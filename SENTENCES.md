@@ -16,39 +16,33 @@ ______________________________________________________________________
 
 **The whole promise, in one sentence:** a line break after every sentence, nowhere else, ever, at any width.
 
-What follows from that promise is the reason this plugin is worth building separately rather than as a mode of the other one.
-
 **The output does not depend on `--wrap`.**
 Line positions are a pure function of the text.
 Adding a word to the second sentence of a paragraph changes exactly the line that word is on, and no other line, at any width, forever.
 That is the diff-stability property Semantic Line Breaks exists for, and the full cascade cannot offer it — as soon as a break position is chosen by "the rightmost candidate that still fits in 80 columns", an edit upstream can change which candidate wins and cascade down the paragraph.
 
-**There is no width, no column, and no line-length knob anywhere in this design.**
-Not as a default, not as an option, not as a tie-breaker.
-A 400-character sentence occupies a 400-character line.
+**Absent by construction, not defaulted off.**
+This is the canonical list, and every later section that declines something cites it rather than re-arguing the case.
 
-**There is no word list.**
-No conjunctions, no clause punctuation, no break words, no parenthetical strategy, no merge pass, no minimum line length, no `MIN_SPLIT_RATIO`.
-The entire configuration surface is two options, both about sentence *detection*.
+- **Width, column and line-length.**
+  Not a default, not an option, not a tie-breaker.
+  A 400-character sentence occupies a 400-character line.
+- **Word lists and clause machinery.**
+  No conjunctions, no clause punctuation, no break words, no parenthetical strategy, no merge pass, no minimum line length, no `MIN_SPLIT_RATIO`.
+- **Spec rules 5 and 12.**
+  Rule 12 is a line-length recommendation and there is no length here; rule 5 cannot be done without a parser, and §5.1 makes that case.
+  This is a strict subset of correct Semantic Line Breaks, not a competing interpretation of them.
 
-The cost is stated plainly in §5: this plugin declines spec rule 5, which is a SHOULD, and does not implement rule 12 at all.
-It is a strict subset of correct Semantic Line Breaks, not a competing interpretation of them.
+The whole configuration surface is two options, both about sentence *detection* (§4).
 
 ### 1.1 Why not a mode of the other plugin
 
 It could be one, and `DESIGN.md`'s cascade reduces to this when its width-driven rules are disabled.
-Three reasons to ship it separately anyway.
+Three things make a separate plugin the better shape, and the longer version of the argument belongs in the README rather than here.
 
-The promise is different in kind, not in degree.
-"Break at sentences" is explainable in a sentence and verifiable by reading the output.
-"Break at sentences, then clauses, then parentheticals, then break words, then let the wrapper finish, then merge the stubs back" is not, and a user who wants the first should not have to understand the second to be confident they are getting it.
-
-The failure modes are different.
-Everything that has gone wrong in `DESIGN.md`'s tuning — coordinating `and` splitting noun phrases, rule 5 shattering serial lists, a length floor standing in for a grammatical test — lives in rules 5 and 6.
-None of it can occur here, because none of those rules exist.
-
-The verification is stronger.
-`--wrap` independence (§7) is an invariant this plugin can assert and the cascade cannot, and it is cheap, total, and catches almost any implementation error.
+The promise is explainable in one sentence and verifiable by reading the output, where "break at sentences, then clauses, then parentheticals, then break words, then let the wrapper finish, then merge the stubs back" is neither.
+The failure modes that have dominated `DESIGN.md`'s tuning — coordinating `and` splitting noun phrases, rule 5 shattering serial lists, a length floor standing in for a grammatical test — all live in rules 5 and 6, which do not exist here.
+`--wrap` independence (§6.1) is an invariant this plugin can assert and the cascade cannot, and it is cheap, total, and catches almost any implementation error.
 
 ______________________________________________________________________
 
@@ -140,10 +134,9 @@ autolink / raw HTML  (?<!\\)<(?:[/!?]?[A-Za-z][^<>]*
                      |[A-Za-z][A-Za-z0-9+.\-]*:[^<>\s]*|[^<>\s@]+@[^<>\s]+)>
 ```
 
-Masking has a narrower job here than in the parent design, and the difference is worth stating so nobody re-derives the wider one.
-There, masking fed both clause detection and depth counting.
-Here there is no clause detection, and the closer set of §3.3 already excludes backtick, `)` and `]`, so a terminator inside a code span or a link destination fails the terminator test without any masking at all.
-What masking is still *required* for is bracket-depth counting (§3.3), where an unmasked `)` inside a URL drives depth negative and corrupts every later gap in the section.
+Masking has exactly one consumer here: bracket-depth counting (§3.3), where an unmasked `)` inside a URL drives depth negative and corrupts every later gap in the section.
+It does not feed sentence detection, because §3.3's closer set already excludes backtick, `)` and `]`, so a terminator inside a code span or a link destination fails the terminator test unmasked.
+In the parent design masking fed clause detection too, which is why it is specified there as a length-preserving rewrite; whether the length requirement survives that reduction is open (§7).
 
 ### 3.3 Sentence detection
 
@@ -173,7 +166,22 @@ Before testing for a terminator, strip a trailing run of footnote references: `(
 A reference glues to the word it annotates, so `The matter at hand.[^1] This is…` yields the single segment `hand.[^1]`, which ends in `]` and would otherwise match nothing.
 Use that narrow grammar rather than adding `]` to the closer set, so a bare `[1]` or a citation like `[Smith 2020]` still opens no sentence.
 
-**Suppressions applied when the terminator is `.`:**
+**Which checks apply, by terminator.**
+
+| terminator | abbreviations | single initial | `require_sentence_capital` |
+| --- | --- | --- | --- |
+| `.` | yes | yes | yes |
+| `…` | no | no | yes |
+| `!` `?` | no | no | only when the first closer is a quote |
+| `。` `！` `？` | no | no | no |
+
+`…` skips the abbreviation check because no abbreviation ends in an ellipsis, so `moment… and then` correctly does not break while `moment… Nobody` does.
+The CJK terminators skip both checks: CJK has no case, so `require_sentence_capital` has nothing to test, and no CJK abbreviation ends in `。`.
+Their wrap point exists only where the author separated the sentences with a space, which is the only case that can be acted on.
+A bare `!` or `?` is unambiguous, but one immediately followed by a closing quote is not, because the question may belong to the quoted phrase rather than to the sentence carrying it.
+Without that qualifier, `A "Is this a test?" guide to the whole subject…` breaks after `test?"`, stranding a 19-character fragment mid-sentence.
+
+**The three checks:**
 
 - **Abbreviations.**
   The English default set is `mr mrs ms dr prof sr jr st i.e e.g vs fig no vol ch sec al`.
@@ -190,22 +198,11 @@ Use that narrow grammar rather than adding `]` to the closer set, so a bare `[1]
   Digits matter: `1976 was hot.` is a sentence opening.
   Opening markup is skipped first, using the opener set above.
 
-**`…` takes the capital rule but no abbreviation check**, because no abbreviation ends in an ellipsis, so `moment… and then` correctly does not break while `moment… Nobody` does.
-
-**The CJK terminators take neither check.**
-CJK has no case, so `require_sentence_capital` has nothing to test, and no CJK abbreviation ends in `。`.
-The wrap point exists only where the author separated the sentences with a space, which is the only case that can be acted on.
-
-**One suppression applies to `!` and `?` as well.**
-A bare `!` or `?` is unambiguous, but one immediately followed by a closing quote is not — the question may belong to the quoted phrase rather than to the sentence carrying it.
-So when the terminator is `!` or `?` and the first closer is a quote, `require_sentence_capital` applies as it does for `.`.
-Without this, `A "Is this a test?" guide to the whole subject…` breaks after `test?"`, stranding a 19-character fragment mid-sentence.
-
 **A sentence never opens with a block-construct marker, and this applies to every terminator.**
 If the next segment would start `#`, `>`, `-`/`*`/`+`, a bare `\d+[.)]`, or a setext or thematic run at line start, the gap is not a sentence boundary.
 
 This rule is **unconditional and independent of `require_sentence_capital`**, and that matters more here than in the parent design.
-It is the only thing preventing a break from putting a construct at a line start where mdformat would escape it, and because this plugin has no `avoid_escapes` option (§5), it is the only protection there is.
+It is the only thing preventing a break from putting a construct at a line start where mdformat would escape it, and because this plugin has no `avoid_escapes` option (§4.1), it is the only protection there is.
 Writing the capital rule as *uppercase, digit or CJK* rather than as *not lowercase* happens to suppress the same cases, but a user who sets `require_sentence_capital = false` would otherwise re-arm all of them.
 
 **Quotation marks are language-specific.**
@@ -389,8 +386,7 @@ Where the two differ, one of them has a bug, and the burden is on us to say whic
 ### 6.4 What to build first
 
 1. The positive control, before anything else.
-   Every other check in §6.2 passes with the plugin disabled — an identity function deletes nothing, changes no render, and is trivially width-independent.
-   Until a test fails when the plugin is absent, a green suite does not distinguish a working plugin from an inert one.
+   Every other check in §6.2 passes with the plugin disabled — an identity function deletes nothing, changes no render, and is trivially width-independent — so until one test fails when the plugin is absent, a green suite does not distinguish a working plugin from an inert one.
 1. §6.1, which is three lines and catches most of what can go wrong.
 1. The sentence-detection fixtures, which are where the remaining complexity actually lives: abbreviations, initials, the capital rule, footnote references, CJK, French spaced closers, German quotes, the `?"` case, bracket depth.
 1. The rumdl differential.
@@ -401,14 +397,7 @@ ______________________________________________________________________
 
 What is new in this document versus inherited, stated honestly, because the parent repository holds claims to that standard.
 
-**Inherited unchanged from `DESIGN.md`**, where each was verified there by execution against mdformat 1.0.0, and none of it re-derived here.
-The seam and its four properties (§2).
-Segmentation and the atom argument (§3.1).
-The corrected masking patterns (§3.2).
-The whole of sentence detection (§3.3).
-Pinning and its effect on `textwrap` (§3.4).
-Edge safety and the tilde decline (§3.5).
-The failure policy (§3.6).
+Everything inherited from `DESIGN.md` is cited there at the point where it is used, and was verified there by execution against mdformat 1.0.0 rather than re-derived here.
 
 **Verified by execution in the session that produced this document.**
 `mdformat-sentences` is unregistered on PyPI.
@@ -417,9 +406,10 @@ The same postprocessor *without* pinning yields 78- and 61-character lines at `-
 `rumdl==0.2.60` in `sentence-per-line` mode leaves a 136-character sentence intact at `line-length = 80`, while its `semantic-line-breaks` mode breaks the same input at the clause comma.
 
 **Asserted but not executed.** No implementation of this specification exists, so §6's gate has never been run.
-The claim that §3.3 reduces to a clean subset without the parent's clause machinery is reasoned from the two specifications, not measured.
+Masking is specified as a length-preserving rewrite, inherited from the parent design where it also fed clause detection; if bracket depth is genuinely its only consumer here (§3.2), a per-segment integer would do and the length requirement is dead weight, but that has not been checked against `DESIGN.md` §4.2's other callers.
 The German abbreviation set is referenced but cannot be carried over, because the parent document never enumerates it (§3.3); an earlier draft of this document invented one, which is exactly the failure `CLAUDE.md`'s provenance rule exists to catch.
 The reduction of masking's role in §3.2 is an argument about which tests can fire, not a measurement of which do.
 
-**Not checked.** Whether any of the sentence-detection rules interact badly in the absence of the clause rung — the parent design has always been measured with both present.
+**Not checked.** Whether §3.3 reduces to a clean subset without the parent's clause machinery, or whether any of the sentence-detection rules interact badly in the absence of the clause rung.
+That reduction is reasoned from the two specifications, not measured, and the parent design has always been measured with both rungs present.
 Whether declining rule 5 changes the calculus on any §3.3 rule that exists partly to keep clause breaks honest.
