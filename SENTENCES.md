@@ -5,10 +5,10 @@ A design for a second, much smaller plugin.
 This document is written one sentence per line, which is the output this plugin produces.
 It is the dogfood, and it is also the argument: read it at any window width and the line breaks do not move.
 
-`DESIGN.md` in this repository specifies `mdformat-semantic-line-breaks`, which implements the full [Semantic Line Breaks](https://sembr.org) cascade.
+`mdformat-semantic-line-breaks` implements the full [Semantic Line Breaks](https://sembr.org) cascade, and its `DESIGN.md` specifies it.
 This specifies a different plugin with a smaller promise.
-Where the two agree, this document cites `DESIGN.md` by section rather than restating the derivation; where they differ, it says so explicitly.
-It is written to become its own repository.
+This document stands alone.
+Where the two designs agree it restates the shared material rather than depending on `DESIGN.md`, citing that document only to say where a fact was verified; where they differ, it says so explicitly.
 
 ______________________________________________________________________
 
@@ -49,29 +49,107 @@ ______________________________________________________________________
 ## 2. Name, packaging and the seam
 
 Distribution `mdformat-sentences`, module `mdformat_sentences`, entry-point id `sentences`.
-The name is free on PyPI as of 2026-09-11, verified against the JSON API.
+Both `mdformat-sentence` and `mdformat-sentences` were unregistered on PyPI as of 2026-09-12, verified against the JSON API.
 
 ```toml
 [project.entry-points."mdformat.parser_extension"]
 sentences = "mdformat_sentences"
 ```
 
-The id is what `--extensions` accepts and what keys `[plugin.sentences]` in `.mdformat.toml`.
-It does not collide with `mdformat-sembr`'s `sembr` or with this repository's `semantic_line_breaks`, and all three can be installed together.
-
-Everything in `DESIGN.md` §1, §1.1, §2, §2.1 and §2.2 applies here unchanged and is not restated:
-the entry point mechanism and its silent-overwrite behaviour on an id collision;
-`--extensions` being a whitelist rather than an addition;
-CLI option defaults having to be `None` or `argparse.SUPPRESS`;
-the `POSTPROCESSORS["inline"]` seam and why it is the only correct hook point;
-that mdformat renders twice whenever `wrap != "keep"`;
-and that `WRAP_POINT` and `PRESERVE_CHAR` are the same byte, `\x00`.
-
 Dependencies: mdformat only, `>=1.0,<2`.
 `requires-python >= 3.10`, because mdformat 1.0.0 declares it.
 Licence MIT, matching mdformat and every plugin in its curated list.
 
-### 2.1 The three wrap modes
+§2.1 to §2.4 are inherited from the `mdformat-semantic-line-breaks` design work, where every fact below was verified by execution against mdformat 1.0.0.
+None of it is re-verified here.
+It is restated rather than cited so that this specification stands alone, and the one place the parent's reasoning does *not* carry over is called out in §2.2.
+
+### 2.1 The entry point id, and why it is the binding constraint
+
+The id is what `--extensions` accepts, what keys `[plugin.sentences]` in `.mdformat.toml`, and what `mdformat.text(..., extensions={"sentences"})` names.
+It follows the ecosystem convention of the distribution name with underscores, as `mdformat-simple-breaks` registers `simple_breaks` and `mdformat-frontmatter` registers `frontmatter`.
+
+**An id collision is silent.**
+mdformat loads plugins with `loaded_ifaces[ep.name] = ep.load()`, a plain dict assignment in `mdformat/plugins.py`, so two distributions registering the same id overwrite each other with no warning and no error.
+The id, not the PyPI name, is the identifier that has to be unique.
+`sentences` collides with neither `mdformat-sembr`'s `sembr` nor `mdformat-semantic-line-breaks`'s `semantic_line_breaks`, and all three can be installed together.
+
+**`--extensions` is a whitelist, not an addition.**
+`enabled_parserplugins` is *all* installed plugins when `--extensions` is absent, and *only* the named ones when it is present.
+So `--extensions sentences` silently disables GFM.
+That is the trap behind §6.2's rule that every baseline must name `extensions=set()` explicitly, and it is worth a line in the README.
+
+### 2.2 The hook point is `POSTPROCESSORS["inline"]`
+
+Not a `paragraph` renderer override, and not a `paragraph` postprocessor.
+
+The relevant mdformat 1.0.0 pipeline, in order, from `mdformat/renderer/_context.py`:
+
+1. `text()` escapes inline markup, then, if `context.do_wrap` and the node is inside a paragraph, replaces every run of `[ \t\n]+` with `WRAP_POINT` (`\x00`).
+1. `softbreak()` becomes `WRAP_POINT`.
+   `hardbreak()` becomes a backslash *and* a newline, glued to the preceding segment with no wrap point between them.
+1. `link()` and `image()` replace every interior `WRAP_POINT` with a space, so a whole link or image is one unbreakable atom.
+1. **The plugin runs here**, because `RenderTreeNode.render` applies postprocessors immediately after the renderer for that node type.
+1. `paragraph()` splits the inline text on `\n`, word-wraps each section independently through `textwrap`, then walks every resulting line and escapes anything that would become block syntax at line start.
+1. `blockquote()`, `bullet_list()` and `ordered_list()` prefix and indent every line, with `context.indented()` keeping `env["indent_width"]` accurate.
+
+So a plugin at this seam turns selected `WRAP_POINT`s into `\n`, and §3.4 narrows the job further: this one turns every gap it does not break into a literal space as well.
+
+Guard: return unchanged unless `node.parent.type == "paragraph"`.
+An inline node's parent is the block that owns it, so the test is exact rather than heuristic.
+
+Why this seam and no other:
+
+- A `WRAP_POINT` is mdformat's own assertion that the position may become a newline without changing the render, so breaking only there makes spec rule 2 structural rather than something this plugin has to police.
+- Breaks inserted here become sections in step 5, so line-start escaping and blockquote and list indentation apply to them for free.
+- Postprocessors chain, so this composes with other plugins instead of fighting them over the `paragraph` renderer.
+- `CHANGES_AST = False` is correct, and `_cli.py` gates `--validate` on `not changes_ast` while `validate` defaults to `True`, so declaring it means mdformat checks the render-equality invariant on our behalf.
+  Three caveats: `--check` never reaches the validation branch at all, because `_cli.py` compares strings and returns first; `changes_ast` is OR-ed across every enabled plugin, so one plugin declaring `True` silently disables validation for all of them; and the Python API never validates.
+  It is a strong default rather than a guarantee, and it is blind to the whitespace class regardless (§3.5).
+- The empirical support for the choice is that `mdformat-sembr` hooks `paragraph` instead, and both of its observable defects follow from that.
+
+**One line of the parent's reasoning does not carry over.**
+`DESIGN.md` also counts on mdformat word-wrapping whatever `WRAP_POINT`s the plugin leaves behind, which is the bottom rung of its cascade and free.
+Nothing is left behind here (§3.4), so that rung does not exist and no part of this design may assume it.
+
+### 2.3 Four facts about the seam
+
+**`mdformat.text()` renders twice.**
+`_api.py` re-renders its own output whenever `wrap != "keep"`, because escaping depends on wrapping.
+A non-idempotent plugin therefore produces visibly unstable output rather than a subtle drift, and the plugin must tolerate seeing its own output as input.
+It does, for the reason given in §3.4.
+
+**`WRAP_POINT` and `PRESERVE_CHAR` are the same byte, `\x00`.**
+They never collide because they are alive in disjoint phases: `PRESERVE_CHAR` exists only inside `_prepare_wrap`, which runs in step 5, after us.
+At plugin time every `\x00` is unambiguously a wrap point.
+
+**No literal `\x00` can reach the plugin from the source.**
+CommonMark requires U+0000 to be replaced with U+FFFD and markdown-it does so, so parsing `"a\x00b"` yields the content `'a\ufffdb'`.
+That is what makes `\x00` safe to use as a delimiter.
+
+**A run of consecutive `WRAP_POINT`s collapses to one space.**
+`_prepare_wrap`'s regex matches `\x00+` as a unit, so `re.compile(r"\x00+")` is the correct splitter and §3.1's segmentation loses nothing by using it.
+
+### 2.4 Only the argparse `dest` is namespaced
+
+mdformat builds each plugin's argument group and then rewrites the destinations, in `mdformat/_cli.py`:
+
+```python
+group = parser.add_argument_group(title=f"{plugin_id} plugin")
+plugin.add_cli_argument_group(group)
+for action in group._group_actions:
+    action.dest = f"plugin.{plugin_id}.{action.dest}"
+```
+
+So `dest="require_sentence_capital"` lands at `options["mdformat"]["plugin"]["sentences"]["require_sentence_capital"]`, and the visible flag text is whatever string the plugin passes to `add_argument`.
+That is why §4 can spell the flags short, and why changing the CLI prefix later costs nothing else.
+
+**`default` must be `None` or `argparse.SUPPRESS`.**
+The same loop emits a `DeprecationWarning` otherwise, warning that the plugin's default will always override any value configured in TOML.
+A plugin that writes `action="store_false", default=True` silently defeats its own TOML config.
+Use `action="store_const", const=False, default=None` and resolve the default inside the plugin rather than in argparse.
+
+### 2.5 The three wrap modes
 
 | `--wrap` | `do_wrap` | behaviour |
 | --- | --- | --- |
@@ -83,8 +161,12 @@ The third row is the surprising one and it is deliberate.
 A user who passes `--wrap 80` alongside this plugin is asking for two incompatible things, and this plugin resolves the conflict in favour of its own promise rather than silently producing something that is neither.
 §3.4 explains the mechanism, §6.1 makes it a test, and the README must say it in the first paragraph.
 
-`--wrap keep` stays silent rather than warning, for the reasons in `DESIGN.md` §5.2:
-`keep` is mdformat's default, and mdformat's own documentation gives Semantic Line Breaks as the reason it is the default.
+`do_wrap` is `isinstance(wrap_mode, int) or wrap_mode == "no"`, which is what makes the first row inert and the third row indistinguishable from the second.
+
+`--wrap keep` stays silent rather than warning.
+`keep` is mdformat's default, and mdformat's own documentation gives hand-written Semantic Line Breaks as the reason it is the default, so a user who installs this plugin and keeps `wrap = "keep"` is asking mdformat to preserve the breaks they wrote themselves.
+Warning on the tool's default configuration would fire constantly for people doing nothing wrong.
+A warning would be justified if the plugin were *explicitly* named in `--extensions` alongside `--wrap keep`, since that is closer to a contradiction, but that is not worth the plumbing until someone trips over it.
 
 ______________________________________________________________________
 
@@ -279,14 +361,14 @@ Two options, both about sentence detection, both in `[plugin.sentences]` and as 
 | `require_sentence_capital` | bool | `true` | `word. lowercase` is not a boundary |
 | `abbreviations` | list | `[]` | **added** to the defaults, never replacing them |
 
-CLI spelling is short, because mdformat namespaces only the argparse `dest` and leaves the flag text to the plugin:
+CLI spelling is short, because mdformat namespaces only the argparse `dest` and leaves the flag text to the plugin (§2.4):
 
 ```
 --sentences-no-require-sentence-capital
 --sentences-abbreviations A,B,C
 ```
 
-Every default must be `None`, or mdformat 1.0.0 raises a `DeprecationWarning` and the CLI value overrides anything set in TOML.
+Every default must be `None`, for the reason in §2.4.
 
 As with any mdformat plugin, these are CLI- and TOML-only: `mdformat.text()` does not populate `options["mdformat"]["plugin"]`, so a library caller gets the defaults.
 An undocumented escape hatch exists and the test harnesses use it — `options={"plugin": {"sentences": {...}}}` reaches the seam via the splat at `_api.py:29` — but it is not a supported mdformat interface.
@@ -400,7 +482,7 @@ What is new in this document versus inherited, stated honestly, because the pare
 Everything inherited from `DESIGN.md` is cited there at the point where it is used, and was verified there by execution against mdformat 1.0.0 rather than re-derived here.
 
 **Verified by execution in the session that produced this document.**
-`mdformat-sentences` is unregistered on PyPI.
+Both `mdformat-sentence` and `mdformat-sentences` were unregistered on PyPI on 2026-09-12, checked against the JSON API.
 A postprocessor emitting `\n` at sentence gaps and a literal space everywhere else leaves a 140-character sentence intact at `--wrap 80`, and produces byte-identical output at `--wrap no`.
 The same postprocessor *without* pinning yields 78- and 61-character lines at `--wrap 80`.
 `rumdl==0.2.60` in `sentence-per-line` mode leaves a 136-character sentence intact at `line-length = 80`, while its `semantic-line-breaks` mode breaks the same input at the clause comma.
