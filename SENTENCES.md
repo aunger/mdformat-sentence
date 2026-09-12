@@ -1,4 +1,4 @@
-# mdformat-sentences
+# mdformat-sentence
 
 A design for a second, much smaller plugin.
 
@@ -48,12 +48,13 @@ ______________________________________________________________________
 
 ## 2. Name, packaging and the seam
 
-Distribution `mdformat-sentences`, module `mdformat_sentences`, entry-point id `sentences`.
-Both `mdformat-sentence` and `mdformat-sentences` were unregistered on PyPI as of 2026-09-12, verified against the JSON API.
+Distribution `mdformat-sentence`, module `mdformat_sentence`, entry-point id `sentence`.
+The name was unregistered on PyPI as of 2026-09-12, verified against the JSON API, as was the plural `mdformat-sentences`.
+Singular over plural is a coin flip in this ecosystem rather than a convention: `mdformat-footnote`, `mdformat-admon`, `mdformat-deflist` and `mdformat-wikilink` are singular, `mdformat-tables`, `mdformat-simple-breaks` and `mdformat-gfm-alerts` are plural.
 
 ```toml
 [project.entry-points."mdformat.parser_extension"]
-sentences = "mdformat_sentences"
+sentence = "mdformat_sentence"
 ```
 
 Dependencies: mdformat only, `>=1.0,<2`.
@@ -66,17 +67,17 @@ It is restated rather than cited so that this specification stands alone, and th
 
 ### 2.1 The entry point id, and why it is the binding constraint
 
-The id is what `--extensions` accepts, what keys `[plugin.sentences]` in `.mdformat.toml`, and what `mdformat.text(..., extensions={"sentences"})` names.
+The id is what `--extensions` accepts, what keys `[plugin.sentence]` in `.mdformat.toml`, and what `mdformat.text(..., extensions={"sentence"})` names.
 It follows the ecosystem convention of the distribution name with underscores, as `mdformat-simple-breaks` registers `simple_breaks` and `mdformat-frontmatter` registers `frontmatter`.
 
 **An id collision is silent.**
 mdformat loads plugins with `loaded_ifaces[ep.name] = ep.load()`, a plain dict assignment in `mdformat/plugins.py`, so two distributions registering the same id overwrite each other with no warning and no error.
 The id, not the PyPI name, is the identifier that has to be unique.
-`sentences` collides with neither `mdformat-sembr`'s `sembr` nor `mdformat-semantic-line-breaks`'s `semantic_line_breaks`, and all three can be installed together.
+`sentence` collides with neither `mdformat-sembr`'s `sembr` nor `mdformat-semantic-line-breaks`'s `semantic_line_breaks`, and all three can be installed together.
 
 **`--extensions` is a whitelist, not an addition.**
 `enabled_parserplugins` is *all* installed plugins when `--extensions` is absent, and *only* the named ones when it is present.
-So `--extensions sentences` silently disables GFM.
+So `--extensions sentence` silently disables GFM.
 That is the trap behind §6.2's rule that every baseline must name `extensions=set()` explicitly, and it is worth a line in the README.
 
 ### 2.2 The hook point is `POSTPROCESSORS["inline"]`
@@ -141,7 +142,7 @@ for action in group._group_actions:
     action.dest = f"plugin.{plugin_id}.{action.dest}"
 ```
 
-So `dest="require_sentence_capital"` lands at `options["mdformat"]["plugin"]["sentences"]["require_sentence_capital"]`, and the visible flag text is whatever string the plugin passes to `add_argument`.
+So `dest="require_sentence_capital"` lands at `options["mdformat"]["plugin"]["sentence"]["require_sentence_capital"]`, and the visible flag text is whatever string the plugin passes to `add_argument`.
 That is why §4 can spell the flags short, and why changing the CLI prefix later costs nothing else.
 
 **`default` must be `None` or `argparse.SUPPRESS`.**
@@ -354,7 +355,7 @@ ______________________________________________________________________
 
 ## 4. Config surface
 
-Two options, both about sentence detection, both in `[plugin.sentences]` and as CLI flags.
+Two options, both about sentence detection, both in `[plugin.sentence]` and as CLI flags.
 
 | Option | Type | Default | Meaning |
 | --- | --- | --- | --- |
@@ -364,14 +365,14 @@ Two options, both about sentence detection, both in `[plugin.sentences]` and as 
 CLI spelling is short, because mdformat namespaces only the argparse `dest` and leaves the flag text to the plugin (§2.4):
 
 ```
---sentences-no-require-sentence-capital
---sentences-abbreviations A,B,C
+--sentence-no-require-sentence-capital
+--sentence-abbreviations A,B,C
 ```
 
 Every default must be `None`, for the reason in §2.4.
 
 As with any mdformat plugin, these are CLI- and TOML-only: `mdformat.text()` does not populate `options["mdformat"]["plugin"]`, so a library caller gets the defaults.
-An undocumented escape hatch exists and the test harnesses use it — `options={"plugin": {"sentences": {...}}}` reaches the seam via the splat at `_api.py:29` — but it is not a supported mdformat interface.
+An undocumented escape hatch exists and the test harnesses use it — `options={"plugin": {"sentence": {...}}}` reaches the seam via the splat at `_api.py:29` — but it is not a supported mdformat interface.
 
 ### 4.1 Options deliberately not provided
 
@@ -483,6 +484,8 @@ Everything inherited from `DESIGN.md` is cited there at the point where it is us
 
 **Verified by execution in the session that produced this document.**
 Both `mdformat-sentence` and `mdformat-sentences` were unregistered on PyPI on 2026-09-12, checked against the JSON API.
+Every plugin in mdformat's curated list is MIT, and so is mdformat itself: all twenty were checked against the PyPI JSON API on 2026-09-12, and `mdformat-simple-breaks` carries the MIT classifier despite an empty `license` field.
+The ecosystem's split on singular versus plural distribution names (§2) was counted from that same list plus `mdformat-tables` and `mdformat-wikilink`, which are not in it.
 A postprocessor emitting `\n` at sentence gaps and a literal space everywhere else leaves a 140-character sentence intact at `--wrap 80`, and produces byte-identical output at `--wrap no`.
 The same postprocessor *without* pinning yields 78- and 61-character lines at `--wrap 80`.
 `rumdl==0.2.60` in `sentence-per-line` mode leaves a 136-character sentence intact at `line-length = 80`, while its `semantic-line-breaks` mode breaks the same input at the clause comma.
