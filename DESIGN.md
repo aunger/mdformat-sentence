@@ -149,9 +149,19 @@ A user who passes `--wrap 80` alongside this plugin is asking for two incompatib
 
 `do_wrap` is `isinstance(wrap_mode, int) or wrap_mode == "no"`, which is what makes the first row inert and the third row indistinguishable from the second.
 
-`--wrap keep` stays silent rather than warning.
-`keep` is mdformat's default, and mdformat's own documentation gives hand-written Semantic Line Breaks as the reason it is the default, so a user who installs this plugin and keeps `wrap = "keep"` is asking mdformat to preserve the breaks they wrote themselves.
-Warning on the tool's default configuration would fire constantly for people doing nothing wrong.
+**The default is the inert row, and the intended row is destructive.**
+This is the most surprising thing about installing the plugin and it belongs in the README as well as here.
+
+`keep` is mdformat's default, and mdformat's own documentation gives hand-written Semantic Line Breaks as the reason it is the default.
+So the out-of-the-box experience of installing this plugin is that nothing happens, and a user has to set `wrap = "no"` before it does anything at all.
+
+Setting it discards every line break the author made by hand.
+Under `--wrap no` mdformat collapses each paragraph to a single line before this plugin sees it, so a paragraph a writer had broken at three clause boundaries arrives as one line and leaves broken at sentences only.
+Verified by execution against mdformat 1.0.0, with no plugin installed: the collapse is mdformat's, not ours, but the mode is the one this plugin asks for.
+A writer who already hand-writes full Semantic Line Breaks therefore loses rules 5 and 6 the moment they adopt this plugin, and the only mode that keeps their work is the one in which the plugin does nothing.
+That is a real cost, it is not recoverable from the output, and it must be said before someone runs the formatter over a corpus they hand-broke.
+
+`--wrap keep` still stays silent rather than warning, because warning on the tool's default configuration would fire constantly for people doing nothing wrong.
 A warning would be justified if the plugin were *explicitly* named in `--extensions` alongside `--wrap keep`, since that is closer to a contradiction, but that is not worth the plumbing until someone trips over it.
 
 ______________________________________________________________________
@@ -433,15 +443,20 @@ Three traps in the harness itself.
 `--check` never validates;
 and the quality harness must fail loudly rather than reporting an F1 for a plugin that never ran.
 
-### 6.3 rumdl is prior art, not an oracle
+### 6.3 rumdl is a working implementation to learn from, not an oracle
 
 rumdl's MD013 has four reflow modes, one of them `sentence-per-line`.
 Verified by execution against `rumdl==0.2.60`: in that mode, with `line-length = 80`, a 136-character sentence is left intact on one line, and the reflow trigger contains no length test at all.
 So a shipped tool already makes the width-independent sentence-per-line promise, which is evidence that §1 describes a coherent product rather than one person's idiosyncrasy.
 
-That is the whole of the relationship, and it is deliberately not part of the gate in §6.2.
-Agreement is not a target and divergence is not a defect.
-rumdl has its own blind spots, and where this design can do better it should; no second implementation's output is a substitute for a specification.
+It is worth more than that, though.
+rumdl has solved in production several of the problems §3 will have to solve, and its solutions are worth reading before writing ours: `sentence_utils.rs` for the terminator and abbreviation handling, and `text_reflow.rs` for segmentation and for the atomicity of links and code spans.
+The closer-set exclusion in §3.3 is a case where reading a working implementation is what surfaced the right rule.
+Read it as a source of solved problems and of test cases we would not have thought of.
+
+What it is not is an oracle.
+It is deliberately absent from §6.2's gate: agreement is not a target and divergence is not a defect.
+rumdl has its own blind spots, this design intends to do better in places, and where the two disagree the specification decides, not the other implementation's output.
 
 ### 6.4 What to build first
 
