@@ -1,14 +1,13 @@
 # mdformat-sentence
 
-A design for a second, much smaller plugin.
+A design for a small mdformat plugin.
 
 This document is written one sentence per line, which is the output this plugin produces.
 It is the dogfood, and it is also the argument: read it at any window width and the line breaks do not move.
 
-`mdformat-semantic-line-breaks` implements the full [Semantic Line Breaks](https://sembr.org) cascade, and its `DESIGN.md` specifies it.
-This specifies a different plugin with a smaller promise.
-This document stands alone.
-Where the two designs agree it restates the shared material rather than depending on `DESIGN.md`, citing that document only to say where a fact was verified; where they differ, it says so explicitly.
+[Semantic Line Breaks](https://sembr.org) is a convention for breaking source lines at meaning boundaries, so that a diff shows what changed rather than where the text reflowed.
+Its specification gives thirteen rules at RFC 2119 levels of obligation.
+This plugin takes the sentence rule and nothing below it, which §5 sets out against the full list.
 
 ______________________________________________________________________
 
@@ -19,7 +18,7 @@ ______________________________________________________________________
 **The output does not depend on `--wrap`.**
 Line positions are a pure function of the text.
 Adding a word to the second sentence of a paragraph changes exactly the line that word is on, and no other line, at any width, forever.
-That is the diff-stability property Semantic Line Breaks exists for, and the full cascade cannot offer it — as soon as a break position is chosen by "the rightmost candidate that still fits in 80 columns", an edit upstream can change which candidate wins and cascade down the paragraph.
+That is the diff-stability property Semantic Line Breaks exists for, and no width-driven implementation can offer it — as soon as a break position is chosen by "the rightmost candidate that still fits in 80 columns", an edit upstream can change which candidate wins and cascade down the paragraph.
 
 **Absent by construction, not defaulted off.**
 This is the canonical list, and every later section that declines something cites it rather than re-arguing the case.
@@ -28,23 +27,12 @@ This is the canonical list, and every later section that declines something cite
   Not a default, not an option, not a tie-breaker.
   A 400-character sentence occupies a 400-character line.
 - **Word lists and clause machinery.**
-  No conjunctions, no clause punctuation, no break words, no parenthetical strategy, no merge pass, no minimum line length, no `MIN_SPLIT_RATIO`.
+  No conjunctions, no clause punctuation, no break words, no parenthetical strategy, no merge pass and no minimum line length.
 - **Spec rules 5 and 12.**
   Rule 12 is a line-length recommendation and there is no length here; rule 5 cannot be done without a parser, and §5.1 makes that case.
   This is a strict subset of correct Semantic Line Breaks, not a competing interpretation of them.
 
 The whole configuration surface is two options, both about sentence *detection* (§4).
-
-### 1.1 Why not a mode of the other plugin
-
-It could be one, and `DESIGN.md`'s cascade reduces to this when its width-driven rules are disabled.
-Three things make a separate plugin the better shape, and the longer version of the argument belongs in the README rather than here.
-
-The promise is explainable in one sentence and verifiable by reading the output, where "break at sentences, then clauses, then parentheticals, then break words, then let the wrapper finish, then merge the stubs back" is neither.
-The failure modes that have dominated `DESIGN.md`'s tuning — coordinating `and` splitting noun phrases, rule 5 shattering serial lists, a length floor standing in for a grammatical test — all live in rules 5 and 6, which do not exist here.
-`--wrap` independence (§6.1) is an invariant this plugin can assert and the cascade cannot, and it is cheap, total, and catches almost any implementation error.
-
-______________________________________________________________________
 
 ## 2. Name, packaging and the seam
 
@@ -61,9 +49,7 @@ Dependencies: mdformat only, `>=1.0,<2`.
 `requires-python >= 3.10`, because mdformat 1.0.0 declares it.
 Licence MIT, matching mdformat and every plugin in its curated list.
 
-§2.1 to §2.4 are inherited from the `mdformat-semantic-line-breaks` design work, where every fact below was verified by execution against mdformat 1.0.0.
-None of it is re-verified here.
-It is restated rather than cited so that this specification stands alone, and the one place the parent's reasoning does *not* carry over is called out in §2.2.
+Every fact in §2.1 to §2.4 was verified by execution against mdformat 1.0.0.
 
 ### 2.1 The entry point id, and why it is the binding constraint
 
@@ -73,7 +59,7 @@ It follows the ecosystem convention of the distribution name with underscores, a
 **An id collision is silent.**
 mdformat loads plugins with `loaded_ifaces[ep.name] = ep.load()`, a plain dict assignment in `mdformat/plugins.py`, so two distributions registering the same id overwrite each other with no warning and no error.
 The id, not the PyPI name, is the identifier that has to be unique.
-`sentence` collides with neither `mdformat-sembr`'s `sembr` nor `mdformat-semantic-line-breaks`'s `semantic_line_breaks`, and all three can be installed together.
+`sentence` does not collide with `mdformat-sembr`'s `sembr`, and both can be installed together.
 
 **`--extensions` is a whitelist, not an addition.**
 `enabled_parserplugins` is *all* installed plugins when `--extensions` is absent, and *only* the named ones when it is present.
@@ -107,11 +93,10 @@ Why this seam and no other:
 - `CHANGES_AST = False` is correct, and `_cli.py` gates `--validate` on `not changes_ast` while `validate` defaults to `True`, so declaring it means mdformat checks the render-equality invariant on our behalf.
   Three caveats: `--check` never reaches the validation branch at all, because `_cli.py` compares strings and returns first; `changes_ast` is OR-ed across every enabled plugin, so one plugin declaring `True` silently disables validation for all of them; and the Python API never validates.
   It is a strong default rather than a guarantee, and it is blind to the whitespace class regardless (§3.5).
-- The empirical support for the choice is that `mdformat-sembr` hooks `paragraph` instead, and both of its observable defects follow from that.
+- Hooking `paragraph` instead, as `mdformat-sembr` does, puts the plugin downstream of wrapping and line-start escaping, so it has to re-derive what this seam gives it for free.
 
-**One line of the parent's reasoning does not carry over.**
-`DESIGN.md` also counts on mdformat word-wrapping whatever `WRAP_POINT`s the plugin leaves behind, which is the bottom rung of its cascade and free.
-Nothing is left behind here (§3.4), so that rung does not exist and no part of this design may assume it.
+**No `WRAP_POINT` survives this plugin.**
+§3.4 resolves every gap to a newline or a literal space, so mdformat's own word wrap is left with nothing to act on, and no part of this design may assume that it will act.
 
 ### 2.3 Four facts about the seam
 
@@ -193,10 +178,10 @@ Three things about that loop carry the whole design.
 
 **Segments are the atoms and gaps are the only legal break positions.**
 There is no other source of truth.
-mdformat has already collapsed each link, image and code span into a single segment with literal interior spaces, so punctuation cannot detach from its token — `Lorem (ipsum sit). Dolor amet.` segments as `['Lorem', '(ipsum', 'sit).', 'Dolor', 'amet.']` and `sit).` is one atom (`DESIGN.md` §3.1, verified there by execution).
+mdformat has already collapsed each link, image and code span into a single segment with literal interior spaces, so punctuation cannot detach from its token — `Lorem (ipsum sit). Dolor amet.` segments as `['Lorem', '(ipsum', 'sit).', 'Dolor', 'amet.']` and `sit).` is one atom.
 
 **Every gap that is not a sentence break becomes a literal space, never a wrap point.**
-This is `DESIGN.md` §4.8's *pinning* primitive applied unconditionally rather than selectively.
+Call this *pinning*, applied to every gap without exception.
 A literal space is carried through `textwrap` as a preserved character and restored verbatim, so a pinned gap is unbreakable by mdformat's own word wrap as well as by us.
 That single decision is what makes the output width-independent, and it is why this plugin emits no `\x00` at all.
 
@@ -207,7 +192,7 @@ It cannot be a function of two adjacent segments, for the reasons in §3.3: brac
 ### 3.2 Masking
 
 Within a segment, blank out the spans below, preserving length so offsets stay valid.
-The patterns are `DESIGN.md` §4.2's, corrected and verified there against ten cases:
+The patterns, verified against ten cases:
 
 ```
 code span            (?<!\\)(?<!`)(`+)(?!`)(?:[^`]|`(?!\1(?!`)))*?(?<!`)\1(?!`)
@@ -219,12 +204,11 @@ autolink / raw HTML  (?<!\\)<(?:[/!?]?[A-Za-z][^<>]*
 
 Masking has exactly one consumer here: bracket-depth counting (§3.3), where an unmasked `)` inside a URL drives depth negative and corrupts every later gap in the section.
 It does not feed sentence detection, because §3.3's closer set already excludes backtick, `)` and `]`, so a terminator inside a code span or a link destination fails the terminator test unmasked.
-In the parent design masking fed clause detection too, which is why it is specified there as a length-preserving rewrite; whether the length requirement survives that reduction is open (§7).
+Whether masking must therefore preserve length is open (§7), since a count per segment would serve a depth counter.
 
 ### 3.3 Sentence detection
 
 This is the entire substance of the plugin.
-Everything below is inherited from `DESIGN.md` §4.3, restated in full because it is normative here and because a reader of this document should not have to hold two specifications open.
 
 **A sentence end is a terminator followed by zero or more closers, at segment end.**
 
@@ -238,12 +222,12 @@ openers      " ' “ ‘ « ‹ ¿ ¡ „ ‚  plus  * _ ~ [ ( \
 That is not a conflict, because a closer is tested after a terminator and an opener before a capital, and no position tests for both.
 
 The closer set **excludes** `)`, `]`, `}` and backtick.
-This is the root fix for a family of bugs rather than a patch for any one of them, and it is what rumdl does.
-Three consequences, all verified in `DESIGN.md` §4.3:
+This is the root fix for a family of bugs rather than a patch for any one of them.
+Three consequences:
 `` Install the `foo.` Then run… `` does not break after the code span;
 `See the [docs](https://ex.com/a.b.) The next…` does not break after the link;
 `An array like (1, 2, 3.) Then…` does not break after the parenthetical.
-The cost is that a sentence genuinely ending inside parentheses — `He left. (He came back.) Then…` — is not detected, which is rumdl's blind spot too, and is accepted.
+The cost is that a sentence genuinely ending inside parentheses — `He left. (He came back.) Then…` — is not detected, and that is accepted: detecting it means putting `)` in the closer set, which re-arms all three cases above.
 
 Before testing for a terminator, strip a trailing run of footnote references: `(\[\^[^\]\s]+\])+$`.
 A reference glues to the word it annotates, so `The matter at hand.[^1] This is…` yields the single segment `hand.[^1]`, which ends in `]` and would otherwise match nothing.
@@ -270,8 +254,8 @@ Without that qualifier, `A "Is this a test?" guide to the whole subject…` brea
   The English default set is `mr mrs ms dr prof sr jr st i.e e.g vs fig no vol ch sec al`.
   `etc`, `inc`, `ltd` and `cf` are deliberately **absent**: they commonly end sentences, and with `etc` present `Use commas, semicolons, etc. The next sentence…` loses a real boundary.
   German abbreviations are in the default set too, and `usw` is excluded from them for exactly the same reason as `etc`.
-  **The German set is not enumerated anywhere upstream**: `DESIGN.md` §4.3 names only `bzw.` and `Abb.` as examples and records that five of six ordinary German sentences broke spuriously without the set, but never lists it.
-  That is a gap inherited from the parent document, not a decision, and it has to be closed before this specification can be implemented from.
+  **The German set is not enumerated in this document**, which is a gap rather than a decision, and it has to be closed before the specification can be implemented from.
+  Source a set; do not invent one.
   German is on by default rather than behind a language flag because the asymmetry runs one way — an abbreviation held back costs at most a missed break, one that is missing corrupts a sentence — and these tokens are vanishingly rare in English prose.
   German cannot borrow the capital rule to cover a missing abbreviation, because German capitalises every noun.
   User-supplied abbreviations are **added** to the defaults, never replace them.
@@ -284,7 +268,7 @@ Without that qualifier, `A "Is this a test?" guide to the whole subject…` brea
 **A sentence never opens with a block-construct marker, and this applies to every terminator.**
 If the next segment would start `#`, `>`, `-`/`*`/`+`, a bare `\d+[.)]`, or a setext or thematic run at line start, the gap is not a sentence boundary.
 
-This rule is **unconditional and independent of `require_sentence_capital`**, and that matters more here than in the parent design.
+This rule is **unconditional and independent of `require_sentence_capital`**, and that matters.
 It is the only thing preventing a break from putting a construct at a line start where mdformat would escape it, and because this plugin has no `avoid_escapes` option (§4.1), it is the only protection there is.
 Writing the capital rule as *uppercase, digit or CJK* rather than as *not lowercase* happens to suppress the same cases, but a user who sets `require_sentence_capital = false` would otherwise re-arm all of them.
 
@@ -324,16 +308,14 @@ That holds only because no break decision consults a width, and because §3.3's 
 
 ### 3.5 Correctness rules
 
-Two, both inherited, both non-negotiable.
+Two, both non-negotiable.
 
 **Edge safety.**
 A gap is ineligible when the last character of the segment to its left, or the first character of the segment to its right, is whitespace that `str.strip()` would delete.
 Test with `.strip()`, not with a character list.
 mdformat's `paragraph()` strips each line after wrapping, so a break at such a gap silently deletes the character, and `is_md_equal` cannot see it because HTML comparison collapses whitespace.
 
-This rule is much smaller here than in the parent design, and the reduction is a direct benefit of §3.4.
-There, every gap was a potential wrap point and all of them needed the guard.
-Here, only sentence gaps can break at all; every other gap is already pinned, which is the same mechanism the guard uses.
+The rule is small because of §3.4: only sentence gaps can break at all, and every other gap is already pinned, which is the same mechanism the guard uses.
 An ineligible sentence gap is simply pinned like its neighbours.
 
 **Tilde sections are declined outright.**
@@ -348,7 +330,7 @@ A section containing a tilde fence is not one anybody is line-breaking for reada
 Reconstruct the pre-layout section by mapping every emitted `\n` and every inserted `" "` back to a `\x00`, and require byte equality with the input.
 On mismatch, return the text untouched.
 
-rumdl takes the same posture, and its comment is worth keeping: the alternative is writing corrupted prose into the user's file.
+The alternative is writing corrupted prose into the user's file.
 "Untouched" is a coherent degraded mode here rather than a failure: the paragraph is simply left to mdformat, which under `--wrap no` puts it on one line and under `--wrap keep` leaves it alone.
 
 ______________________________________________________________________
@@ -378,7 +360,7 @@ An undocumented escape hatch exists and the test harnesses use it — `options={
 
 - **Any width, column or line-length option.** §1.
 - **`avoid_escapes`.** Unnecessary: §3.3's block-construct rule is unconditional, so no break can land before `#`, `>`, `-` or an enumerator, and no escape is ever added.
-- **A "honour `--wrap`" mode** that would let mdformat wrap inside a sentence. That is a coherent product — GNU Emacs's `fill-paragraph-semlf` is exactly it — but it reintroduces geometric line breaks and therefore forfeits §1's property, which is the only reason this plugin exists. Anyone who wants it wants the other plugin, or Emacs.
+- **A "honour `--wrap`" mode** that would let mdformat wrap inside a sentence. That is a coherent product — GNU Emacs's `fill-paragraph-semlf` is exactly it — but it reintroduces geometric line breaks and therefore forfeits §1's property, which is the only reason this plugin exists. Anyone who wants it wants a different tool.
 - **`break_words`, `strict_clauses`, `merge_short_lines`, `min_line_chars`.** No clause or width machinery exists to configure.
 
 ______________________________________________________________________
@@ -410,13 +392,12 @@ Rules 4 and 9 are the two this plugin implements, and they are the only MUSTs am
 Rule 5 is a SHOULD, and this plugin does not do it.
 That is a real gap and it should not be dressed up as a design choice about taste.
 
-The reason is that rule 5 cannot be implemented from punctuation alone without over-firing, and the evidence is in this repository.
-Under the parent design's unconditional reading, rule 5 breaks at every comma at paren depth zero with no test for whether an independent clause follows, which shatters serial lists (`LaTeX,` / `Markdown,` / `and plain text,`), coordinate prepositional phrases and introductory adverbials.
-It is made tolerable only by a length-based merge pass that folds short lines back — a geometric patch for a grammatical problem, and one this plugin has no width to compute.
+The reason is that rule 5 cannot be implemented from punctuation alone without over-firing.
+Read unconditionally, it breaks at every comma at paren depth zero with no test for whether an independent clause follows, which shatters serial lists (`LaTeX,` / `Markdown,` / `and plain text,`), coordinate prepositional phrases and introductory adverbials.
+The usual remedy is a length-based merge pass that folds short lines back — a geometric patch for a grammatical problem, and one this plugin has no width to compute.
 
 Implementing rule 5 correctly needs a test for whether both sides of a comma could stand alone as sentences, which is the parsing problem this project has ruled out by charter.
 Declining the rule is the honest position for a tool that will not parse.
-Anyone who wants rule 5 as currently implementable wants `mdformat-semantic-line-breaks`.
 
 Rule 12 is declined for the reason in §1 and needs no further defence: it is a RECOMMENDED, and honouring it is incompatible with the property this plugin sells.
 
@@ -426,7 +407,7 @@ ______________________________________________________________________
 
 ### 6.1 The width-independence invariant
 
-This is the gate that does not exist for the other plugin, and it is the cheapest and strongest test here.
+This is the cheapest and strongest test here.
 
 > For every input, the output at `--wrap no` is byte-identical to the output at `--wrap 20`, `40`, `80`, `120` and `1000`.
 
@@ -442,29 +423,25 @@ Run it over the fixtures, over the corpora, and over the fuzz corpus.
 | idempotency vs baseline | 0 regressions per 4,000 |
 | whitespace deletions vs baseline | 0 per 1,500 fixtures |
 | structural property | pass |
-| rumdl `sentence-per-line` agreement (§6.3) | to be established, then held |
 | positive control | must fail when the plugin is absent |
 
 Every oracle is **relative**: plain mdformat at the same width, with `extensions=set()` named explicitly.
 Absolute render equality is the wrong bar because mdformat itself already breaks the render on some inputs (§3.5's tilde fence), and holding ourselves to a standard mdformat does not meet means either failing forever or weakening the test until it says nothing.
 
-The harnesses in this repository's `tests/` port across almost unchanged, and their traps apply here too.
+Three traps in the harness itself.
 `--extensions` is a whitelist, so every baseline must name `extensions=set()`;
 `--check` never validates;
 and the quality harness must fail loudly rather than reporting an F1 for a plugin that never ran.
 
-### 6.3 rumdl is a direct differential oracle
+### 6.3 rumdl is prior art, not an oracle
 
-This is a significant advantage over the parent design and it should be used from the first commit.
+rumdl's MD013 has four reflow modes, one of them `sentence-per-line`.
+Verified by execution against `rumdl==0.2.60`: in that mode, with `line-length = 80`, a 136-character sentence is left intact on one line, and the reflow trigger contains no length test at all.
+So a shipped tool already makes the width-independent sentence-per-line promise, which is evidence that §1 describes a coherent product rather than one person's idiosyncrasy.
 
-rumdl's MD013 has four reflow modes, and one of them is `sentence-per-line`.
-Verified by execution against `rumdl==0.2.60`: in that mode, with `line-length = 80`, a 136-character sentence is left intact on one line.
-Its reflow trigger contains no length test at all, unlike its `Default` and `SemanticLineBreaks` modes.
-So rumdl's sentence mode makes the same promise this plugin does, including the width-independence part.
-
-`DESIGN.md` §8 had to enumerate deliberate divergences from rumdl because the parent plugin reads rule 5 differently.
-Here there is no such divergence to manage, and agreement is a target rather than a thing to explain.
-Where the two differ, one of them has a bug, and the burden is on us to say which.
+That is the whole of the relationship, and it is deliberately not part of the gate in §6.2.
+Agreement is not a target and divergence is not a defect.
+rumdl has its own blind spots, and where this design can do better it should; no second implementation's output is a substitute for a specification.
 
 ### 6.4 What to build first
 
@@ -472,29 +449,25 @@ Where the two differ, one of them has a bug, and the burden is on us to say whic
    Every other check in §6.2 passes with the plugin disabled — an identity function deletes nothing, changes no render, and is trivially width-independent — so until one test fails when the plugin is absent, a green suite does not distinguish a working plugin from an inert one.
 1. §6.1, which is three lines and catches most of what can go wrong.
 1. The sentence-detection fixtures, which are where the remaining complexity actually lives: abbreviations, initials, the capital rule, footnote references, CJK, French spaced closers, German quotes, the `?"` case, bracket depth.
-1. The rumdl differential.
 
 ______________________________________________________________________
 
-## 7. Provenance
+## 7. Status
 
-What is new in this document versus inherited, stated honestly, because the parent repository holds claims to that standard.
+No implementation exists, so §6's gate has never been run.
+What follows separates what has been measured from what has only been argued, so that a reader knows which is which.
 
-Everything inherited from `DESIGN.md` is cited there at the point where it is used, and was verified there by execution against mdformat 1.0.0 rather than re-derived here.
-
-**Verified by execution in the session that produced this document.**
-Both `mdformat-sentence` and `mdformat-sentences` were unregistered on PyPI on 2026-09-12, checked against the JSON API.
-Every plugin in mdformat's curated list is MIT, and so is mdformat itself: all twenty were checked against the PyPI JSON API on 2026-09-12, and `mdformat-simple-breaks` carries the MIT classifier despite an empty `license` field.
-The ecosystem's split on singular versus plural distribution names (§2) was counted from that same list plus `mdformat-tables` and `mdformat-wikilink`, which are not in it.
+**Measured.**
+Every fact in §2 holds against mdformat 1.0.0.
 A postprocessor emitting `\n` at sentence gaps and a literal space everywhere else leaves a 140-character sentence intact at `--wrap 80`, and produces byte-identical output at `--wrap no`.
 The same postprocessor *without* pinning yields 78- and 61-character lines at `--wrap 80`.
-`rumdl==0.2.60` in `sentence-per-line` mode leaves a 136-character sentence intact at `line-length = 80`, while its `semantic-line-breaks` mode breaks the same input at the clause comma.
+`mdformat-sentence` was unregistered on PyPI on 2026-09-12, and every plugin in mdformat's curated list is MIT, both checked against the JSON API.
 
-**Asserted but not executed.** No implementation of this specification exists, so §6's gate has never been run.
-Masking is specified as a length-preserving rewrite, inherited from the parent design where it also fed clause detection; if bracket depth is genuinely its only consumer here (§3.2), a per-segment integer would do and the length requirement is dead weight, but that has not been checked against `DESIGN.md` §4.2's other callers.
-The German abbreviation set is referenced but cannot be carried over, because the parent document never enumerates it (§3.3); an earlier draft of this document invented one, which is exactly the failure `CLAUDE.md`'s provenance rule exists to catch.
-The reduction of masking's role in §3.2 is an argument about which tests can fire, not a measurement of which do.
+**Open.**
+The German abbreviation set (§3.3) is required by the design and is not given by it, which blocks implementation until a set is sourced.
+Whether masking must preserve length (§3.2) is undecided: bracket depth is its only consumer and a count per segment would serve, but the length-preserving form is what is specified.
 
-**Not checked.** Whether §3.3 reduces to a clean subset without the parent's clause machinery, or whether any of the sentence-detection rules interact badly in the absence of the clause rung.
-That reduction is reasoned from the two specifications, not measured, and the parent design has always been measured with both rungs present.
-Whether declining rule 5 changes the calculus on any §3.3 rule that exists partly to keep clause breaks honest.
+**Argued, not measured.**
+That §3.2's masking feeds nothing but bracket depth is an argument about which tests can fire, not a measurement of which do.
+Whether §3.3's sentence-detection rules interact badly with one another has not been tested; they have never been run without clause-level breaking alongside them.
+Whether any §3.3 rule exists partly to keep clause breaks honest, and so is now doing less than it appears to, has not been examined.
