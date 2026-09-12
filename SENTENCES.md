@@ -204,7 +204,7 @@ autolink / raw HTML  (?<!\\)<(?:[/!?]?[A-Za-z][^<>]*
 
 Masking has exactly one consumer here: bracket-depth counting (§3.3), where an unmasked `)` inside a URL drives depth negative and corrupts every later gap in the section.
 It does not feed sentence detection, because §3.3's closer set already excludes backtick, `)` and `]`, so a terminator inside a code span or a link destination fails the terminator test unmasked.
-Whether masking must therefore preserve length is open (§7), since a count per segment would serve a depth counter.
+Whether masking must therefore preserve length is undecided: a count per segment would serve a depth counter, but the length-preserving form is what is specified above.
 
 ### 3.3 Sentence detection
 
@@ -449,25 +449,3 @@ rumdl has its own blind spots, and where this design can do better it should; no
    Every other check in §6.2 passes with the plugin disabled — an identity function deletes nothing, changes no render, and is trivially width-independent — so until one test fails when the plugin is absent, a green suite does not distinguish a working plugin from an inert one.
 1. §6.1, which is three lines and catches most of what can go wrong.
 1. The sentence-detection fixtures, which are where the remaining complexity actually lives: abbreviations, initials, the capital rule, footnote references, CJK, French spaced closers, German quotes, the `?"` case, bracket depth.
-
-______________________________________________________________________
-
-## 7. Status
-
-No implementation exists, so §6's gate has never been run.
-What follows separates what has been measured from what has only been argued, so that a reader knows which is which.
-
-**Measured.**
-Every fact in §2 holds against mdformat 1.0.0.
-A postprocessor emitting `\n` at sentence gaps and a literal space everywhere else leaves a 140-character sentence intact at `--wrap 80`, and produces byte-identical output at `--wrap no`.
-The same postprocessor *without* pinning yields 78- and 61-character lines at `--wrap 80`.
-`mdformat-sentence` was unregistered on PyPI on 2026-09-12, and every plugin in mdformat's curated list is MIT, both checked against the JSON API.
-
-**Open.**
-The German abbreviation set (§3.3) is required by the design and is not given by it, which blocks implementation until a set is sourced.
-Whether masking must preserve length (§3.2) is undecided: bracket depth is its only consumer and a count per segment would serve, but the length-preserving form is what is specified.
-
-**Argued, not measured.**
-That §3.2's masking feeds nothing but bracket depth is an argument about which tests can fire, not a measurement of which do.
-Whether §3.3's sentence-detection rules interact badly with one another has not been tested; they have never been run without clause-level breaking alongside them.
-Whether any §3.3 rule exists partly to keep clause breaks honest, and so is now doing less than it appears to, has not been examined.
