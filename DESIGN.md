@@ -411,6 +411,49 @@ Declining the rule is the honest position for a tool that will not parse.
 
 Rule 12 is declined for the reason in §1 and needs no further defence: it is a RECOMMENDED, and honouring it is incompatible with the property this plugin sells.
 
+### 5.2 What punctuation cannot see, measured
+
+§5.1 argues that a punctuation rule over-fires.
+It also under-fires, and that is the sharper objection, because no amount of tuning reaches a position where there is no signal.
+
+Every line break in the Semantic Line Breaks specification's own prose, which is hand-written clause-level sembr by the specification's author, classified by what sits at the break:
+
+| break falls at | rule | count | share |
+| --- | --- | ---: | ---: |
+| a sentence end | 4 | 11 | 15% |
+| clause punctuation `,` `;` `:` — | 5 | 33 | 44% |
+| neither | 6 | 31 | **41%** |
+
+Three things follow.
+
+**This plugin implements the rule that accounts for 15% of what a sembr author does by hand.**
+That is the honest size of the promise, and it is worth stating next to §5.1's defence rather than leaving the reader to infer it.
+
+**Declining rule 5 forgoes 44%, and it is the larger of the two costs.**
+§5.1 gives the reason and the reason stands; this is its price.
+
+**The remaining 41% is reachable by nothing lexical at all.**
+Rule 6 breaks after a *dependent* clause, where there is no punctuation and no reliable vocabulary.
+A 36-word break-word list recovers 11 of those 31 and leaves 27% of all breaks undetectable; a conservative 14-word list recovers 2.
+Real breaks from that prose, none of which any punctuation or word rule can see:
+
+```
+_Semantic Line Breaks_ describe a set of conventions
+for using insensitive vertical whitespace
+Conventional markup languages like HTML and XML
+```
+
+So even a perfect rule 5 would leave two breaks in five unreachable.
+That is the measurement behind §5.1's claim that implementing rule 5 correctly needs a parser: the part punctuation can see is not the whole problem, and the part it cannot see has no smaller solution.
+
+**Rules 10 and 11 are a separate case and are not measured here.**
+They break before and after hyperlinks and before inline markup, and unlike rule 6 those positions are trivially matchable, the more so at this seam because mdformat has already collapsed a link into one atom (§3.1).
+They contribute zero breaks in this corpus, whose prose carries 2 links and 2 code spans across 109 lines with none at a line boundary.
+Nothing here should be read as a claim about prose that uses links heavily.
+
+Reproduce with `notes/experiments/breaks.py`.
+One document and 75 breaks is a small sample, and `notes/corpus/README.md` explains why it is nonetheless the right one: this document is pure sentence-per-line, so measuring layout rules against it returns a perfect score for anything.
+
 ______________________________________________________________________
 
 ## 6. Verification
