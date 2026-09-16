@@ -67,6 +67,47 @@ print("   DEFAULT_RENDERERS is a", type(C.DEFAULT_RENDERERS).__name__,
       "- not assignable, so the renderer must be replaced via a plugin's own")
 print("   RENDERERS mapping, which is the paragraph hook DESIGN.md 2.2 rejects.\n")
 
+print("WHAT THE PLUGIN CAN AND CANNOT SEE ABOUT wrap\n")
+import io, contextlib
+seen = []
+def spy(text, node, context):
+    if node.parent is not None and node.parent.type == "paragraph":
+        o = context.options.get("mdformat", {})
+        seen.append(("wrap" in o, o.get("wrap", "<absent>"), o.get("extensions")))
+    return text
+P.PARSER_EXTENSIONS["probe"] = types.SimpleNamespace(
+    CHANGES_AST=False, RENDERERS={}, POSTPROCESSORS={"inline": spy},
+    add_cli_options=lambda p: None, update_mdit=lambda m: None)
+for label, kw in (("API, no wrap given       ", {}),
+                  ("API, wrap='keep' explicit", {"wrap": "keep"})):
+    seen.clear(); mdformat.text(SRC, options=kw, extensions={"probe"})
+    print(f"  {label}  'wrap' present={seen[0][0]!s:5}  value={seen[0][1]!r}")
+
+import tempfile, os
+from mdformat._cli import run
+with tempfile.TemporaryDirectory() as d:
+    f = os.path.join(d, "t.md")
+    open(f, "w").write("One sentence. Two sentences.\n")
+    for label, argv in (("CLI, no --wrap           ", ["--extensions", "probe", f]),
+                        ("CLI, --wrap keep         ", ["--extensions", "probe", "--wrap", "keep", f])):
+        seen.clear()
+        with contextlib.redirect_stdout(io.StringIO()): run(argv)
+        print(f"  {label}  'wrap' present={seen[0][0]!s:5}  value={seen[0][1]!r}")
+    seen.clear()
+    with contextlib.redirect_stdout(io.StringIO()): run(["--extensions", "probe", f])
+    print(f"\n  --extensions given     -> options['extensions'] = {seen[0][2]!r}")
+
+print("""
+  So: explicit vs defaulted 'keep' is distinguishable through mdformat.text(),
+  because build_mdit assigns the caller's dict with no defaults merged. It is
+  NOT distinguishable through the CLI, because _cli.py:56 merges DEFAULT_OPTS
+  first and argparse drops unset values. CI uses the CLI.
+
+  But 'extensions' IS a usable signal on both paths: DEFAULT_OPTS['extensions']
+  is None, so a non-None value means someone typed --extensions. That is the
+  exact condition DESIGN.md 2.5 wanted for its warning.
+""")
+
 print("CONSEQUENCES of route B, all measured above or in _api.py:")
 print("  1. The double render does not fire. _api.text decides on the CALLER's")
 print("     options (_api.py:38), which still say 'keep', so the second pass that")

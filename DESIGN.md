@@ -161,8 +161,26 @@ Verified by execution against mdformat 1.0.0, with no plugin installed: the coll
 A writer who already hand-writes full Semantic Line Breaks therefore loses rules 5 and 6 the moment they adopt this plugin, and the only mode that keeps their work is the one in which the plugin does nothing.
 That is a real cost, it is not recoverable from the output, and it must be said before someone runs the formatter over a corpus they hand-broke.
 
-`--wrap keep` still stays silent rather than warning, because warning on the tool's default configuration would fire constantly for people doing nothing wrong.
-A warning would be justified if the plugin were *explicitly* named in `--extensions` alongside `--wrap keep`, since that is closer to a contradiction, but that is not worth the plumbing until someone trips over it.
+**The plugin warns when it was asked for by name and given a mode it cannot act in.**
+It stays silent on the default configuration, because warning there would fire constantly for people doing nothing wrong.
+It does warn when `--extensions` explicitly names it alongside a wrap mode that makes it inert, which is closer to a contradiction: the user asked for this plugin by name and for a configuration in which it can do nothing.
+
+The signal is available and the test is one condition.
+`DEFAULT_OPTS["extensions"]` is `None`, so a non-`None` `options["mdformat"]["extensions"]` means someone typed the flag:
+
+```python
+ext = context.options["mdformat"].get("extensions")
+if ext is not None and "sentence" in ext and not context.do_wrap:
+    LOGGER.warning("mdformat-sentence does nothing under --wrap keep; use --wrap no")
+```
+
+`mdformat.renderer.LOGGER` is the channel, and `_cli.py` attaches a handler printing WARNING and above to stderr.
+It is attached on the CLI path only, so `mdformat.text()` callers see nothing unless they configure logging themselves.
+
+**What the plugin cannot see is whether `keep` was chosen or merely defaulted.**
+`_cli.py` builds `{**DEFAULT_OPTS, **toml_opts, **cli_core_opts}` and argparse drops unset values, so an omitted `--wrap`, an explicit `--wrap keep`, and `wrap = "keep"` in TOML all arrive identical.
+Only `mdformat.text()` leaks the difference, because `build_mdit` assigns the caller's mapping with no defaults merged and the key is simply absent.
+CI runs the CLI, so the warning keys off `--extensions` rather than off wrap.
 
 ______________________________________________________________________
 
