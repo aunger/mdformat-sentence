@@ -422,7 +422,10 @@ Every line break in the Semantic Line Breaks specification's own prose, which is
 | --- | --- | ---: | ---: |
 | a sentence end | 4 | 11 | 15% |
 | clause punctuation `,` `;` `:` — | 5 | 33 | 44% |
-| neither | 6 | 31 | **41%** |
+| a hyperlink or inline-markup boundary | 10, 11 | 0 | 0% |
+| none of the above | 6 | 31 | **41%** |
+
+Breaks are classified by the first row that matches, and no break classified 4 or 5 also sat at a markup boundary, so the rows do not overlap here.
 
 Three things follow.
 
@@ -446,10 +449,11 @@ Conventional markup languages like HTML and XML
 So even a perfect rule 5 would leave two breaks in five unreachable.
 That is the measurement behind §5.1's claim that implementing rule 5 correctly needs a parser: the part punctuation can see is not the whole problem, and the part it cannot see has no smaller solution.
 
-**Rules 10 and 11 are a separate case and are not measured here.**
-They break before and after hyperlinks and before inline markup, and unlike rule 6 those positions are trivially matchable, the more so at this seam because mdformat has already collapsed a link into one atom (§3.1).
-They contribute zero breaks in this corpus, whose prose carries 2 links and 2 code spans across 109 lines with none at a line boundary.
-Nothing here should be read as a claim about prose that uses links heavily.
+**The zero in the rules 10 and 11 row is about this corpus, not about those rules.**
+They are in the table so they are not forgotten, because they are the one part of the unimplemented remainder that is *not* a hard problem.
+Unlike rule 6 their positions are trivially matchable, the more so at this seam, because mdformat has already collapsed a link or image into a single atom before the plugin runs (§3.1), so a gap adjacent to one is exactly identifiable.
+They score zero only because this corpus carries 2 links and 2 code spans across 109 prose lines with none at a line boundary.
+Nothing here should be read as a claim about prose that uses links heavily, and if rules 10 and 11 are ever revisited this row is the measurement to redo first, against a corpus that actually exercises them.
 
 Reproduce with `notes/experiments/breaks.py`.
 One document and 75 breaks is a small sample, and `notes/corpus/README.md` explains why it is nonetheless the right one: this document is pure sentence-per-line, so measuring layout rules against it returns a perfect score for anything.

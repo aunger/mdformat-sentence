@@ -10,7 +10,7 @@ can re-run them rather than take them on trust.
 | --- | --- |
 | `PRESERVE-MODE.md` | Why the plugin does not try to preserve an author's existing line breaks. The longest-running open question about this design, answered. |
 | `corpus/` | The one corpus that gives honest answers about layout heuristics, and why. |
-| `experiments/` | Eleven short programs. Five need mdformat, six are stdlib only. |
+| `experiments/` | Thirteen short programs. Six need mdformat, seven are stdlib only. |
 
 ## Running them
 
@@ -36,6 +36,8 @@ to it.
 | `thresh.py` | no | Any coverage *threshold* reintroduces paragraph-sized diffs: one edit, 18 changed lines. |
 | `k0.py` | no | At a threshold of exactly zero, appending a sentence is safe (1 diff line) but removing a sentence break is not (8 lines, all clause breaks lost). |
 | `edit.py` | no | Rewrapping a paragraph versus adding only the missing break: 9 diff lines against 1, 0 clause breaks surviving against 4. |
+| `rules.py` | no | Every author break in the corpus by which sembr rule put it there: 15% rule 4, 44% rule 5, 0% rules 10 and 11, 41% rule 6. The table in `DESIGN.md` §5.2. |
+| `wrapkeep.py` | yes | Whether a plugin can defeat `--wrap keep`. It can, in two lines, through a supported hook, and the script lists the three consequences that are why `DESIGN.md` does not. |
 | `lic.py` | no | Every plugin in mdformat's curated list is MIT, and so is mdformat. |
 
 The programs are throwaway quality on purpose. They exist to produce a number
