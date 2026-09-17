@@ -20,3 +20,21 @@ a decisive result produced it against this file and a misleading one against
 `DESIGN.md`.
 
 If you evaluate a layout heuristic, evaluate it here.
+
+## Do not let mdformat reformat this file
+
+`sembr.md` is verbatim third-party content pinned by the checksum above, and it
+does not satisfy `mdformat --check`. Running mdformat over this directory will
+rewrite it and break both the attribution and every measurement taken against it.
+
+**mdformat's own `exclude` cannot protect it.** The feature requires Python
+3.13+, and on anything earlier an `exclude` list in `.mdformat.toml` is a hard
+error that stops mdformat formatting *anything* in the repository, including
+when a file is named explicitly on the command line. Measured against mdformat
+1.0.0 on Python 3.11, which this project supports (`requires-python >= 3.10`).
+Reading `is_excluded` in `_cli.py`, an explicitly named file stays excluded on
+3.13+ as well, so the feature would not give back a way to format this file on
+purpose; that half was read rather than run.
+
+Until this repository has a pre-commit config, whose own `exclude:` is
+independent of mdformat's Python floor, the protection is this paragraph.

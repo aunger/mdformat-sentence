@@ -306,7 +306,11 @@ Without that qualifier, `A "Is this a test?" guide to the whole subject…` brea
 - **Abbreviations.**
   The English default set is `mr mrs ms dr prof sr jr st i.e e.g vs fig no vol ch sec al`.
   `etc`, `inc`, `ltd` and `cf` are deliberately **absent**: they commonly end sentences, and with `etc` present `Use commas, semicolons, etc. The next sentence…` loses a real boundary.
-  `no` is the one entry that fails that same criterion and is kept anyway — `The answer was no. Then he left.` loses its boundary — and it is listed here as an open call rather than a settled one, because "no." as an abbreviation for *number* and "no." as a sentence end are equally ordinary English and the set cannot have both.
+  `no` is the one entry that would fail that same criterion as a bare token, so it carries a condition none of the others do: **it suppresses a break only when the next segment begins with a digit.**
+  `No. 5 was the hottest.` holds; `The answer was no. Then he left.` breaks.
+  Both rumdl and `mdformat-sembr` list `no` unconditionally, and the second sentence loses its boundary in both, so the condition is a deliberate divergence from every implementation that has one.
+  It is not a departure from their reasoning, though: rumdl admits an abbreviation only if it is "almost always followed by something, not sentence-final", and files `no` under "Reference abbreviations — followed by what they refer to".
+  The condition is that criterion made operational rather than assumed.
   German abbreviations are in the default set too, and `usw` is excluded from them for exactly the same reason as `etc`.
   **The German set is not enumerated in this document**, which is a gap rather than a decision, and it has to be closed before the specification can be implemented from.
   Source a set; do not invent one.
