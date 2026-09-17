@@ -21,13 +21,13 @@ CASES = {
    "The tool reports success."],
  "same text, wrapped at 62 columns": [
    "Because the cascade picks by width, an edit upstream can",
-   "change which candidate wins, and cascade down the paragraph.",   # end falls mid-line
+   "change which candidate wins, and cascade down the paragraph.",   # wrap lands ON the end: 1.00 by luck
    "The tool reports success."],
  "single sentence, clause-broken (no internal ends)": [
    "Because the cascade picks by width,",
    "an edit upstream can change which candidate wins."],
  "half and half": [
-   "One. Two.",                                    # two ends on one line: neither broken
+   "One. Two.",                                    # two ends here, only "One." is unbroken
    "Three.",
    "Four."],
 }

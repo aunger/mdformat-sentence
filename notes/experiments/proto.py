@@ -26,7 +26,7 @@ def make(add_only):
         return "".join(out)
     return types.SimpleNamespace(CHANGES_AST=False, RENDERERS={},
         POSTPROCESSORS={"inline": pp},
-        add_cli_options=lambda p: None, update_mdit=lambda m: None)
+        add_cli_argument_group=lambda g: None, update_mdit=lambda m: None)
 
 P.PARSER_EXTENSIONS
 SRC = ("Because the cascade picks by width,\n"

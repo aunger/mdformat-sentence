@@ -24,7 +24,7 @@ def build(override_wrap, root_second_pass):
     post = {"inline": inline_pp}
     if root_second_pass: post["root"] = root_pp
     return types.SimpleNamespace(CHANGES_AST=False, RENDERERS={}, POSTPROCESSORS=post,
-        add_cli_options=lambda p: None,
+        add_cli_argument_group=lambda g: None,
         update_mdit=(lambda m: m.options["mdformat"].__setitem__("wrap","no")) if override_wrap else (lambda m: None)), state
 
 P.PARSER_EXTENSIONS
@@ -83,7 +83,7 @@ def build2(override, second, strip):
     pp = {"inline": inline_pp}
     if second: pp["root"] = root_pp
     return types.SimpleNamespace(CHANGES_AST=False, RENDERERS={}, POSTPROCESSORS=pp,
-        add_cli_options=lambda p: None,
+        add_cli_argument_group=lambda g: None,
         update_mdit=(lambda m: m.options["mdformat"].__setitem__("wrap", "no"))
                     if override else (lambda m: None)), st
 

@@ -1,4 +1,5 @@
 import re, textwrap, os
+from collections import Counter
 CORPUS = os.path.join(os.path.dirname(__file__), '..', 'corpus', 'sembr.md')
 SENT = re.compile(r'[.!?](?:["\'’”])?$')
 
@@ -7,7 +8,7 @@ def paras(path):
     for l in open(path,encoding='utf-8'):
         s=l.rstrip('\n')
         if re.match(r'^\s*(```|~~~)',s): fence=not fence; continue
-        if fence or not s.strip() or re.match(r'^\s*(#|\||\[|>|\d+\.|[-*+] |<)',s):
+        if fence or not s.strip() or re.match(r'^\s*(#|\||\[[^\]]*\]:|>|\d+\.|[-*+] |<)',s):
             if cur: out.append(cur); cur=[]
             continue
         cur.append(s)
@@ -25,18 +26,24 @@ def coverage(lines):
     if not ends: return None, 0
     return sum(1 for j in ends if j in brk)/len(ends), len(ends)
 
+def report(label, scores):
+    """min/median/max hides the middle, which is the only interesting part."""
+    dist = " ".join(f"{k:.2f}x{v}" for k, v in sorted(Counter(round(c,2) for c in scores).items()))
+    print(f"{label} n={len(scores):3d}   min={min(scores):.2f}  "
+          f"median={sorted(scores)[len(scores)//2]:.2f}  max={max(scores):.2f}   "
+          f"at 1.00: {sum(1 for c in scores if c==1.0)}/{len(scores)}   dist: {dist}")
+
 print("coverage = internal sentence ends that ARE followed by a line break\n")
 real=[c for c,_ in (coverage(p) for p in paras(CORPUS)) if c is not None]
-print(f"real hand-written sembr   n={len(real):3d}   min={min(real):.2f}  "
-      f"median={sorted(real)[len(real)//2]:.2f}  max={max(real):.2f}   "
-      f"at 1.00: {sum(1 for c in real if c==1.0)}/{len(real)}")
+report("real hand-written sembr  ", real)
 
+allhw=[]
 for width in (62,72,80):
     hw=[]
     for p in paras(CORPUS):
         text=" ".join(" ".join(p).split())
         c,n = coverage(textwrap.wrap(text,width))
         if c is not None: hw.append(c)
-    print(f"same text hard-wrapped@{width} n={len(hw):3d}   min={min(hw):.2f}  "
-          f"median={sorted(hw)[len(hw)//2]:.2f}  max={max(hw):.2f}   "
-          f"at 1.00: {sum(1 for c in hw if c==1.0)}/{len(hw)}")
+    allhw += hw
+    report(f"same text hard-wrapped@{width}", hw)
+report("all three widths pooled  ", allhw)

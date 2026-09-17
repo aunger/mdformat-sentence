@@ -76,9 +76,14 @@ The three CLI rows are identical because `_cli.py:56` builds `{**DEFAULT_OPTS, *
 **A plugin can therefore distinguish an explicit `keep` from a defaulted one through the Python API and cannot through the CLI.**
 CI runs the CLI.
 
-`extensions` is a usable signal on both paths, because `DEFAULT_OPTS["extensions"]` is `None` (`_conf.py:19`) and `_cli.py:82-88` only replaces the full plugin mapping when it is not `None`.
+`extensions` is a usable signal **on the CLI and TOML paths only**, because `DEFAULT_OPTS["extensions"]` is `None` (`_conf.py:19`) and `_cli.py:82-88` only replaces the full plugin mapping when it is not `None`.
 A non-`None` `options["mdformat"]["extensions"]` therefore means someone typed the flag or wrote the TOML key.
 That is the condition `DESIGN.md` §2.5's warning keys off, and it is the reason it keys off `--extensions` rather than off `wrap`.
+
+**It is not a signal on the Python API path at all**, and an earlier draft of this note and of `wrapkeep.py` said it was.
+`mdformat.text(src, extensions={"probe"})` passes the set as its own argument to `build_mdit` (`_util.py:32-42`); it never reaches `options["mdformat"]`, so the key is absent and `.get("extensions")` is `None`.
+Measured, `wrapkeep.py`: `'<absent>'` on both API rows, `['probe']` on the CLI row.
+The consequence for `DESIGN.md` §2.5 is that its warning can never fire for a library caller, whichever wrap mode they chose, so §2.5's account of where a library caller's warning lands describes an unreachable case.
 
 ______________________________________________________________________
 
@@ -148,6 +153,10 @@ Two caveats, both measured:
 - **It needs a re-entrancy guard.**
   The re-render runs the same plugin, including this postprocessor.
   Unguarded, it recurses to `RecursionError`.
+- **The second pass has to be given the first pass's whole configuration, and the measurement did not give it one.**
+  `secondpass.py` calls `mdformat.text(..., options={"wrap": "keep"}, extensions={"probe"})` with both hardcoded, which silently drops every other enabled plugin, every code formatter and every other option from the pass it is restoring.
+  That is harmless in a measurement with one plugin and no options, and it is not harmless in a plugin: a real implementation has only `context.options` to rebuild them from, and `codeformatters` is not in there at all.
+  Nothing below about matching the honest `--wrap no` transfers past the one-plugin case.
 
 **Honest limit on the claim.** Route B *alone* already matched the honest `--wrap no` byte for byte on both documents tried.
 No input has been exhibited here where one pass and two disagree.
@@ -243,7 +252,7 @@ Both make a shared `.mdformat.toml` valid on one machine and invalid on another,
 
 This one does not touch the option space at all, and it is the smallest true statement of what the plugin needs.
 
-**The conflation.** `do_wrap` is one predicate serving two questions, and `renderer/_context.py` uses it at six places that divide cleanly four to one:
+**The conflation.** `do_wrap` is one predicate serving two questions, and `renderer/_context.py` uses it at five places (plus the definition at :641-644) which divide cleanly four to one:
 
 | use | job |
 | --- | --- |
@@ -274,10 +283,24 @@ Asked in the other order, the named mode has to carry the split inside it.
 ### 5.7 Prior art
 
 Searched on 2026-09-17, on the mdformat issue tracker, for issues about `--wrap`, wrap modes, and plugins controlling wrapping.
-**Nothing proposes new wrap modes, plugin-defined wrap modes, or semantic line breaks.**
-So this is greenfield: there is no prior rejection to work around, and no existing thread to join.
+An earlier pass over that search concluded that nothing proposes new wrap modes, plugin-defined wrap modes or semantic line breaks, and that this was greenfield.
+**That was wrong, and the correction matters more than anything else in §5.**
+The search term was `--wrap`; the prior art is filed under *sentence*, and re-running the search on 2026-09-17 with that word returns four issues:
 
-Three open issues are adjacent and are listed only by title, without characterising them further:
+- **#4** `Sentence-based word wrapping` — **open**, opened by hukkin, the maintainer, labelled `Enhancement`, `Plugin`, `Research`.
+  It proposes sentence-based wrapping as an optional mode that does not change the default, and reaches for NLTK to segment sentences.
+- **#374** `Allow wrapping option of 1 sentence per line` — closed as a **duplicate** of #4.
+  It asks for `--wrap sentence` as a new enum value, which is §5.4's ask verbatim.
+- **#222** `Support enforcing line breaks after 'end of sentence'` — closed.
+  It asks for a flag implementing the first four rules of the Semantic Line Breaks specification, which is this plugin's scope.
+- **#422** `Word-wrap on sentence (punctuation) and width.` — closed.
+
+So there is an existing thread to join and it is the maintainer's own, the `Plugin` label on it is his own triage of where this belongs, and the exact spelling §5.4 proposes has already been asked for once and folded into #4.
+Nothing found is a *rejection*: #4 is open and #374 was closed only as a duplicate.
+What changes is the shape of the ask — a comment on #4 rather than a new issue — and §5.6's split becomes the part that is genuinely new, since no issue proposes separating wrap-point production from width wrapping.
+None of the four issues was read beyond its title and opening comment, so any maintainer position further down those threads is unchecked.
+
+Three further open issues are adjacent and are listed only by title, without characterising them further:
 
 - **#590** `--wrap can turn a paragraph into a code fence (~~~ reaching line start)`
 - **#589** `--wrap silently deletes a non-breaking space at a wrapped line edge`
@@ -346,8 +369,13 @@ The consequence for `DESIGN.md` §2.5: an `mdformat.text()` caller **does** see 
 What the CLI adds is the `Warning: ` prefix and only on the first pass.
 §9 records this as the one place this note and `DESIGN.md` disagree.
 
-**Volume.** The warning §2.5 specifies is raised from the inline postprocessor, so it fires once per paragraph, not once per document: three paragraphs give three lines on stderr under `--wrap keep`, and six under `--wrap no` where the second pass doubles them.
+**Volume.** The warning §2.5 specifies is raised from the inline postprocessor, so it fires once per paragraph, not once per document: three paragraphs give three lines on stderr.
 Whoever implements §2.5 needs a once-per-render latch; the option mapping is shared and mutable, so there is somewhere to put one.
+
+The second pass does *not* double it, although `wraparg.py` §4 measures three lines under `--wrap keep` and six under `--wrap no`.
+That experiment warns unconditionally; §2.5's warning is guarded by `not context.do_wrap`, which is true only under `keep`, and `_api.py:39` re-renders only when `wrap != "keep"`.
+The two conditions are complementary, so the pass that doubles a warning is never the pass that raises this one.
+The latch is needed per paragraph, not across passes.
 
 ______________________________________________________________________
 
@@ -369,12 +397,18 @@ ______________________________________________________________________
 
 **Resolved.** This note found that `DESIGN.md` §2.5 claimed `mdformat.text()` callers "see nothing unless they configure logging themselves".
 The first half was right and the second was not: with no handler configured, `logging.lastResort` writes the message to stderr anyway (§7).
-`DESIGN.md` §2.5 has since been corrected, and gained a second point found the same way: the warning fires once per render pass, so twice under any wrapping mode.
+`DESIGN.md` §2.5 has since been corrected.
+It briefly gained a second point, that the warning fires twice under any wrapping mode because the render runs twice; that was withdrawn, because §7 shows the double render and the warning's guard are complementary and never coincide.
+
+**Resolved.** §2 claimed `extensions` was a usable signal "on both paths", and `wrapkeep.py` printed the same conclusion without ever measuring the API row it was about.
+It is absent from `options["mdformat"]` on the API path, so the warning is reachable from the CLI and from TOML only; both §2 and the script now say so, and `DESIGN.md` §2.5 records the consequence.
+
+**Resolved.** §4 listed two caveats on the root-postprocessor re-render and there are three: `secondpass.py` hardcodes the options and the extension set of the pass it restores, which a real implementation cannot do.
 
 **Not checked:**
 
-- Whether mdformat upstream has been asked for a sentence wrap mode already.
-  An issue search was run on 2026-09-17 and is recorded in §5.6.
+- How far the prior art in §5.7 goes.
+  It has been established that mdformat upstream *has* been asked for a sentence wrap mode, three times, and that #4 is open; none of those threads was read past its opening comment.
 - How two break-inserting postprocessors compose. §5.3 declines the claim for this reason.
 - Any mdformat version other than 1.0.0.
   The 2.x line, if it exists, was not looked at.

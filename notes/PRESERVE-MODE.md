@@ -60,7 +60,7 @@ Never add a clause break, only decline to destroy one, so there are zero false a
 
 **Buys.** On toy examples it looks excellent: it keeps hand-written clause breaks and correctly collapses hard wrapping.
 
-**Costs.** Measured against real hand-written sembr, `breaks.py`, it deletes **41% of the author's line breaks**, because that share carry no punctuation at all.
+**Costs.** Measured against real hand-written sembr, `breaks.py`, it deletes **45% of the author's line breaks**, because that share carry no punctuation at all.
 
 **Why.** Structural, not a tuning problem.
 Rule 6 breaks after a *dependent* clause, and there is nothing there to match.
@@ -72,11 +72,12 @@ for using insensitive vertical whitespace
 Conventional markup languages like HTML and XML
 ```
 
-**Status.** Rejected. A keep rule that silently deletes two breaks in five is not a preserve mode.
+**Status.** Rejected. A keep rule that silently deletes nearly half an author's breaks is not a preserve mode.
 
 **Note on rules 10 and 11.** They break before and after hyperlinks and before inline markup, and unlike rule 6 those positions *are* trivially matchable; at this seam better than trivially, since mdformat already collapses a link into a single atom.
-They contribute zero breaks on this corpus, whose prose holds 2 links and 2 code spans across 109 lines with none at a line boundary.
-So they neither rescue nor worsen the 41% here, and this corpus can say nothing about prose that uses links heavily.
+They account for 8 of the 88 breaks on this corpus, whose prose holds 12 reference links across 122 lines with 10 of those lines opening with one.
+An earlier reading of this note put them at zero; that was the paragraph extractor deleting every line that starts with `[`, which is exactly the evidence, and `breaks.py` records the correction.
+So they recover 8 of the 40 unpunctuated breaks and leave 32 that nothing lexical reaches, and this corpus still says little about prose that uses links heavily.
 
 ______________________________________________________________________
 
@@ -84,12 +85,12 @@ ______________________________________________________________________
 
 Rule 6 has no punctuation, but it has vocabulary. Keep a break whose following word is a subordinator or coordinator.
 
-**Buys.** Measured, `breaks.py`: a 36-word list recovers 11 of the 31 unpunctuated breaks, taking silent deletion from 41% down to **27%**.
+**Buys.** Measured, `breaks.py`: a 36-word list recovers 12 of the 32 rule 6 breaks, taking silent deletion from 45% down to **23%** once rules 10 and 11 take their 8.
 
 **Costs.** Still deletes more than a quarter of an author's breaks.
 The residual has no lexical signal at all; the words following those breaks are `to`, `exhibit`, `without`, `makes`, `the`, `can`, `in`.
 And the list that recovers anything is the noisy one: two of its eleven recoveries are `for` and `and`, the two words most often wrong when they *make* a break.
-A conservative 14-word list recovers 2 of 31.
+A conservative 14-word list recovers 2 of 32.
 
 **Status.** Rejected. It narrows the gap and cannot close it, because you cannot narrow your way to a rule that fires where there is no signal.
 
@@ -101,10 +102,11 @@ If per-gap punctuation cannot decide, perhaps the paragraph as a whole can: scor
 
 **Costs.** Measured: at threshold 0.5 this reflows 31% of real sembr paragraphs, and at 0.9 it reflows 69%.
 The score distribution is spread across the whole range, with five paragraphs at exactly 0.000, so no threshold sits safely under it.
+No program in `experiments/` reproduces these three numbers; they were produced by a scorer that was not kept, so take them as the weakest measurements in this note.
 
 **Status.** Rejected, and it inherits §3's blindness rather than escaping it. Aggregating a signal that is absent does not produce a signal.
 
-**Trap worth recording.** Evaluated against `DESIGN.md` this idea looks flawless: all 53 of its multi-line paragraphs score 1.000 with zero variance, because that document is already pure sentence-per-line.
+**Trap worth recording.** Evaluated against `DESIGN.md` this idea looks flawless: all 62 of its paragraphs that have an internal sentence end score 1.000 with zero variance, because that document is already pure sentence-per-line.
 The corpus, not the threshold, was doing the work. See `corpus/README.md`.
 
 ______________________________________________________________________
@@ -125,7 +127,9 @@ So infer nothing about clauses. Ask only a question §3.3 of `DESIGN.md` can alr
 | real hand-written sembr, n=9 | 1.00 at min, median and max |
 | the same text hard-wrapped at 62, 72, 80, n=27 | 0.00 median, 26 of 27 below 1.00 |
 
-Perfect separation with an empty middle, against 31–69% misclassification for §5.
+Near-perfect separation against 31–69% misclassification for §5, but not perfect: three of the 27 hard-wrapped paragraphs score above zero, two at 0.50 (one at width 62, one at width 72) and one at 1.00 (at width 72).
+The other 24 score 0.00, so the middle is nearly empty rather than empty.
+The 1.00 is the case that matters, because it is indistinguishable from the hand-written class; §7 names the mechanism, a wrap that happens to land just after a sentence end, so it is a false *preserve*, in the safe direction.
 It is also the only idea here that addresses §2's real defect, because it is the only one that can recognise geometric wrapping as geometric.
 
 **Costs.** The detector is sound; the *remedy* is not. See §8.
@@ -149,7 +153,7 @@ A 12-line paragraph at coverage 0.33; one hand-added break moves it to 0.67; the
 
 **Why.** The general rule, which governs this whole ladder: *the diff blast radius of a formatter equals the domain of its decision function.*
 A per-gap rule can perturb one gap. A per-paragraph rule can perturb the whole paragraph.
-For any threshold in (0,1] there is an input one edit away from crossing it.
+For any threshold greater than zero and at most one there is an input one edit away from crossing it.
 
 **Status.** Rejected, and it is worse than §6 rather than better. Softening a binary rule into a graded one reintroduces exactly the instability the graded rule was meant to smooth.
 
@@ -185,7 +189,7 @@ It survives the common edit. It dies on the other, and this measurement says how
 
 > **How many internal sentence ends does a real sembr paragraph have?**
 > sembr.org spec: 7 of 9 have exactly one.
-> `DESIGN.md`: 27 of 52 have exactly one.
+> `DESIGN.md`: 28 of 62 have exactly one.
 
 For those, the score is binary and a single removed break zeroes it.
 Unanimity over a set of size one is not unanimity.
@@ -230,7 +234,9 @@ mdformat cannot do it, since it sees one file and no history, so it is a wrapper
 
 The plugin-only answer that survives CI is weaker but safe: add-only, never delete, plus a warning naming any paragraph whose layout ignores sentence boundaries.
 The warning channel exists and is measured: `mdformat.renderer.LOGGER`, with a `RendererWarningPrinter` handler attached in `_cli.py` that prints WARNING and above to stderr.
-It is attached on the CLI path only, so `mdformat.text()` callers see nothing unless they configure logging themselves.
+It is attached on the CLI path only, but that does not make the API path silent: with no handler configured, `logging.lastResort` still writes the message to stderr, unprefixed.
+What the CLI adds is the `Warning: ` prefix, and only on the first render pass.
+Measured, `wraparg.py` §3; `MDFORMAT-WRAP-AND-OVERRIDES.md` §7 is the full account.
 
 **Status.** The VCS-scoped wrapper is the only design that serves the motivating case without a heuristic. It is out of scope for the plugin and worth building separately.
 
@@ -238,7 +244,7 @@ ______________________________________________________________________
 
 ## 11. What this says about `DESIGN.md` §6.2
 
-Every variant on this ladder was run end to end, and **all of them pass idempotency and all of them pass §6.1's width-independence invariant** — including the one that silently deletes 41% of an author's line breaks.
+Every variant on this ladder was run end to end, and **all of them pass idempotency and all of them pass §6.1's width-independence invariant** — including the one that silently deletes 45% of an author's line breaks.
 
 Idempotency is necessary and nowhere near sufficient.
 Two invariants would catch what the current gate cannot:
@@ -282,7 +288,7 @@ ______________________________________________________________________
 
 ## 14. Wrong turns, kept
 
-**§3 was proposed as "the variant that fixes most of it"** on the strength of two hand-made examples. Against real sembr it deletes 41% of the author's breaks. The corpus was the error, and §5 records the same trap in its general form.
+**§3 was proposed as "the variant that fixes most of it"** on the strength of two hand-made examples. Against real sembr it deletes 45% of the author's breaks. The corpus was the error, and §5 records the same trap in its general form.
 
 **§7 was proposed as the fix for §6's remedy problem.** It reintroduces the paragraph-sized blast radius that §6 had just been credited with avoiding, measured at 18 diff lines from one edit.
 

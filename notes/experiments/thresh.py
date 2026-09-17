@@ -25,7 +25,8 @@ def repair(ls):
 def apply(ls,k): return rewrap(ls) if cov(ls) < k else repair(ls)
 def d(a,b): return sum(1 for x in difflib.unified_diff(a,b,lineterm="",n=0) if x[:1] in "+-" and x[:3] not in ("+++","---"))
 
-# 12-line paragraph, clause-broken, 4 internal sentence ends, 2 of them covered -> cov .50
+# 12-line paragraph, clause-broken, 3 internal sentence ends, 1 of them covered -> cov .33
+# (the fourth `here.` is the paragraph's last word, so it is not an *internal* end)
 BASE=["Alpha one runs on,","and continues here,","and ends here. Beta two starts,",
       "and runs on,","and ends here.","Gamma three starts,","and runs on,",
       "and ends here. Delta four starts,","and runs on,","and continues,",

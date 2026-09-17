@@ -11,7 +11,7 @@ def inline_pp(text, node, context):
 
 probe = types.SimpleNamespace(CHANGES_AST=False, RENDERERS={},
     POSTPROCESSORS={"inline": inline_pp},
-    add_cli_options=lambda p: None, update_mdit=lambda m: None)
+    add_cli_argument_group=lambda g: None, update_mdit=lambda m: None)
 P.PARSER_EXTENSIONS
 P.PARSER_EXTENSIONS["probe"] = probe
 

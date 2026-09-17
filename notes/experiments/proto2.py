@@ -18,7 +18,7 @@ def make(mode):
             out.append("\n" if keep else " "); i = m.end()
         out.append(text[i:]); return "".join(out)
     return types.SimpleNamespace(CHANGES_AST=False, RENDERERS={},
-        POSTPROCESSORS={"inline": pp}, add_cli_options=lambda p: None, update_mdit=lambda m: None)
+        POSTPROCESSORS={"inline": pp}, add_cli_argument_group=lambda g: None, update_mdit=lambda m: None)
 
 P.PARSER_EXTENSIONS
 CASES = {

@@ -179,9 +179,15 @@ if ext is not None and "sentence" in ext and not context.do_wrap:
 `_cli.py` attaches a handler that prefixes `Warning: ` and writes to stderr, and that handler is CLI-only, but a library caller is not silent: with no handler configured, `logging.lastResort` writes the message to stderr unprefixed.
 Verified by execution.
 
-Two things the implementation must handle.
-The warning fires once per render pass, so twice under any wrapping mode (§2.3), and the repeat has to be suppressed.
-And it fires per paragraph, not per file, so it needs to be raised once per run rather than once per inline node.
+**This warning is nonetheless a CLI and TOML feature, because its guard cannot be true anywhere else.**
+`mdformat.text(md, extensions={"sentence"})` passes the set as its own argument to `build_mdit` and never writes it into `options["mdformat"]`, so `.get("extensions")` is `None` for every library caller, however explicitly they named the plugin.
+Measured in `notes/experiments/wrapkeep.py`.
+The paragraph above is therefore about where mdformat's warnings land in general, not about a message this plugin can actually deliver to an API caller.
+
+One thing the implementation must handle, and one that looks like a second and is not.
+It fires per paragraph, not per file, so it needs a once-per-render latch rather than one warning per inline node.
+§2.3's double render does *not* double it: the guard above is `not context.do_wrap`, true only under `keep`, and `_api.py` re-renders only when `wrap != "keep"`, so the pass that would repeat a warning is never the pass that raises this one.
+Measured in `notes/experiments/wraparg.py` §4: three paragraphs give three seam calls under `--wrap keep` and six under `--wrap no`, and it is only the three that can warn.
 
 **What the plugin cannot see is whether `keep` was chosen or merely defaulted.**
 `_cli.py` builds `{**DEFAULT_OPTS, **toml_opts, **cli_core_opts}` and argparse drops unset values, so an omitted `--wrap`, an explicit `--wrap keep`, and `wrap = "keep"` in TOML all arrive identical.
@@ -226,17 +232,27 @@ It cannot be a function of two adjacent segments, for the reasons in §3.3: brac
 ### 3.2 Masking
 
 Within a segment, blank out the spans below, preserving length so offsets stay valid.
-The patterns, verified against ten cases:
+The patterns, verified by execution against the eleven forms below the block:
 
 ```
 code span            (?<!\\)(?<!`)(`+)(?!`)(?:[^`]|`(?!\1(?!`)))*?(?<!`)\1(?!`)
-link/image dest      \]\((?:[^()\\\s]|\\.|\((?:[^()\\]|\\.)*\))*(?:\s+"[^"]*")?\)
-reference label      \]\[[^\]]*\]
+link/image dest      \[(?:[^\[\]]|\[[^\[\]]*\])*\]
+                     \((?:[^()\\\s]|\\.|\((?:[^()\\]|\\.)*\))*(?:\s+"[^"]*")?\)
+reference label      \[(?:[^\[\]]|\[[^\[\]]*\])*\]\[[^\]]*\]
 autolink / raw HTML  (?<!\\)<(?:[/!?]?[A-Za-z][^<>]*
                      |[A-Za-z][A-Za-z0-9+.\-]*:[^<>\s]*|[^<>\s@]+@[^<>\s]+)>
 ```
 
+The two link patterns are written on one line each; the first is split above only to fit the page.
+The eleven forms they were checked against are `[t](u)`, `![t](u)`, `[![t](u)](v)`, `[![t](u)][r]`, `[t](u/a_(b))`, `[t](u "title")`, `[t][r]`, `[t]`, `[a [b] c](u)`, two links in one segment, and `` `code` ``; each masks to a bracket-balanced segment, which is the only property the depth counter needs.
+
 Masking has exactly one consumer here: bracket-depth counting (§3.3), where an unmasked `)` inside a URL drives depth negative and corrupts every later gap in the section.
+The two link patterns start at the opening `[`, not at the `]`, and that is load-bearing rather than cosmetic: masking only `](dest)` leaves the link's `[` counted with nothing left to close it, so depth never returns to zero and every gap after the first link in a section is wrongly held to be inside brackets.
+Masking the whole link is what makes §3.3's discriminator — a complete bracket group within one segment is link syntax — true of the mechanism and not just of the intent.
+The link-text part admits one level of nested brackets, and that is not decoration: `[![badge](img)](target)` is the ordinary badge idiom, and a link-text pattern of `[^\]]*` stops at the image's `]`, masks `[![badge](img)` and leaves a bare `](target)` behind, which drives depth below zero and puts every following gap one level too shallow — so the next prose citation is read as unbracketed and split.
+**Depth is also clamped at zero.**
+No masking rule is going to catch every construct, and a counter that can go negative turns one missed atom into a wrong answer for the rest of the section, whereas a clamped one loses only the segment it missed.
+
 It does not feed sentence detection, because §3.3's closer set already excludes backtick, `)` and `]`, so a terminator inside a code span or a link destination fails the terminator test unmasked.
 Whether masking must therefore preserve length is undecided: a count per segment would serve a depth counter, but the length-preserving form is what is specified above.
 
@@ -248,12 +264,15 @@ This is the entire substance of the plugin.
 
 ```
 terminators  . ! ? … 。 ！ ？
-closers      " ' ’ ” » › “ ‘      plus  * _ ~
-openers      " ' “ ‘ « ‹ ¿ ¡ „ ‚  plus  * _ ~ [ ( \
+closers      " ' ’ ” » › « ‹ “ ‘      plus  * _ ~
+openers      " ' “ ‘ « ‹ » › ¿ ¡ „ ‚  plus  * _ ~ [ ( \
 ```
 
 `“` and `‘` are in both sets deliberately: they open in English and close in German.
-That is not a conflict, because a closer is tested after a terminator and an opener before a capital, and no position tests for both.
+So are the guillemets, and for the same reason: French and Swiss German write «…» while German and Austrian usage reverses them to »…«, so each of the four marks both opens and closes depending on the language.
+Leaving `«` out of the closers is what would silently drop every sentence end in `»Ist das ein Test?« Dann ging er.`
+Inside a segment the overlap costs nothing, because a closer is tested after a terminator and an opener before a capital, and neither test is reached from the position the other is asked about.
+**A mark standing alone as its own segment is the one place where it does cost something, and set membership must not decide it there** — see the two structural rules below, which decide by what precedes the mark instead.
 
 The closer set **excludes** `)`, `]`, `}` and backtick.
 This is the root fix for a family of bugs rather than a patch for any one of them.
@@ -287,6 +306,7 @@ Without that qualifier, `A "Is this a test?" guide to the whole subject…` brea
 - **Abbreviations.**
   The English default set is `mr mrs ms dr prof sr jr st i.e e.g vs fig no vol ch sec al`.
   `etc`, `inc`, `ltd` and `cf` are deliberately **absent**: they commonly end sentences, and with `etc` present `Use commas, semicolons, etc. The next sentence…` loses a real boundary.
+  `no` is the one entry that fails that same criterion and is kept anyway — `The answer was no. Then he left.` loses its boundary — and it is listed here as an open call rather than a settled one, because "no." as an abbreviation for *number* and "no." as a sentence end are equally ordinary English and the set cannot have both.
   German abbreviations are in the default set too, and `usw` is excluded from them for exactly the same reason as `etc`.
   **The German set is not enumerated in this document**, which is a gap rather than a decision, and it has to be closed before the specification can be implemented from.
   Source a set; do not invent one.
@@ -295,12 +315,17 @@ Without that qualifier, `A "Is this a test?" guide to the whole subject…` brea
   User-supplied abbreviations are **added** to the defaults, never replace them.
   Two refinements to the match, both reachable in practice: strip leading punctuation from the candidate word so `(e.g.` and `[i.e.` match, and also test the last hyphen-separated component so `Wrangell-St.` matches via `st`.
 - **Single capital initials** — `J. K. Rowling`.
-- **`require_sentence_capital`** (default true): the next sentence must open with a character having no lowercase form — uppercase, a digit, or CJK.
+- **`require_sentence_capital`** (default true): the next sentence must open with an uppercase letter, a digit, or a CJK character.
+  Write the test as that positive list and not as *not lowercase*, which is a wider set that admits `#`, `>` and `-`; the paragraph below turns on the difference.
   Digits matter: `1976 was hot.` is a sentence opening.
   Opening markup is skipped first, using the opener set above.
 
 **A sentence never opens with a block-construct marker, and this applies to every terminator.**
-If the next segment would start `#`, `>`, `-`/`*`/`+`, a bare `\d+[.)]`, or a setext or thematic run at line start, the gap is not a sentence boundary.
+If the next segment would start `#`, `>`, `-`/`*`/`+`, a bare `\d+[.)]`, a setext or thematic run at line start, or an HTML block opener, the gap is not a sentence boundary.
+The HTML entry is the one it is easy to omit, because mdformat's remedy for it is not an escape character.
+`paragraph()` prefixes four spaces to any line matching an `HTML_SEQUENCES` opener that can interrupt a paragraph, so `Do not use it. <div> is a block element.` broken at the sentence end comes back as `'Do not use it.\n    <div> is a block element.\n'`.
+Verified by execution against mdformat 1.0.0, with `<div>`, `<table>` and `<!-- -->`.
+`is_md_equal` passes on all three, so §6.2's render-equality gate cannot catch this one and the rule is the only guard.
 
 This rule is **unconditional and independent of `require_sentence_capital`**, and that matters.
 It is the only thing preventing a break from putting a construct at a line start where mdformat would escape it, and because this plugin has no `avoid_escapes` option (§4.1), it is the only protection there is.
@@ -309,10 +334,13 @@ Writing the capital rule as *uppercase, digit or CJK* rather than as *not lowerc
 **Quotation marks are language-specific.**
 Two structural rules follow, neither of them about any one language:
 
-- A segment consisting only of closing punctuation is never a break candidate, and when the segment to the left is such a mark, the terminator test looks one segment further back.
+- A segment consisting only of quotation or markup characters is read as *closing* when the segment before it ends in a terminator, and as *opening* otherwise.
+  Membership in the two sets above cannot decide it, because every guillemet and both of `“` `‘` are in both sets; what the mark is doing is determined by what it follows, not by which language wrote it.
+- A segment read as closing is never a break candidate, and when the segment to the left is such a mark, the terminator test looks one segment further back.
   French spaces its closer off — `« Ceci est important. »` — which puts the closer in a segment of its own and breaks the naive rule twice, once by orphaning the mark onto the next line and once by failing to see the terminator.
-- A segment consisting only of *opening* markup defers the capital test to the next segment rather than failing it.
+- A segment read as *opening* defers the capital test to the next segment rather than failing it.
   Returning "no opener found" is not the same as "no sentence opens here".
+  This is the rule that keeps `Il a dit. « Ceci est important. »` breaking after `dit.`: the lone `«` follows no terminator, so it is opening markup and the capital test moves on to `Ceci`.
 
 **No boundary inside brackets.**
 Depth counts `[` as well as `(`, accumulated across the section over masked segments.
@@ -355,14 +383,23 @@ An ineligible sentence gap is simply pinned like its neighbours.
 **Tilde sections are declined outright.**
 A run of three or more tildes at a line start opens a fenced code block and changes the render.
 This is an upstream mdformat defect, not ours — plain mdformat with no plugin and no extensions reproduces it — but our breaks reach it far more often, so the blast radius is ours.
-A section containing `~{3,}` is returned unchanged, with every gap pinned.
-Pinning alone is not sufficient, because a code span or list marker elsewhere in the same section can re-segment the text so the fence reaches a line start by another route.
+A section containing `~{3,}` is returned unchanged, with every gap pinned — every gap in the section, not only the gaps adjacent to the tilde run.
+Pinning only the gaps on either side of the run is not sufficient, because a break taken anywhere else in the section can put the run at a line start by another route; pinning the whole section emits no `\n` and no `\x00` in it, so it stays a single line and the run can only reach a line start if it already was one.
 A section containing a tilde fence is not one anybody is line-breaking for readability anyway.
 
 ### 3.6 Failure policy
 
-Reconstruct the pre-layout section by mapping every emitted `\n` and every inserted `" "` back to a `\x00`, and require byte equality with the input.
+Rebuild the emitted section from the input: replace the *i*th run of `\x00` in the input section with the *i*th separator the loop chose, and require byte equality with what was actually emitted.
 On mismatch, return the text untouched.
+
+Two reconstructions that look equivalent and are not.
+
+Do *not* recover the input by scanning the emitted string for `\n` and `" "`: mdformat has already collapsed each link, image and code span into a single segment with literal interior spaces (§3.1), so a scan turns those spaces into wrap points too and the check fails on every paragraph carrying a multi-word link.
+
+Do *not* use `"\x00".join(segs) == section` either.
+`re.split(r"\x00+", ...)` collapses a run of wrap points (§2.3), so that comparison is false for every section containing one, and a single tab at the end of a line produces one: `text()` turns the tab into a space and then into a `\x00`, and the following `softbreak()` contributes a second, which is measurable as `'Alpha\x00beta.\x00\x00gamma\x00delta.'` from `"Alpha beta.\t\ngamma delta."`.
+Every such paragraph would be handed back untouched and never broken at all.
+It is also the weaker check, because it never looks at the emitted string and therefore cannot see the error it exists to catch.
 
 The alternative is writing corrupted prose into the user's file.
 "Untouched" is a coherent degraded mode here rather than a failure: the paragraph is simply left to mdformat, which under `--wrap no` puts it on one line and under `--wrap keep` leaves it alone.
@@ -393,7 +430,7 @@ An undocumented escape hatch exists and the test harnesses use it — `options={
 ### 4.1 Options deliberately not provided
 
 - **Any width, column or line-length option.** §1.
-- **`avoid_escapes`.** Unnecessary: §3.3's block-construct rule is unconditional, so no break can land before `#`, `>`, `-` or an enumerator, and no escape is ever added.
+- **`avoid_escapes`.** Unnecessary: §3.3's block-construct rule is unconditional, so no break can land before `#`, `>`, `-`, an enumerator or an HTML block opener, and no escape and no four-space indent is ever added.
 - **A "honour `--wrap`" mode** that would let mdformat wrap inside a sentence. That is a coherent product — GNU Emacs's `fill-paragraph-semlf` is exactly it — but it reintroduces geometric line breaks and therefore forfeits §1's property, which is the only reason this plugin exists. Anyone who wants it wants a different tool.
 - **`break_words`, `strict_clauses`, `merge_short_lines`, `min_line_chars`.** No clause or width machinery exists to configure.
 
@@ -444,24 +481,24 @@ Every line break in the Semantic Line Breaks specification's own prose, which is
 
 | break falls at | rule | count | share |
 | --- | --- | ---: | ---: |
-| a sentence end | 4 | 11 | 15% |
-| clause punctuation `,` `;` `:` — | 5 | 33 | 44% |
-| a hyperlink or inline-markup boundary | 10, 11 | 0 | 0% |
-| none of the above | 6 | 31 | **41%** |
+| a sentence end | 4 | 11 | 12% |
+| clause punctuation `,` `;` `:` — | 5 | 37 | 42% |
+| a hyperlink or inline-markup boundary | 10, 11 | 8 | 9% |
+| none of the above | 6 | 32 | **36%** |
 
-Breaks are classified by the first row that matches, and no break classified 4 or 5 also sat at a markup boundary, so the rows do not overlap here.
+Breaks are classified by the first row that matches, so the rows are disjoint by construction rather than by luck; two of the breaks classified 4 or 5 also sit at a markup boundary and would have been claimed by the third row had it been tested first.
 
 Three things follow.
 
-**This plugin implements the rule that accounts for 15% of what a sembr author does by hand.**
+**This plugin implements the rule that accounts for 12% of what a sembr author does by hand.**
 That is the honest size of the promise, and it is worth stating next to §5.1's defence rather than leaving the reader to infer it.
 
-**Declining rule 5 forgoes 44%, and it is the larger of the two costs.**
+**Declining rule 5 forgoes 42%, and it is the larger of the two costs.**
 §5.1 gives the reason and the reason stands; this is its price.
 
-**The remaining 41% is reachable by nothing lexical at all.**
+**The remaining 36% is reachable by nothing lexical at all.**
 Rule 6 breaks after a *dependent* clause, where there is no punctuation and no reliable vocabulary.
-A 36-word break-word list recovers 11 of those 31 and leaves 27% of all breaks undetectable; a conservative 14-word list recovers 2.
+A 36-word break-word list recovers 12 of those 32 and leaves 23% of all breaks undetectable; a conservative 14-word list recovers 2.
 Real breaks from that prose, none of which any punctuation or word rule can see:
 
 ```
@@ -470,17 +507,18 @@ for using insensitive vertical whitespace
 Conventional markup languages like HTML and XML
 ```
 
-So even a perfect rule 5 would leave two breaks in five unreachable.
+So even a perfect rule 5 would leave more than a third of the breaks unreachable.
 That is the measurement behind §5.1's claim that implementing rule 5 correctly needs a parser: the part punctuation can see is not the whole problem, and the part it cannot see has no smaller solution.
 
-**The zero in the rules 10 and 11 row is about this corpus, not about those rules.**
-They are in the table so they are not forgotten, because they are the one part of the unimplemented remainder that is *not* a hard problem.
+**The rules 10 and 11 row is the cheapest 9% on the table.**
+They are in it so they are not forgotten, because they are the one part of the unimplemented remainder that is *not* a hard problem.
 Unlike rule 6 their positions are trivially matchable, the more so at this seam, because mdformat has already collapsed a link or image into a single atom before the plugin runs (§3.1), so a gap adjacent to one is exactly identifiable.
-They score zero only because this corpus carries 2 links and 2 code spans across 109 prose lines with none at a line boundary.
-Nothing here should be read as a claim about prose that uses links heavily, and if rules 10 and 11 are ever revisited this row is the measurement to redo first, against a corpus that actually exercises them.
+Ten of this corpus's 122 prose lines open with a reference link, which is what those 8 breaks are.
+An earlier version of this table put the row at zero, and that was an artefact of the measurement rather than a fact about the corpus: the paragraph extractor treated every line starting with `[` as a block opener, which deleted exactly the lines rules 10 and 11 describe.
+It is still a corpus that uses links lightly, so read the share rather than the count, and if rules 10 and 11 are ever revisited this row is the measurement to redo first against prose that leans on links.
 
-Reproduce with `notes/experiments/breaks.py`.
-One document and 75 breaks is a small sample, and `notes/corpus/README.md` explains why it is nonetheless the right one: this document is pure sentence-per-line, so measuring layout rules against it returns a perfect score for anything.
+Reproduce the table with `notes/experiments/rules.py`, and the break-word figures above it with `notes/experiments/breaks.py`.
+One document and 88 breaks is a small sample, and `notes/corpus/README.md` explains why it is nonetheless the right one: this document is pure sentence-per-line, so measuring layout rules against it returns a perfect score for anything.
 
 ______________________________________________________________________
 

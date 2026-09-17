@@ -11,7 +11,7 @@ probe = types.SimpleNamespace(
     CHANGES_AST=False,
     RENDERERS={},
     POSTPROCESSORS={"inline": inline_pp},
-    add_cli_options=lambda parser: None,
+    add_cli_argument_group=lambda group: None,
     update_mdit=lambda mdit: None,
 )
 P.PARSER_EXTENSIONS  # materialise

@@ -2,8 +2,12 @@
 there: sentence end (4), clause punctuation (5), hyperlink or inline-markup
 boundary (10, 11), or none of the above (6).
 
-Produces the table in DESIGN.md 5.2. Breaks are classified by first match; the
-overlap count at the end confirms the rows are disjoint on this corpus.
+Produces the table in DESIGN.md 5.2. Breaks are classified by first match, so
+the rows are disjoint by construction; the count at the end says how many of
+them had a second claim on them, which is 2 here rather than 0.
+
+The block-opener test excludes `[label]: url` definitions, NOT every line that
+starts with `[`. See breaks.py for what the broader form cost.
 """
 import os, re
 CORPUS = os.path.join(os.path.dirname(__file__), '..', 'corpus', 'sembr.md')
@@ -14,7 +18,7 @@ def paras(p):
     for l in open(p,encoding='utf-8'):
         s=l.rstrip('\n')
         if re.match(r'^\s*(```|~~~)',s): f=not f; continue
-        if f or not s.strip() or re.match(r'^\s*(#|\||\[|>|\d+\.|[-*+] |<)',s):
+        if f or not s.strip() or re.match(r'^\s*(#|\||\[[^\]]*\]:|>|\d+\.|[-*+] |<)',s):
             if cur: out.append(cur); cur=[]
             continue
         cur.append(s)
