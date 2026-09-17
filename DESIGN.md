@@ -3,7 +3,8 @@
 A design for a small mdformat plugin.
 
 This document is written one sentence per line, which is the output this plugin produces.
-It is the dogfood, and it is also the argument: read it at any window width and the line breaks do not move.
+It is the dogfood, and it is also the argument.
+Read it at any window width and the line breaks do not move.
 
 [Semantic Line Breaks](https://sembr.org) is a convention for breaking source lines at meaning boundaries, so that a diff shows what changed rather than where the text reflowed.
 Its specification gives thirteen rules at RFC 2119 levels of obligation.
