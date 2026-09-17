@@ -40,6 +40,7 @@ to it.
 | `rules.py` | no | Every author break in the corpus by which sembr rule put it there: 15% rule 4, 44% rule 5, 0% rules 10 and 11, 41% rule 6. The table in `DESIGN.md` §5.2. |
 | `wrapkeep.py` | yes | Whether a plugin can defeat `--wrap keep`. It can, in two lines, through a supported hook, and the script lists the three consequences that are why `DESIGN.md` does not. Also: what the plugin can and cannot see about `wrap`, which is what §2.5's warning keys off. |
 | `secondpass.py` | yes | A `POSTPROCESSORS["root"]` hook can re-render, restoring mdformat's second pass when it would otherwise be skipped. Output matches the honest `--wrap no` exactly, over a bare paragraph and over lists, blockquotes and fenced code, once the already-finalised trailing newline is handled. |
+| `wrapsplit.py` | yes | Simulates splitting `do_wrap` into "produce wrap points" and "width-wrap". Under `--wrap keep` the plugin works, mdformat adds no geometric wrapping, and links survive as atoms. The feasibility check behind §5.6 of the wrap note. |
 | `wraparg.py` | yes | `wrap` as an *argument* rather than at the seam. The CLI and TOML validators are separate code and disagree; `--wrap sentence` is rejected at argument parsing today; and a renderer warning reaches stderr through `logging.lastResort` even with no handler attached, once per paragraph. |
 | `lic.py` | no | Every plugin in mdformat's curated list is MIT, and so is mdformat. |
 

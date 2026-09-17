@@ -155,7 +155,7 @@ The re-render restores the pass, not a known output difference; mdformat runs tw
 
 ______________________________________________________________________
 
-## 5. `--wrap sentence` as an upstream request
+## 5. What to ask upstream
 
 ### 5.1 The primary defect: `--wrap no` becomes false
 
@@ -239,7 +239,39 @@ That makes it a convention, and §5.3's disclaimer stands unchanged.
 Variant B needs `keep` and `no` reserved against a plugin id colliding with them.
 Both make a shared `.mdformat.toml` valid on one machine and invalid on another, since the value's legality depends on what is installed — arguably correct, since the plugin genuinely is required, but it is a new failure mode for a checked-in config.
 
-### 5.6 Prior art
+### 5.6 The smaller ask: split wrap-point production from width wrapping
+
+This one does not touch the option space at all, and it is the smallest true statement of what the plugin needs.
+
+**The conflation.** `do_wrap` is one predicate serving two questions, and `renderer/_context.py` uses it at six places that divide cleanly four to one:
+
+| use | job |
+| --- | --- |
+| `softbreak` :109, `text` :153 | **produce** wrap points |
+| `image` :204, `link` :267 | collapse interior wrap points, which only matters once they are produced |
+| `paragraph` :394 | **width-wrap**, using the value as a column |
+
+A plugin that converts wrap points to newlines needs the first group and has no opinion about the second.
+There is no way to ask for that today except `no`, which to a user without the plugin means "put every paragraph on one line".
+That is why `no` is doing double duty, and it is the defect underneath §5.1 and §5.2 both.
+
+**The ask.** Let a plugin declare that it requires wrap points — a new Protocol member such as `NEEDS_WRAP_POINTS`, or a separately named postprocessor hook — and gate the production group on `do_wrap or any(plugin declared it)` while leaving `paragraph`'s width-wrapping gated on `do_wrap` alone.
+Opt-in by declaration, so every existing plugin is unaffected and the default behaviour of every existing invocation is unchanged.
+
+**Measured feasible**, `experiments/wrapsplit.py`.
+Forcing the production group true while `paragraph` honours the user's real mode, under `--wrap keep`, yields sentence-per-line output with no width wrapping, links surviving as single atoms, and no stray wrap points in the result.
+
+**What it fixes and what it does not.**
+It fixes the mechanism: a plugin gets what it needs through a declared, typed, documented channel instead of §3.1's assignment into someone else's config, and it stops `no` being the only way to spell "produce but do not wrap".
+It does not fix the naming.
+Under this ask `--wrap keep` still stops keeping when such a plugin is installed, which is §5.1's complaint relocated rather than answered.
+
+**The two asks compose, and in one direction.**
+The split is what makes a named mode cheap: with production and width separately gated, `--wrap sentence` or `--wrap <plugin-id>` becomes "production on, width off, this plugin named", which is a value that selects an existing combination rather than a new code path.
+Asked in the other order, the named mode has to carry the split inside it.
+**Reasoned.** If only one is filed, the split is the better first ask: smaller, opt-in, invisible to existing users, and it is the one the other depends on.
+
+### 5.7 Prior art
 
 Searched on 2026-09-17, on the mdformat issue tracker, for issues about `--wrap`, wrap modes, and plugins controlling wrapping.
 **Nothing proposes new wrap modes, plugin-defined wrap modes, or semantic line breaks.**
