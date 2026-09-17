@@ -9,8 +9,9 @@ can re-run them rather than take them on trust.
 | | |
 | --- | --- |
 | `PRESERVE-MODE.md` | Why the plugin does not try to preserve an author's existing line breaks. The longest-running open question about this design, answered. |
+| `MDFORMAT-WRAP-AND-OVERRIDES.md` | Where mdformat reads `wrap`, what a plugin can see and override about it, and what `--wrap sentence` would cost upstream. A reference for whoever later decides whether to patch, to ask, or how to implement §2.5's warning. |
 | `corpus/` | The one corpus that gives honest answers about layout heuristics, and why. |
-| `experiments/` | Fourteen short programs. Seven need mdformat, seven are stdlib only. |
+| `experiments/` | Sixteen short programs. Eight need mdformat, eight are stdlib only. |
 
 ## Running them
 
@@ -38,7 +39,8 @@ to it.
 | `edit.py` | no | Rewrapping a paragraph versus adding only the missing break: 9 diff lines against 1, 0 clause breaks surviving against 4. |
 | `rules.py` | no | Every author break in the corpus by which sembr rule put it there: 15% rule 4, 44% rule 5, 0% rules 10 and 11, 41% rule 6. The table in `DESIGN.md` §5.2. |
 | `wrapkeep.py` | yes | Whether a plugin can defeat `--wrap keep`. It can, in two lines, through a supported hook, and the script lists the three consequences that are why `DESIGN.md` does not. Also: what the plugin can and cannot see about `wrap`, which is what §2.5's warning keys off. |
-| `secondpass.py` | yes | A `POSTPROCESSORS["root"]` hook can re-render, restoring mdformat's second pass when it would otherwise be skipped. Output matches the honest `--wrap no` exactly, once the already-finalised trailing newline is handled. |
+| `secondpass.py` | yes | A `POSTPROCESSORS["root"]` hook can re-render, restoring mdformat's second pass when it would otherwise be skipped. Output matches the honest `--wrap no` exactly, over a bare paragraph and over lists, blockquotes and fenced code, once the already-finalised trailing newline is handled. |
+| `wraparg.py` | yes | `wrap` as an *argument* rather than at the seam. The CLI and TOML validators are separate code and disagree; `--wrap sentence` is rejected at argument parsing today; and a renderer warning reaches stderr through `logging.lastResort` even with no handler attached, once per paragraph. |
 | `lic.py` | no | Every plugin in mdformat's curated list is MIT, and so is mdformat. |
 
 The programs are throwaway quality on purpose. They exist to produce a number

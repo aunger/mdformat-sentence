@@ -174,8 +174,13 @@ if ext is not None and "sentence" in ext and not context.do_wrap:
     LOGGER.warning("mdformat-sentence does nothing under --wrap keep; use --wrap no")
 ```
 
-`mdformat.renderer.LOGGER` is the channel, and `_cli.py` attaches a handler printing WARNING and above to stderr.
-It is attached on the CLI path only, so `mdformat.text()` callers see nothing unless they configure logging themselves.
+`mdformat.renderer.LOGGER` is the channel.
+`_cli.py` attaches a handler that prefixes `Warning: ` and writes to stderr, and that handler is CLI-only, but a library caller is not silent: with no handler configured, `logging.lastResort` writes the message to stderr unprefixed.
+Verified by execution.
+
+Two things the implementation must handle.
+The warning fires once per render pass, so twice under any wrapping mode (§2.3), and the repeat has to be suppressed.
+And it fires per paragraph, not per file, so it needs to be raised once per run rather than once per inline node.
 
 **What the plugin cannot see is whether `keep` was chosen or merely defaulted.**
 `_cli.py` builds `{**DEFAULT_OPTS, **toml_opts, **cli_core_opts}` and argparse drops unset values, so an omitted `--wrap`, an explicit `--wrap keep`, and `wrap = "keep"` in TOML all arrive identical.
