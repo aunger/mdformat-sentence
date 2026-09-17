@@ -274,6 +274,15 @@ Leaving `«` out of the closers is what would silently drop every sentence end i
 Inside a segment the overlap costs nothing, because a closer is tested after a terminator and an opener before a capital, and neither test is reached from the position the other is asked about.
 **A mark standing alone as its own segment is the one place where it does cost something, and set membership must not decide it there** — see the two structural rules below, which decide by what precedes the mark instead.
 
+**Clause punctuation is not a closer, and that is what handles `e.g.,`**
+A terminator followed by `,` `;` or `:` is not a sentence end, because the test scans back over *closers* only and none of those three is one, so the scan meets a character that is neither closer nor terminator and fails.
+`e.g.,` and `i.e.,` are the common cases and they are very common in technical prose; `etc.;` in a semicolon-separated list and `Ph.D.,` in a byline are the same shape.
+No rule is needed for them, and none is added.
+
+The point of stating it is that the behaviour rests entirely on an *absence*.
+Anyone who later adds clause punctuation to the closer set, which is a tempting thing to try when working on rule 5, silently turns every `e.g.,` into a sentence-end candidate.
+The closer set is for marks that can follow a terminator *and still end the sentence*; a comma after a period means the abbreviation was not a sentence end at all.
+
 The closer set **excludes** `)`, `]`, `}` and backtick.
 This is the root fix for a family of bugs rather than a patch for any one of them.
 Three consequences:
@@ -351,12 +360,17 @@ Measured, as the share of each token's top continuations that are numerals:
 Each of those five precedes a number rather than a name, and three of them are also ordinary English: a `fig` is a fruit, `no` is a negation, a `sec` is a moment.
 `He ate a fig.`, `The answer was no.` and `Wait a sec.` all end sentences, and all three lose that boundary if the entry is unconditional, which is what rumdl and `mdformat-sembr` both do.
 
-So those five suppress a break **only when the next segment opens with an index token**: a digit, or a run of two or more of `IVXLCDM`.
-`No. 5`, `Fig. 3`, `Vol. II` and `Ch. IV` hold; `He ate a fig. Then he left.` breaks.
+So those five suppress a break **only when the next segment opens with an index token**: a digit, or a run of one or more of `IVXLCDM`.
+`No. 5`, `Fig. 3`, `Vol. II`, `Ch. IV` and `Vol. I` hold; `He ate a fig. Then he left.` breaks.
 
-Two things a digit-only test would get wrong.
-Roman numerals are ordinary for volumes, chapters and sections, so digits alone would split `Vol. II`.
-And the run must be two or more characters, because a bare `I` is the English pronoun: `No. I think so.` must break, and a one-character roman test would suppress it.
+A digit-only test would be wrong, because roman numerals are ordinary for volumes, chapters and sections and digits alone would split `Vol. II`.
+Measured: `Ch` has the single letter `D` among its five commonest continuations, so single-character labels are real and not a corner case.
+
+**The run is deliberately not required to be two or more characters**, although that would fix one bad case: a bare `I` is the English pronoun, so `No. I think so.` is suppressed and stays on one line.
+That is a *missed* break, and the alternative error is worse.
+Requiring two characters splits `Vol. I of the series` after `Vol.`, which severs a noun phrase and puts `I` at the head of a line — visibly wrong output rather than merely unbroken output.
+This is the same asymmetry the German abbreviation set turns on: holding a break back costs a long line, taking one that should not be taken corrupts the text.
+Single-letter labels outside `IVXLCDM`, such as `Sec. A`, are not covered and will break, which is the same trade taken the same way.
 
 **`vs` stays unconditional** although it too precedes a name rather than an index, because it is not an English word in any inflection and cannot end a sentence.
 
