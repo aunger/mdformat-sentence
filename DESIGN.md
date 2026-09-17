@@ -306,11 +306,7 @@ Without that qualifier, `A "Is this a test?" guide to the whole subject…` brea
 - **Abbreviations.**
   The English default set is `mr mrs ms dr prof sr jr st i.e e.g vs fig no vol ch sec al`.
   `etc`, `inc`, `ltd` and `cf` are deliberately **absent**: they commonly end sentences, and with `etc` present `Use commas, semicolons, etc. The next sentence…` loses a real boundary.
-  `no` is the one entry that would fail that same criterion as a bare token, so it carries a condition none of the others do: **it suppresses a break only when the next segment begins with a digit.**
-  `No. 5 was the hottest.` holds; `The answer was no. Then he left.` breaks.
-  Both rumdl and `mdformat-sembr` list `no` unconditionally, and the second sentence loses its boundary in both, so the condition is a deliberate divergence from every implementation that has one.
-  It is not a departure from their reasoning, though: rumdl admits an abbreviation only if it is "almost always followed by something, not sentence-final", and files `no` under "Reference abbreviations — followed by what they refer to".
-  The condition is that criterion made operational rather than assumed.
+  Five of the sixteen carry a condition, for the reason set out after this list.
   German abbreviations are in the default set too, and `usw` is excluded from them for exactly the same reason as `etc`.
   **The German set is not enumerated in this document**, which is a gap rather than a decision, and it has to be closed before the specification can be implemented from.
   Source a set; do not invent one.
@@ -323,6 +319,48 @@ Without that qualifier, `A "Is this a test?" guide to the whole subject…` brea
   Write the test as that positive list and not as *not lowercase*, which is a wider set that admits `#`, `>` and `-`; the paragraph below turns on the difference.
   Digits matter: `1976 was hot.` is a sentence opening.
   Opening markup is skipped first, using the opener set above.
+
+**What an abbreviation entry is actually for.**
+**Reasoned, not measured**: the corpus exercises none of these tokens, so nothing below rests on it.
+
+An entry only ever does work when the next token is capitalised or a digit, because `require_sentence_capital` already suppresses the break before a lowercase word.
+That reframes the question for every entry, from *is it also a word* to *what does it suppress that the capital rule does not already*, and it sorts the sixteen into three jobs and one mistake.
+
+| entry | job | also a word, or sentence-final | rule |
+| --- | --- | --- | --- |
+| `mr mrs ms dr prof sr jr st` | precede a capitalised name | `st` only, as *Street* | unconditional |
+| `i.e e.g vs` | introduce the term that follows | no | unconditional |
+| `fig no vol ch sec` | precede an index | `fig`, `no`, `sec` | **conditional** |
+| `al` | — | yes, and often | **see below** |
+
+**The index class is where a condition earns its place.**
+Each of those five precedes a number rather than a name, and three of them are also ordinary English: a `fig` is a fruit, `no` is a negation, a `sec` is a moment.
+`He ate a fig.`, `The answer was no.` and `Wait a sec.` all end sentences, and all three lose that boundary if the entry is unconditional, which is what rumdl and `mdformat-sembr` both do.
+
+So those five suppress a break **only when the next segment opens with an index token**: a digit, or a run of two or more of `IVXLCDM`.
+`No. 5`, `Fig. 3`, `Vol. II` and `Ch. IV` hold; `He ate a fig. Then he left.` breaks.
+
+Two things a digit-only test would get wrong.
+Roman numerals are ordinary for volumes, chapters and sections, so digits alone would split `Vol. II`.
+And the run must be two or more characters, because a bare `I` is the English pronoun: `No. I think so.` must break, and a one-character roman test would suppress it.
+
+**`vs` stays unconditional** although it too precedes a name rather than an index, because it is not an English word in any inflection and cannot end a sentence.
+
+**`al` is net harmful under the default configuration, and is recommended for removal.**
+Two things can follow `et al.`
+Before a lowercase word, as in `Smith et al. showed that…`, `require_sentence_capital` already suppresses the break and the entry changes nothing.
+Before a capital, as in `…as described by Smith et al. Then he left.`, the entry suppresses a break that should happen, and a citation ending a sentence is ordinary academic prose.
+So with the capital rule on, which is the default, `al` is redundant in the first case and wrong in the second.
+It earns its place only when `require_sentence_capital` is false, a configuration that accepts more spurious breaks everywhere in any case.
+**Not removed here**, because deleting an entry from a default set inherited verbatim from rumdl is a larger decision than adding a condition, and this paragraph is the argument for making it.
+
+**`st` is a known ambiguity and no rule is offered.**
+`St. Louis` and `Main St. Then he left.` both put a capital after the period, so neither the capital rule nor an index test separates them.
+A discriminator plausibly exists in what *precedes* the token, since *Saint* leads a name and *Street* trails one, but that is speculation and nothing here implements it.
+
+**None of this departs from rumdl's reasoning, only from its implementation.**
+rumdl admits an entry only if it is "almost always followed by something, not sentence-final", and files this class under "Reference abbreviations — followed by what they refer to".
+The conditions above make that criterion operational instead of assuming it holds for the bare token.
 
 **A sentence never opens with a block-construct marker, and this applies to every terminator.**
 If the next segment would start `#`, `>`, `-`/`*`/`+`, a bare `\d+[.)]`, a setext or thematic run at line start, or an HTML block opener, the gap is not a sentence boundary.
