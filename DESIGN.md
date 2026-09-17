@@ -321,7 +321,7 @@ Without that qualifier, `A "Is this a test?" guide to the whole subject…` brea
   Opening markup is skipped first, using the opener set above.
 
 **What an abbreviation entry is actually for.**
-**Reasoned, not measured**: the corpus exercises none of these tokens, so nothing below rests on it.
+**Partly measured.** The repository corpus exercises none of these tokens, but Google Books English 2019 does; `notes/experiments/ngram.py` reproduces the figures, and the method's one real limitation is recorded at the end of this block.
 
 An entry only ever does work when the next token is capitalised or a digit, because `require_sentence_capital` already suppresses the break before a lowercase word.
 That reframes the question for every entry, from *is it also a word* to *what does it suppress that the capital rule does not already*, and it sorts the sixteen into three jobs and one mistake.
@@ -330,8 +330,22 @@ That reframes the question for every entry, from *is it also a word* to *what do
 | --- | --- | --- | --- |
 | `mr mrs ms dr prof sr jr st` | precede a capitalised name | `st` only, as *Street* | unconditional |
 | `i.e e.g vs` | introduce the term that follows | no | unconditional |
-| `fig no vol ch sec` | precede an index | `fig`, `no`, `sec` | **conditional** |
-| `al` | — | yes, and often | **see below** |
+| `fig no vol ch sec al` | precede an index | `fig`, `no`, `sec` | **conditional** |
+
+Measured, as the share of each token's top continuations that are numerals:
+
+| token | followed by a number | top continuations |
+| --- | ---: | --- |
+| `et al` | **100%** | 1990, 1991, 1992, 1989, 1993 |
+| `Vol` | 100% | 1, 2, 3, II, I |
+| `Fig` | 97% | 1, 2, 3, 4, 5 |
+| `Ch` | 92% | 1, D, 3, 2, 4 |
+| `Sec` | 20% | also, Entry, of, 1 |
+| `vs` | 13% | the, time, 1, a, non |
+| `fig` | 12% | **tree, trees, leaf, leaves** |
+| `No` / `no` | **0%** | one, matter, doubt / longer, one, more |
+| `St` | 0% | John, Paul, Louis, Petersburg, Mary |
+| `Dr` | 0% | John, David, Johnson, J., Peter |
 
 **The index class is where a condition earns its place.**
 Each of those five precedes a number rather than a name, and three of them are also ordinary English: a `fig` is a fruit, `no` is a negation, a `sec` is a moment.
@@ -346,17 +360,26 @@ And the run must be two or more characters, because a bare `I` is the English pr
 
 **`vs` stays unconditional** although it too precedes a name rather than an index, because it is not an English word in any inflection and cannot end a sentence.
 
-**`al` is net harmful under the default configuration, and is recommended for removal.**
-Two things can follow `et al.`
-Before a lowercase word, as in `Smith et al. showed that…`, `require_sentence_capital` already suppresses the break and the entry changes nothing.
-Before a capital, as in `…as described by Smith et al. Then he left.`, the entry suppresses a break that should happen, and a citation ending a sentence is ordinary academic prose.
-So with the capital rule on, which is the default, `al` is redundant in the first case and wrong in the second.
-It earns its place only when `require_sentence_capital` is false, a configuration that accepts more spurious breaks everywhere in any case.
-**Not removed here**, because deleting an entry from a default set inherited verbatim from rumdl is a larger decision than adding a condition, and this paragraph is the argument for making it.
+**`al` belongs in the index class, and the measurement is what puts it there.**
+Three things can follow `et al.`, and only two of them are obvious.
+Before a lowercase word — `Smith et al. showed that…` — `require_sentence_capital` already suppresses the break, so the entry changes nothing.
+Before a capital — `…described by Smith et al. Then he left.` — the entry suppresses a break that should happen.
+Those two alone argue for deleting `al` outright, and that was this document's recommendation until the third case was measured.
+**`et al` is followed by a numeral 100% of the time**, and every one of its top continuations is a citation year: 1990, 1991, 1992, 1989, 1993.
+Digits are sentence openings (see `require_sentence_capital` above), so the capital rule does *not* suppress before one, which makes the entry **required** for `Smith et al. 1990 showed…` and makes deleting it the wrong call.
+Conditioned on an index token it does all three correctly.
 
 **`st` is a known ambiguity and no rule is offered.**
 `St. Louis` and `Main St. Then he left.` both put a capital after the period, so neither the capital rule nor an index test separates them.
-A discriminator plausibly exists in what *precedes* the token, since *Saint* leads a name and *Street* trails one, but that is speculation and nothing here implements it.
+The measurement is reassuring but not decisive: `St` is followed by `John`, `Paul`, `Louis`, `Petersburg` and `Mary`, with the *Street* sense nowhere in the top continuations, so unconditional is the right default for prose like this corpus.
+Books under-represent addresses, though, and a discriminator plausibly exists in what *precedes* the token, since *Saint* leads a name and *Street* trails one.
+Neither is implemented.
+
+**What the measurement cannot show, and why.**
+Google's tokenizer splits the abbreviation period off and treats it as a sentence terminator, so `Fig . 1` has a frequency of exactly zero while `Fig 1` is ordinary, and every n-gram following a period is `_END_`.
+The corpus has therefore already decided the question this section is about, and decided it wrongly for abbreviations.
+The figures above are from the period-less forms, which measure *index use versus word use* — the axis that sorts the table — and say nothing directly about how often each token ends a sentence.
+`fig` is the clearest case the method does reach: capitalised `Fig` is 97% numerals while lowercase `fig` is 46% `tree`, so the label and the fruit separate cleanly on case, which the case-insensitive match in this design deliberately does not exploit.
 
 **None of this departs from rumdl's reasoning, only from its implementation.**
 rumdl admits an entry only if it is "almost always followed by something, not sentence-final", and files this class under "Reference abbreviations — followed by what they refer to".
