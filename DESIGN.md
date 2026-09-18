@@ -257,14 +257,13 @@ No masking rule is going to catch every construct, and a counter that can go neg
 Masking does not feed sentence detection, because §3.3's closer set already excludes backtick, `)` and `]`, so a terminator inside a code span or a link destination fails the terminator test unmasked.
 The autolink and raw-HTML pattern needs no equivalent argument: its terminator is an ASCII `>`, and the closer set's guillemets are `»` and `›`.
 
-**Masking therefore does not preserve length, and nothing asks it to**, because no rule reads a position inside a masked segment.
+**Masking does not preserve length**, because no rule reads a position inside a masked segment.
 Every other rule in §3.3 reads the *raw* segment: the terminator test by the sentence above, the capital rule by skipping the opener set, which carries `[`, `(` and backslash for exactly this reason, and the block-construct rule because `<div>` and `<table>` match the raw-HTML pattern above — a masked reading would blank away the one guard `is_md_equal` cannot replace.
-§3.6 is the only other candidate and it indexes the *i*th run of `\x00` in the input, an ordinal rather than an offset.
-Choosing a fill character was the latent hazard here: a space would have changed §3.5's edge-safety verdict for every segment whose first or last span is a link or a code span, and the number form makes that unrepresentable.
+§3.6 indexes the *i*th run of `\x00` in the input, an ordinal rather than an offset.
 
 **The clamp applies to the running total once per segment** — `depth = max(0, depth + delta)` — and not after each bracket character.
-The two readings genuinely differ: at carry-in zero a segment containing `)(` leaves depth at 1 per character and 0 per segment.
-Per segment is the one that matches where the counter is read, since depth is consulted only at a gap, and it is also the only reading a single number per segment can express; per character would need two, the net and the minimum prefix sum.
+The two differ: at carry-in zero a segment containing `)(` leaves depth at 1 per character and 0 per segment.
+Depth is consulted only at a gap, which is where the per-segment form clamps, and per character would need two numbers per segment rather than one, the net and the minimum prefix sum.
 
 ### 3.3 Sentence detection
 
@@ -325,15 +324,10 @@ Without that qualifier, `A "Is this a test?" guide to the whole subject…` brea
 - **Abbreviations.**
   **The default set is English only**: `mr mrs ms dr prof sr jr st i.e e.g vs fig no vol ch sec al`.
   `etc`, `inc`, `ltd` and `cf` are deliberately **absent**: they commonly end sentences, and with `etc` present `Use commas, semicolons, etc. The next sentence…` loses a real boundary.
-  Six of the seventeen carry a condition, for the reason set out after this list.
+  The index entries carry a condition, for the reason set out after this list.
   User-supplied abbreviations (§4) are **added** to the default set, never replace it.
   Two refinements to the match, both reachable in practice: strip leading punctuation from the candidate word so `(e.g.` and `[i.e.` match, and also test the last hyphen-separated component so `Wrangell-St.` matches via `st`.
-
-  **English-only is a narrowing, not an oversight.**
-  Pouring a second language's abbreviations into the same flat list is not multilingual support, it is one more arbitrary language, and it leaves French, Spanish and Italian equally unserved.
-  Support worth the name needs a language flag, detection, or per-language sets; this design has none of those, so it claims none of it.
-  German speakers have the strongest case for reaching for `abbreviations` (§4), because German capitalises every noun and so cannot borrow the capital rule to cover a missing entry.
-  An English-only default set does not make the design English-only: the quotation rules above decide opening from closing by what precedes a mark rather than by language, and the terminator set covers CJK.
+  Only this list is language-specific: the quotation rules decide opening from closing by what precedes a mark, and the terminator set covers CJK.
 
 - **Single capital initials** — `J. K. Rowling`.
 
@@ -346,7 +340,7 @@ Without that qualifier, `A "Is this a test?" guide to the whole subject…` brea
 **Partly measured.** The repository corpus exercises none of these tokens, but Google Books English 2019 does; `notes/experiments/ngram.py` reproduces the figures, and the method's one real limitation is recorded at the end of this block.
 
 An entry only ever does work when the next token is capitalised or a digit, because `require_sentence_capital` already suppresses the break before a lowercase word.
-That reframes the question for every entry, from *is it also a word* to *what does it suppress that the capital rule does not already*, and it sorts the seventeen into three jobs and one mistake.
+That reframes the question for every entry, from *is it also a word* to *what does it suppress that the capital rule does not already*, and it sorts them into three jobs and one mistake.
 
 | entry | job | also a word, or sentence-final | rule |
 | --- | --- | --- | --- |
@@ -370,10 +364,10 @@ Measured, as the share of each token's top continuations that are numerals:
 | `Dr` | 0% | John, David, Johnson, J., Peter |
 
 **The index class is where a condition earns its place.**
-Each of those six precedes a number rather than a name, and three of them are also ordinary English: a `fig` is a fruit, `no` is a negation, a `sec` is a moment.
+Each of these precedes a number rather than a name, and three of them are also ordinary English: a `fig` is a fruit, `no` is a negation, a `sec` is a moment.
 `He ate a fig.`, `The answer was no.` and `Wait a sec.` all end sentences, and all three lose that boundary if the entry is unconditional, which is what rumdl and `mdformat-sembr` both do.
 
-So those six suppress a break **only when the next segment opens with an index token**: a digit, or a run of one or more of `IVXLCDM`.
+So these suppress a break **only when the next segment opens with an index token**: a digit, or a run of one or more of `IVXLCDM`.
 `No. 5`, `Fig. 3`, `Vol. II`, `Ch. IV` and `Vol. I` hold; `He ate a fig. Then he left.` breaks.
 
 A digit-only test would be wrong, because roman numerals are ordinary for volumes, chapters and sections and digits alone would split `Vol. II`.
@@ -382,7 +376,7 @@ Measured: `Ch` has the single letter `D` among its five commonest continuations,
 **The run is deliberately not required to be two or more characters**, although that would fix one bad case: a bare `I` is the English pronoun, so `No. I think so.` is suppressed and stays on one line.
 That is a *missed* break, and the alternative error is worse.
 Requiring two characters splits `Vol. I of the series` after `Vol.`, which severs a noun phrase and puts `I` at the head of a line — visibly wrong output rather than merely unbroken output.
-The asymmetry is the whole argument: holding a break back costs a long line, taking one that should not be taken corrupts the text.
+Holding a break back costs a long line; taking one that should not be taken corrupts the text.
 Single-letter labels outside `IVXLCDM`, such as `Sec. A`, are not covered and will break, which is the same trade taken the same way.
 
 **`vs` stays unconditional** although it too precedes a name rather than an index, because it is not an English word in any inflection and cannot end a sentence.
@@ -583,7 +577,7 @@ Breaks are classified by the first row that matches, so the rows are disjoint by
 Three things follow.
 
 **This plugin implements the rule that accounts for 12% of what a sembr author does by hand.**
-That is the honest size of the promise, and it is worth stating next to §5.1's defence rather than leaving the reader to infer it.
+That is the size of the promise.
 
 **Declining rule 5 forgoes 42%, and it is the larger of the two costs.**
 §5.1 gives the reason and the reason stands; this is its price.
@@ -606,8 +600,7 @@ That is the measurement behind §5.1's claim that implementing rule 5 correctly 
 They are in it so they are not forgotten, because they are the one part of the unimplemented remainder that is *not* a hard problem.
 Unlike rule 6 their positions are trivially matchable, the more so at this seam, because mdformat has already collapsed a link or image into a single atom before the plugin runs (§3.1), so a gap adjacent to one is exactly identifiable.
 Ten of this corpus's 122 prose lines open with a reference link, which is what those 8 breaks are.
-An earlier version of this table put the row at zero, and that was an artefact of the measurement rather than a fact about the corpus: the paragraph extractor treated every line starting with `[` as a block opener, which deleted exactly the lines rules 10 and 11 describe.
-It is still a corpus that uses links lightly, so read the share rather than the count, and if rules 10 and 11 are ever revisited this row is the measurement to redo first against prose that leans on links.
+It is a corpus that uses links lightly, so read the share rather than the count, and if rules 10 and 11 are ever revisited this row is the measurement to redo first against prose that leans on links.
 
 Reproduce the table with `notes/experiments/rules.py`, and the break-word figures above it with `notes/experiments/breaks.py`.
 One document and 88 breaks is a small sample, and `notes/corpus/README.md` explains why it is nonetheless the right one: this document is pure sentence-per-line, so measuring layout rules against it returns a perfect score for anything.
