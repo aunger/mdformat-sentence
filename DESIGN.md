@@ -313,17 +313,20 @@ Without that qualifier, `A "Is this a test?" guide to the whole subject…` brea
 **The three checks:**
 
 - **Abbreviations.**
-  The English default set is `mr mrs ms dr prof sr jr st i.e e.g vs fig no vol ch sec al`.
+  **The default set is English only**: `mr mrs ms dr prof sr jr st i.e e.g vs fig no vol ch sec al`.
   `etc`, `inc`, `ltd` and `cf` are deliberately **absent**: they commonly end sentences, and with `etc` present `Use commas, semicolons, etc. The next sentence…` loses a real boundary.
-  Five of the sixteen carry a condition, for the reason set out after this list.
-  German abbreviations are in the default set too, and `usw` is excluded from them for exactly the same reason as `etc`.
-  **The German set is not enumerated in this document**, which is a gap rather than a decision, and it has to be closed before the specification can be implemented from.
-  Source a set; do not invent one.
-  German is on by default rather than behind a language flag because the asymmetry runs one way — an abbreviation held back costs at most a missed break, one that is missing corrupts a sentence — and these tokens are vanishingly rare in English prose.
-  German cannot borrow the capital rule to cover a missing abbreviation, because German capitalises every noun.
-  User-supplied abbreviations are **added** to the defaults, never replace them.
+  Six of the seventeen carry a condition, for the reason set out after this list.
+  User-supplied abbreviations (§4) are **added** to the default set, never replace it.
   Two refinements to the match, both reachable in practice: strip leading punctuation from the candidate word so `(e.g.` and `[i.e.` match, and also test the last hyphen-separated component so `Wrangell-St.` matches via `st`.
+
+  **English-only is a narrowing, not an oversight.**
+  Pouring a second language's abbreviations into the same flat list is not multilingual support, it is one more arbitrary language, and it leaves French, Spanish and Italian equally unserved.
+  Support worth the name needs a language flag, detection, or per-language sets; this design has none of those, so it claims none of it.
+  German speakers have the strongest case for reaching for `abbreviations` (§4), because German capitalises every noun and so cannot borrow the capital rule to cover a missing entry.
+  An English-only default set does not make the design English-only: the quotation rules above decide opening from closing by what precedes a mark rather than by language, and the terminator set covers CJK.
+
 - **Single capital initials** — `J. K. Rowling`.
+
 - **`require_sentence_capital`** (default true): the next sentence must open with an uppercase letter, a digit, or a CJK character.
   Write the test as that positive list and not as *not lowercase*, which is a wider set that admits `#`, `>` and `-`; the paragraph below turns on the difference.
   Digits matter: `1976 was hot.` is a sentence opening.
@@ -333,7 +336,7 @@ Without that qualifier, `A "Is this a test?" guide to the whole subject…` brea
 **Partly measured.** The repository corpus exercises none of these tokens, but Google Books English 2019 does; `notes/experiments/ngram.py` reproduces the figures, and the method's one real limitation is recorded at the end of this block.
 
 An entry only ever does work when the next token is capitalised or a digit, because `require_sentence_capital` already suppresses the break before a lowercase word.
-That reframes the question for every entry, from *is it also a word* to *what does it suppress that the capital rule does not already*, and it sorts the sixteen into three jobs and one mistake.
+That reframes the question for every entry, from *is it also a word* to *what does it suppress that the capital rule does not already*, and it sorts the seventeen into three jobs and one mistake.
 
 | entry | job | also a word, or sentence-final | rule |
 | --- | --- | --- | --- |
@@ -357,10 +360,10 @@ Measured, as the share of each token's top continuations that are numerals:
 | `Dr` | 0% | John, David, Johnson, J., Peter |
 
 **The index class is where a condition earns its place.**
-Each of those five precedes a number rather than a name, and three of them are also ordinary English: a `fig` is a fruit, `no` is a negation, a `sec` is a moment.
+Each of those six precedes a number rather than a name, and three of them are also ordinary English: a `fig` is a fruit, `no` is a negation, a `sec` is a moment.
 `He ate a fig.`, `The answer was no.` and `Wait a sec.` all end sentences, and all three lose that boundary if the entry is unconditional, which is what rumdl and `mdformat-sembr` both do.
 
-So those five suppress a break **only when the next segment opens with an index token**: a digit, or a run of one or more of `IVXLCDM`.
+So those six suppress a break **only when the next segment opens with an index token**: a digit, or a run of one or more of `IVXLCDM`.
 `No. 5`, `Fig. 3`, `Vol. II`, `Ch. IV` and `Vol. I` hold; `He ate a fig. Then he left.` breaks.
 
 A digit-only test would be wrong, because roman numerals are ordinary for volumes, chapters and sections and digits alone would split `Vol. II`.
@@ -369,7 +372,7 @@ Measured: `Ch` has the single letter `D` among its five commonest continuations,
 **The run is deliberately not required to be two or more characters**, although that would fix one bad case: a bare `I` is the English pronoun, so `No. I think so.` is suppressed and stays on one line.
 That is a *missed* break, and the alternative error is worse.
 Requiring two characters splits `Vol. I of the series` after `Vol.`, which severs a noun phrase and puts `I` at the head of a line — visibly wrong output rather than merely unbroken output.
-This is the same asymmetry the German abbreviation set turns on: holding a break back costs a long line, taking one that should not be taken corrupts the text.
+The asymmetry is the whole argument: holding a break back costs a long line, taking one that should not be taken corrupts the text.
 Single-letter labels outside `IVXLCDM`, such as `Sec. A`, are not covered and will break, which is the same trade taken the same way.
 
 **`vs` stays unconditional** although it too precedes a name rather than an index, because it is not an English word in any inflection and cannot end a sentence.
