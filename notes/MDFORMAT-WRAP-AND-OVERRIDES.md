@@ -287,18 +287,25 @@ An earlier pass over that search concluded that nothing proposes new wrap modes,
 **That was wrong, and the correction matters more than anything else in §5.**
 The search term was `--wrap`; the prior art is filed under *sentence*, and re-running the search on 2026-09-17 with that word returns four issues:
 
-- **#4** `Sentence-based word wrapping` — **open**, opened by hukkin, the maintainer, labelled `Enhancement`, `Plugin`, `Research`.
+**None of these four was read past its title and opening comment.**
+Everything attributed to them below is from that much and no more, so any later comment, counter-proposal, maintainer decision or linked PR in any of the four threads is unknown to this note.
+Read them before acting on this section.
+
+- **#4** `Sentence-based word wrapping` — **open**, opened by hukkin, the maintainer, labelled `Enhancement`, `Plugin`, `Research`. *Opening comment only.*
   It proposes sentence-based wrapping as an optional mode that does not change the default, and reaches for NLTK to segment sentences.
-- **#374** `Allow wrapping option of 1 sentence per line` — closed as a **duplicate** of #4.
+  Whether the NLTK dependency was later argued about, and whether the `Plugin` label reflects a settled position or an initial guess, are exactly the kind of thing the unread remainder would say.
+- **#374** `Allow wrapping option of 1 sentence per line` — closed as a **duplicate** of #4. *Title and opening comment only.*
   It asks for `--wrap sentence` as a new enum value, which is §5.4's ask verbatim.
-- **#222** `Support enforcing line breaks after 'end of sentence'` — closed.
+  Who closed it, and whether anything was said while closing it, is unread.
+- **#222** `Support enforcing line breaks after 'end of sentence'` — closed. *Title and opening comment only.*
   It asks for a flag implementing the first four rules of the Semantic Line Breaks specification, which is this plugin's scope.
-- **#422** `Word-wrap on sentence (punctuation) and width.` — closed.
+  Why it was closed is unread, and a stated reason there would bear directly on this whole section.
+- **#422** `Word-wrap on sentence (punctuation) and width.` — closed. *Title only; not opened at all.*
 
 So there is an existing thread to join and it is the maintainer's own, the `Plugin` label on it is his own triage of where this belongs, and the exact spelling §5.4 proposes has already been asked for once and folded into #4.
 Nothing found is a *rejection*: #4 is open and #374 was closed only as a duplicate.
 What changes is the shape of the ask — a comment on #4 rather than a new issue — and §5.6's split becomes the part that is genuinely new, since no issue proposes separating wrap-point production from width wrapping.
-None of the four issues was read beyond its title and opening comment, so any maintainer position further down those threads is unchecked.
+The reading limit stated above applies to every claim in this subsection.
 
 Three further open issues are adjacent and are listed only by title, without characterising them further:
 

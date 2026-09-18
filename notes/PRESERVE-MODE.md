@@ -281,8 +281,8 @@ ______________________________________________________________________
 
 1. Keep sentence-only exactly as `DESIGN.md` specifies it. Nothing on this ladder amends the specification.
 1. Reject every deleting variant: per-gap punctuation, punctuation plus break words, paragraph scoring, coverage thresholds, and coverage at exactly zero.
-1. If a preserve mode ships, ship §2: explicit opt-in, per-gap, no heuristic, documented as freezing existing breaks including accidental ones, with §6.2 extended by the two invariants in §11.
-1. Solve the agent-insertion case outside the plugin, per §10.
+1. Treat §2, add-only, as a possible future mode. If it is ever built: explicit opt-in, per-gap, no heuristic, documented as freezing existing breaks including accidental ones, with §6.2 extended by the two invariants in §11. Whether it is worth building is not a question this note settles.
+1. The agent-insertion case is not solvable inside the plugin; §10 sets out where its signal lives.
 
 ______________________________________________________________________
 
