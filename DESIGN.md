@@ -339,7 +339,7 @@ Without that qualifier, `A "Is this a test?" guide to the whole subject…` brea
 **What an abbreviation entry is actually for.**
 **Partly measured.** The repository corpus exercises none of these tokens, but Google Books English 2019 does; `notes/experiments/ngram.py` reproduces the figures, and the method's one real limitation is recorded at the end of this block.
 
-An entry only ever does work when the next token is capitalised or a digit, because `require_sentence_capital` already suppresses the break before a lowercase word.
+An entry only ever does work when the next token is capitalised or a digit, because the break before a lowercase word is suppressed already — by `require_sentence_capital` at its default, and by the conditional class's own lowercase clause whatever that option is set to.
 That reframes the question for every entry, from *is it also a word* to *what does it suppress that the capital rule does not already*, and it sorts them into three jobs and one mistake.
 
 | entry | job | also a word, or sentence-final | rule |
@@ -367,8 +367,13 @@ Measured, as the share of each token's ten commonest continuations that are nume
 Each of these precedes a number rather than a name, and three of them are also ordinary English: a `fig` is a fruit, `no` is a negation, a `sec` is a moment.
 `He ate a fig.`, `The answer was no.` and `Wait a sec.` all end sentences, and all three lose that boundary if the entry is unconditional, which is what rumdl and `mdformat-sembr` both do.
 
-So these suppress a break **only when the next segment opens with an index token**: a digit, or a run of one or more of `IVXLCDM`.
+So these suppress a break **only when the next segment opens with an index token** — a digit, or a run of one or more of `IVXLCDM` — **or with a lowercase letter**.
 `No. 5`, `Fig. 3`, `Vol. II`, `Ch. IV` and `Vol. I` hold; `He ate a fig. Then he left.` breaks.
+
+**The lowercase half is deliberately redundant with `require_sentence_capital`.**
+At the option's default the capital rule has already suppressed those breaks and the clause does nothing.
+With the option turned off it is the only thing between `Smith et al. showed that…` and a break, and likewise for `vol. iii` and `ch. iv`, whose lowercase roman numerals the index token does not admit.
+The class carries its own guard for the same reason the block-construct rule below does: a safety property a user-facing flag can switch off is not one the rest of the design can rely on.
 
 A digit-only test would be wrong, because roman numerals are ordinary for volumes, chapters and sections and digits alone would split `Vol. II`.
 Measured: `Ch` has the single letter `D` among its five commonest continuations, so single-character labels are real and not a corner case.
@@ -385,7 +390,7 @@ Single-letter labels outside `IVXLCDM`, such as `Sec. A`, are not covered and wi
 Nothing indexes anything in `Smith et al. 1990`; what follows is a citation year.
 A year is digits, so the digit half of the index test fits it exactly, and the entry is placed in this class for that reuse and for nothing more principled than that.
 Three things can follow `et al.`, and only two of them are obvious.
-Before a lowercase word — `Smith et al. showed that…` — `require_sentence_capital` already suppresses the break, so the entry changes nothing.
+Before a lowercase word — `Smith et al. showed that…` — the break is suppressed already, so the entry changes nothing.
 Before a capital — `…described by Smith et al. Then he left.` — the entry suppresses a break that should happen.
 Those two alone argue for deleting `al` outright, and the third case is why that would be wrong.
 **Every one of `et al`'s ten commonest continuations is a citation year** — 1990, 1991, 1992, 1989, 1993 lead them and no non-numeral appears among the ten at all — so a numeral is what typically follows.
@@ -509,6 +514,8 @@ Two options, both about sentence detection, both in `[plugin.sentence]` and as C
 | --- | --- | --- | --- |
 | `require_sentence_capital` | bool | `true` | `word. lowercase` is not a boundary |
 | `abbreviations` | list | `[]` | **added** to the defaults, never replacing them |
+
+Turning `require_sentence_capital` off re-arms nothing that protects the output: the conditional abbreviations and the block-construct rule both carry their own lowercase and marker guards (§3.3), so the option decides only whether `word. lowercase` is a boundary.
 
 CLI spelling is short, because mdformat namespaces only the argparse `dest` and leaves the flag text to the plugin (§2.4):
 
