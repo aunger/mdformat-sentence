@@ -346,7 +346,7 @@ That reframes the question for every entry, from *is it also a word* to *what do
 | --- | --- | --- | --- |
 | `mr mrs ms dr prof sr jr st` | precede a capitalised name | `st` only, as *Street* | unconditional |
 | `i.e e.g vs` | introduce the term that follows | no | unconditional |
-| `fig no vol ch sec al` | precede an index | `fig`, `no`, `sec` | **conditional** |
+| `fig no vol ch sec al` | precede an index, or for `al` a citation year | `fig`, `no`, `sec` | **conditional** |
 
 Measured, as the share of each token's ten commonest continuations that are numerals:
 
@@ -381,7 +381,9 @@ Single-letter labels outside `IVXLCDM`, such as `Sec. A`, are not covered and wi
 
 **`vs` stays unconditional** although it too precedes a name rather than an index, because it is not an English word in any inflection and cannot end a sentence.
 
-**`al` belongs in the index class, and the measurement is what puts it there.**
+**`al` rides the index test rather than belonging to it.**
+Nothing indexes anything in `Smith et al. 1990`; what follows is a citation year.
+A year is digits, so the digit half of the index test fits it exactly, and the entry is placed in this class for that reuse and for nothing more principled than that.
 Three things can follow `et al.`, and only two of them are obvious.
 Before a lowercase word — `Smith et al. showed that…` — `require_sentence_capital` already suppresses the break, so the entry changes nothing.
 Before a capital — `…described by Smith et al. Then he left.` — the entry suppresses a break that should happen.
@@ -390,6 +392,8 @@ Those two alone argue for deleting `al` outright, and the third case is why that
 Measure the bare token instead and the figure is 44%, because `al Qaeda` and `al dente` are not this abbreviation; the bigram is the only form that isolates it.
 Digits are sentence openings (see `require_sentence_capital` above), so the capital rule does *not* suppress before one, which makes the entry **required** for `Smith et al. 1990 showed…` and makes deleting it the wrong call.
 Conditioned on an index token it does all three correctly.
+The reuse is not free: the roman half of the test has no meaning for a citation, and a bare `I` matches it, so `…described by Smith et al. I disagree.` is suppressed.
+That is the same missed break `No. I think so.` already accepts, reached by the same route.
 
 **`st` is a known ambiguity and no rule is offered.**
 `St. Louis` and `Main St. Then he left.` both put a capital after the period, so neither the capital rule nor an index test separates them.
