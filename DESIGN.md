@@ -314,7 +314,7 @@ Use that narrow grammar rather than adding `]` to the closer set, so a bare `[1]
 | `。` `！` `？` | no | no | no |
 
 `…` skips the abbreviation check because no abbreviation ends in an ellipsis, so `moment… and then` correctly does not break while `moment… Nobody` does.
-The CJK terminators skip both checks: CJK has no case, so `require_sentence_capital` has nothing to test, and no CJK abbreviation ends in `。`.
+The CJK terminators skip both checks: a CJK opening passes the capital test anyway, and no CJK abbreviation ends in `。`.
 Their wrap point exists only where the author separated the sentences with a space, which is the only case that can be acted on.
 A bare `!` or `?` is unambiguous, but one immediately followed by a closing quote is not, because the question may belong to the quoted phrase rather than to the sentence carrying it.
 Without that qualifier, `A "Is this a test?" guide to the whole subject…` breaks after `test?"`, stranding a 19-character fragment mid-sentence.
@@ -331,9 +331,13 @@ Without that qualifier, `A "Is this a test?" guide to the whole subject…` brea
 
 - **Single capital initials** — `J. K. Rowling`.
 
-- **`require_sentence_capital`** (default true): the next sentence must open with an uppercase letter, a digit, or a CJK character.
-  Write the test as that positive list and not as *not lowercase*, which is a wider set that admits `#`, `>` and `-`; the paragraph below turns on the difference.
+- **`require_sentence_capital`** (default true): the next sentence must open with a digit, or with an alphabetic character that is not lowercase.
+  The alphabetic conjunct is load-bearing: a bare *not lowercase* is a wider set that admits `#`, `>` and `-`, and the paragraph below turns on the difference.
   Digits matter: `1976 was hot.` is a sentence opening.
+  **Writing the case half as *not lowercase* rather than as *uppercase* is what carries the caseless scripts.**
+  CJK, Arabic, Hebrew, Devanagari, Thai and Ethiopic are alphabetic and neither upper nor lower, so each passes without a clause of its own, while `a` and `ω` still fail.
+  An *uppercase* test admits only the scripts that have case, which would leave Arabic and Hebrew prose unbreakable and the option the only way out.
+  **Verified by execution.** Georgian is the known exception: Python reports `ა` as lowercase because Mtavruli exists, so Georgian fails the test and does need the option turned off.
   Opening markup is skipped first, using the opener set above.
 
 **What an abbreviation entry is actually for.**
@@ -429,7 +433,7 @@ Verified by execution against mdformat 1.0.0, with `<div>`, `<table>` and `<!-- 
 
 This rule is **unconditional and independent of `require_sentence_capital`**, and that matters.
 It is the only thing preventing a break from putting a construct at a line start where mdformat would escape it, and because this plugin has no `avoid_escapes` option (§4.1), it is the only protection there is.
-Writing the capital rule as *uppercase, digit or CJK* rather than as *not lowercase* happens to suppress the same cases, but a user who sets `require_sentence_capital = false` would otherwise re-arm all of them.
+Requiring an alphabetic character rather than merely a non-lowercase one happens to suppress the same cases, but a user who sets `require_sentence_capital = false` would otherwise re-arm all of them.
 
 **Quotation marks are language-specific.**
 Two structural rules follow, neither of them about any one language:
@@ -516,6 +520,11 @@ Two options, both about sentence detection, both in `[plugin.sentence]` and as C
 | `abbreviations` | list | `[]` | **added** to the defaults, never replacing them |
 
 Turning `require_sentence_capital` off re-arms nothing that protects the output: the conditional abbreviations and the block-construct rule both carry their own lowercase and marker guards (§3.3), so the option decides only whether `word. lowercase` is a boundary.
+
+**The option is inherited, and that is the whole of its provenance.**
+rumdl has it under the same name with the same default, and its trigger was one issue reporting that lowercase English prose did not reflow ([rvben/rumdl#514](https://github.com/rvben/rumdl/issues/514)); no argument from any language was attached to it there or here.
+It is kept because it now costs nothing, not because a need for it has been shown, and the widened test above removes the one principled use it had.
+Turning it off is not free: it makes every abbreviation absent from the default set a break site, so `Dept. of Defense` breaks after `Dept.`
 
 CLI spelling is short, because mdformat namespaces only the argparse `dest` and leaves the flag text to the plugin (§2.4):
 
