@@ -348,15 +348,15 @@ That reframes the question for every entry, from *is it also a word* to *what do
 | `i.e e.g vs` | introduce the term that follows | no | unconditional |
 | `fig no vol ch sec al` | precede an index | `fig`, `no`, `sec` | **conditional** |
 
-Measured, as the share of each token's top continuations that are numerals:
+Measured, as the share of each token's ten commonest continuations that are numerals:
 
-| token | followed by a number | top continuations |
+| token | numeral share of the top ten | commonest continuations |
 | --- | ---: | --- |
 | `et al` | **100%** | 1990, 1991, 1992, 1989, 1993 |
 | `Vol` | 100% | 1, 2, 3, II, I |
 | `Fig` | 97% | 1, 2, 3, 4, 5 |
 | `Ch` | 92% | 1, D, 3, 2, 4 |
-| `Sec` | 20% | also, Entry, of, 1 |
+| `Sec` | 20% | also, Entry, `_END_`, of, 1 |
 | `vs` | 13% | the, time, 1, a, non |
 | `fig` | 12% | **tree, trees, leaf, leaves** |
 | `No` / `no` | **0%** | one, matter, doubt / longer, one, more |
@@ -385,8 +385,9 @@ Single-letter labels outside `IVXLCDM`, such as `Sec. A`, are not covered and wi
 Three things can follow `et al.`, and only two of them are obvious.
 Before a lowercase word — `Smith et al. showed that…` — `require_sentence_capital` already suppresses the break, so the entry changes nothing.
 Before a capital — `…described by Smith et al. Then he left.` — the entry suppresses a break that should happen.
-Those two alone argue for deleting `al` outright, and that was this document's recommendation until the third case was measured.
-**`et al` is followed by a numeral 100% of the time**, and every one of its top continuations is a citation year: 1990, 1991, 1992, 1989, 1993.
+Those two alone argue for deleting `al` outright, and the third case is why that would be wrong.
+**Every one of `et al`'s ten commonest continuations is a citation year** — 1990, 1991, 1992, 1989, 1993 lead them and no non-numeral appears among the ten at all — so a numeral is what typically follows.
+Measure the bare token instead and the figure is 44%, because `al Qaeda` and `al dente` are not this abbreviation; the bigram is the only form that isolates it.
 Digits are sentence openings (see `require_sentence_capital` above), so the capital rule does *not* suppress before one, which makes the entry **required** for `Smith et al. 1990 showed…` and makes deleting it the wrong call.
 Conditioned on an index token it does all three correctly.
 
@@ -397,9 +398,13 @@ Books under-represent addresses, though, and a discriminator plausibly exists in
 Neither is implemented.
 
 **What the measurement cannot show, and why.**
+The wildcard returns only the ten commonest continuations and omits punctuation from them, so every figure above is a share of that top ten rather than of all occurrences.
+A 0% row means no numeral is among the ten, not that none ever follows, and the 100% row means every one of the ten is a year, not that a year always follows.
+`et al. showed that…` never enters the denominator.
 Google's tokenizer splits the abbreviation period off and treats it as a sentence terminator, so `Fig . 1` has a frequency of exactly zero while `Fig 1` is ordinary, and every n-gram following a period is `_END_`.
 The corpus has therefore already decided the question this section is about, and decided it wrongly for abbreviations.
 The figures above are from the period-less forms, which measure *index use versus word use* — the axis that sorts the table — and say nothing directly about how often each token ends a sentence.
+`Sec` is the one row carrying a direct signal: `_END_` is Google's sentence-end marker, so `Sec` demonstrably ends sentences, which is why the entry is conditional.
 `fig` is the clearest case the method does reach: capitalised `Fig` is 97% numerals while lowercase `fig` is 46% `tree`, so the label and the fruit separate cleanly on case, which the case-insensitive match in this design deliberately does not exploit.
 
 **None of this departs from rumdl's reasoning, only from its implementation.**
