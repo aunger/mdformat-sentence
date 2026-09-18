@@ -231,7 +231,8 @@ It cannot be a function of two adjacent segments, for the reasons in §3.3: brac
 
 ### 3.2 Masking
 
-Within a segment, blank out the spans below, preserving length so offsets stay valid.
+Within a segment, find the spans below and discard them, then count what is left: masking yields a number per segment, not a string.
+The number is that segment's bracket delta over the unmasked remainder, `[` and `(` counting +1 and `]` and `)` counting -1.
 The patterns, verified by execution against the eleven forms below the block:
 
 ```
@@ -244,7 +245,7 @@ autolink / raw HTML  (?<!\\)<(?:[/!?]?[A-Za-z][^<>]*
 ```
 
 The two link patterns are written on one line each; the first is split above only to fit the page.
-The eleven forms they were checked against are `[t](u)`, `![t](u)`, `[![t](u)](v)`, `[![t](u)][r]`, `[t](u/a_(b))`, `[t](u "title")`, `[t][r]`, `[t]`, `[a [b] c](u)`, two links in one segment, and `` `code` ``; each masks to a bracket-balanced segment, which is the only property the depth counter needs.
+The eleven forms they were checked against are `[t](u)`, `![t](u)`, `[![t](u)](v)`, `[![t](u)][r]`, `[t](u/a_(b))`, `[t](u "title")`, `[t][r]`, `[t]`, `[a [b] c](u)`, two links in one segment, and `` `code` ``; each masks away completely and so contributes a delta of zero, which is the only property the depth counter needs.
 
 Masking has exactly one consumer here: bracket-depth counting (§3.3), where an unmasked `)` inside a URL drives depth negative and corrupts every later gap in the section.
 The two link patterns start at the opening `[`, not at the `]`, and that is load-bearing rather than cosmetic: masking only `](dest)` leaves the link's `[` counted with nothing left to close it, so depth never returns to zero and every gap after the first link in a section is wrongly held to be inside brackets.
@@ -253,8 +254,17 @@ The link-text part admits one level of nested brackets, and that is not decorati
 **Depth is also clamped at zero.**
 No masking rule is going to catch every construct, and a counter that can go negative turns one missed atom into a wrong answer for the rest of the section, whereas a clamped one loses only the segment it missed.
 
-It does not feed sentence detection, because §3.3's closer set already excludes backtick, `)` and `]`, so a terminator inside a code span or a link destination fails the terminator test unmasked.
-Whether masking must therefore preserve length is undecided: a count per segment would serve a depth counter, but the length-preserving form is what is specified above.
+Masking does not feed sentence detection, because §3.3's closer set already excludes backtick, `)` and `]`, so a terminator inside a code span or a link destination fails the terminator test unmasked.
+The autolink and raw-HTML pattern needs no equivalent argument: its terminator is an ASCII `>`, and the closer set's guillemets are `»` and `›`.
+
+**Masking therefore does not preserve length, and nothing asks it to**, because no rule reads a position inside a masked segment.
+Every other rule in §3.3 reads the *raw* segment: the terminator test by the sentence above, the capital rule by skipping the opener set, which carries `[`, `(` and backslash for exactly this reason, and the block-construct rule because `<div>` and `<table>` match the raw-HTML pattern above — a masked reading would blank away the one guard `is_md_equal` cannot replace.
+§3.6 is the only other candidate and it indexes the *i*th run of `\x00` in the input, an ordinal rather than an offset.
+Choosing a fill character was the latent hazard here: a space would have changed §3.5's edge-safety verdict for every segment whose first or last span is a link or a code span, and the number form makes that unrepresentable.
+
+**The clamp applies to the running total once per segment** — `depth = max(0, depth + delta)` — and not after each bracket character.
+The two readings genuinely differ: at carry-in zero a segment containing `)(` leaves depth at 1 per character and 0 per segment.
+Per segment is the one that matches where the counter is read, since depth is consulted only at a gap, and it is also the only reading a single number per segment can express; per character would need two, the net and the minimum prefix sum.
 
 ### 3.3 Sentence detection
 
@@ -425,7 +435,7 @@ Two structural rules follow, neither of them about any one language:
   This is the rule that keeps `Il a dit. « Ceci est important. »` breaking after `dit.`: the lone `«` follows no terminator, so it is opening markup and the capital test moves on to `Ceci`.
 
 **No boundary inside brackets.**
-Depth counts `[` as well as `(`, accumulated across the section over masked segments.
+Depth counts `[` as well as `(`, as §3.2's per-segment deltas accumulated across the section and clamped at zero after each.
 A citation like `[@Smith2020, p. 12-14]` is prose brackets and its `p.` is not a sentence end; without the guard it splits.
 The discriminator between prose brackets and link syntax is the seam itself: mdformat collapses wrap points inside a link, so a *complete* bracket group within one segment is link syntax, while a group arriving in pieces across segments is prose.
 
