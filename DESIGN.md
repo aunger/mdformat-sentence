@@ -337,7 +337,9 @@ Without that qualifier, `A "Is this a test?" guide to the whole subject…` brea
   **Writing the case half as *not lowercase* rather than as *uppercase* is what carries the caseless scripts.**
   CJK, Arabic, Hebrew, Devanagari, Thai and Ethiopic are alphabetic and neither upper nor lower, so each passes without a clause of its own, while `a` and `ω` still fail.
   An *uppercase* test admits only the scripts that have case, which would leave Arabic and Hebrew prose unbreakable and the option the only way out.
-  **Verified by execution.** Georgian is the known exception: Python reports `ა` as lowercase because Mtavruli exists, so Georgian fails the test and does need the option turned off.
+  Georgian needs one carve-out, because Python reports `ა` as lowercase where the Mtavruli capitals exist: treat `U+10D0..U+10FA` and `U+10FD..U+10FF` as not lowercase.
+  UAX #29 writes the same two ranges into its own `Lower` property for the same reason, so this is the standard's answer and not an invention here.
+  **Verified by execution**, both the script coverage and the carve-out: it moves Georgian and nothing else.
   Opening markup is skipped first, using the opener set above.
 
 **What an abbreviation entry is actually for.**
