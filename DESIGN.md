@@ -224,7 +224,8 @@ Three things about that loop carry the whole design.
 
 **Segments are the atoms and gaps are the only legal break positions.**
 No other position is ever a break.
-An authored soft line break is not one of them either: `text()` turns it into a wrap point like any other space (§2.2), so it arrives here as a gap and not as a section boundary, which is why §2.5 says a hand-broken paragraph leaves broken at sentences only.
+An authored soft line break is not one of them either: `text()` turns it into a wrap point like any other space (§2.2), so it arrives here as a gap and not as a section boundary.
+`node.children` still marks it as a `softbreak`, so keeping it is mechanically possible; this design declines to (§2.5), and `notes/PRESERVE-MODE.md` records the alternatives and why an opt-in add-only mode is the one that survives.
 
 **`scan` also reads the node, for type and nothing else.**
 It walks `node.children`, renders each through `child.render(context)` and accumulates lengths, which gives the start offset and type of every child in `inline_text`; the sum equals `len(inline_text)` exactly, and a mismatch is a §3.6 failure.
@@ -1156,4 +1157,5 @@ Panache is MIT and is a working implementation of this same cascade, so its expe
 The first is the strongest block-construct test available and it is the one this list previously omitted altogether.
 Both of its gaps matter and in opposite directions: the gap before `1.` must not break, because that puts an enumerator at line start where `paragraph()` escapes it to `1\.`, and the gap after `1.` must break, which leaves the marker at the end of a line where it is harmless.
 The escape is the enumerator's remedy as the four-space indent is the HTML opener's (§3.3), and like the indent it is invisible to `is_md_equal`, which reads `1\.` as the `1.` it renders to.
-The second, third and fourth record a real cost rather than a pass: an authored soft break reaches this seam as an ordinary wrap point (§3.1), so under `--wrap no` it is gone before the plugin runs, and only a hard break survives as a section boundary.
+The second, third and fourth record a deliberate difference rather than a pass: an authored soft break reaches this seam as an ordinary wrap point (§3.1), and although `node.children` still marks it, this design does not keep it, so only a hard break survives as a section boundary.
+All three would pass under the add-only mode `notes/PRESERVE-MODE.md` describes, which this specification does not adopt.
