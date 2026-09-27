@@ -801,7 +801,7 @@ The table is compiled once and cached, keyed on the config file it came from, it
 A file whose `schema` this version does not recognize is a load error naming the one it does, so a future incompatible format is refused rather than half-read into rules that look plausible.
 
 **There is no `language` key**, because nothing would read it.
-Case folding is per-pattern (§3.3), quote direction is decided by what a mark follows rather than by which language wrote it, and the terminators are a Unicode property, so no check left in this design takes a language.
+Case folding is per-pattern (§3.3), quote direction is decided by a mark's glyph or by what it follows rather than by which language wrote it, and the terminators are a Unicode property, so no check left in this design takes a language.
 What a set is for belongs in a comment at the top of it and in its filename, where a reader sees it and no one expects it to do anything.
 
 **What an `include` entry names, and where a path starts from.**
