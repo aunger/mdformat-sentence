@@ -91,6 +91,7 @@ So a plugin at this seam turns selected `WRAP_POINT`s into `\n`, and §3.4 narro
 Guard: return unchanged unless `node.parent is not None and node.parent.type == "paragraph"`.
 An inline node's parent is the block that owns it, so the test is exact rather than heuristic.
 No inline node with a null parent is reachable in mdformat 1.0.0, so the first conjunct is defensive, and it is how `mdformat-gfm` writes the same guard.
+A second early return follows §2.5's warning check: a text with no `WRAP_POINT` has no gap to decide, which is every paragraph under `--wrap keep`, so it too is returned unchanged before any segmentation or walk of the node.
 
 Why this seam and no other:
 
@@ -209,9 +210,10 @@ Normative.
 ### 3.1 Segmentation
 
 ```
+atoms = walk(node)                                # once per inline node: child offsets and types
 for each section in inline_text.split("\n"):     # hard breaks; newlines inside inline HTML
     segs  = re.split(r"\x00+", section)
-    state = scan(segs)                            # §3.3's cross-segment facts
+    state = scan(segs, atoms)                     # §3.3's cross-segment facts
     emit  = [segs[0]]
     for i in range(len(segs) - 1):
         emit.append("\n" if is_sentence_break(segs, i, state) else " ")
@@ -227,8 +229,9 @@ No other position is ever a break.
 An authored soft line break is not one of them either: `text()` turns it into a wrap point like any other space (§2.2), so it arrives here as a gap and not as a section boundary.
 `node.children` still marks it as a `softbreak`, so keeping it is mechanically possible; this design declines to (§2.5), and `notes/PRESERVE-MODE.md` records the alternatives and why an opt-in add-only mode is the one that survives.
 
-**`scan` also reads the node, for type and nothing else.**
-It walks `node.children`, renders each through `child.render(context)` and accumulates lengths, which gives the start offset and type of every child in `inline_text`; the sum equals `len(inline_text)` exactly, and a mismatch is a §3.6 failure.
+**The node is read once, for type and nothing else.**
+Before the section loop, `walk` renders each of `node.children` through `child.render(context)` and accumulates lengths, which gives the start offset and type of every child in `inline_text`; the sum equals `len(inline_text)` exactly, and a mismatch is a §3.6 failure.
+Each section's `scan` reads the offsets that fall inside it, so a paragraph with hard breaks is still rendered once, not once per section.
 That is what §3.3's opaque-atom check reads, since whether a segment begins a code span, an image or an autolink is a fact about a node rather than about text.
 Child offsets add type information at existing positions and never add a position.
 mdformat has already collapsed each link, image and code span into a single segment with literal interior spaces, so punctuation cannot detach from its token — `Lorem (ipsum sit). Dolor amet.` segments as `['Lorem', '(ipsum', 'sit).', 'Dolor', 'amet.']` and `sit).` is one atom.
@@ -792,6 +795,7 @@ That is the whole of the question, and an empty array answers it in the one way 
 So a file overrides an inherited rule by writing a later one that matches the same token, without knowing or repeating how the earlier one was expressed, and removes a rule by writing `break = 'allow'` for what it matched.
 Several bases compose through the array and only through it, because TOML forbids a duplicate key and a second `include` line is a parse error rather than a second base.
 A name that is not a shipped set is a load error, as is a cycle, and both resolve before any pattern compiles.
+The table is compiled once and cached, keyed on the config file it came from, its `[plugin.sentence]` table and `cli_include`, and never rebuilt per paragraph, since the hook runs for every paragraph and twice under `--wrap no` (§2.3).
 
 **`schema` is the format version, and the loader checks it.**
 A file whose `schema` this version does not recognize is a load error naming the one it does, so a future incompatible format is refused rather than half-read into rules that look plausible.
