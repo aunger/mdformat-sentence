@@ -10,8 +10,9 @@ can re-run them rather than take them on trust.
 | --- | --- |
 | `PRESERVE-MODE.md` | Why the plugin does not try to preserve an author's existing line breaks. The longest-running open question about this design, answered. |
 | `MDFORMAT-WRAP-AND-OVERRIDES.md` | Where mdformat reads `wrap`, what a plugin can see and override about it, and what `--wrap sentence` would cost upstream. A reference for whoever later decides whether to patch, to ask, or how to implement §2.5's warning. |
+| `QUOTE-ROLES.md` | Which quotation marks always open or always close, in any language. Only the CJK marks do, which is why §3.3 reads them and the guillemets by glyph and every other lone mark by what precedes it. |
 | `corpus/` | The one corpus that gives honest answers about layout heuristics, and why. |
-| `experiments/` | Eighteen short programs. Nine need mdformat and nine are stdlib only, two of which need the network. |
+| `experiments/` | Twenty short programs. Nine need mdformat and eleven are stdlib only, three of which need the network. |
 
 ## Running them
 
@@ -43,6 +44,8 @@ to it.
 | `wrapsplit.py` | yes | Simulates splitting `do_wrap` into "produce wrap points" and "width-wrap". Under `--wrap keep` the plugin works, mdformat adds no geometric wrapping, and links survive as atoms. The feasibility check behind §5.6 of the wrap note. |
 | `wraparg.py` | yes | `wrap` as an *argument* rather than at the seam. The CLI and TOML validators are separate code and disagree; `--wrap sentence` is rejected at argument parsing today; and a renderer warning reaches stderr through `logging.lastResort` even with no handler attached, once per paragraph. |
 | `ngram.py` | no (network) | For each abbreviation, the share of its top Google Books continuations that are numerals. `et al` 100%, `Vol` 100%, `Fig` 97%, `No`/`no` 0%. The evidence behind §3.3's abbreviation classes. Needs outbound HTTPS. |
+| `lonemark.py` | no | §3.3's lone-mark rules, simulated. Eleven quotation-mark fixtures hold; one lone mark's role moves only the mark over 64 readings of seventeen texts; two side by side move breaks. |
+| `cldrquotes.py` | no (network) | Each quotation mark's roles across CLDR 48.2's 766 locales. Only the corner brackets and the low marks `„` `‚` have one role there, and `《` `》` `〈` `〉` `‟` `‛` have none. Needs outbound HTTPS. |
 | `lic.py` | no (network) | Every plugin in mdformat's curated list is MIT, and so is mdformat. Needs outbound HTTPS; a package it cannot fetch is reported as not clearly MIT rather than skipped. |
 
 The programs are throwaway quality on purpose. They exist to produce a number
