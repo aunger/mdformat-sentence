@@ -34,7 +34,7 @@ for member in tgz.getmembers():
     locales += 1
     (loc, body), = json.load(tgz.extractfile(member))["main"].items()
     for field, role in FIELDS.items():
-        for ch in body["delimiters"].get(field, ""):
+        for ch in body["delimiters"][field]:
             roles[ch][role].add(loc)
 
 print(f"cldr-misc-full 48.2.0: {locales} locales\n")

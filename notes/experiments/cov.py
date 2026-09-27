@@ -1,5 +1,5 @@
 import re
-SENT = re.compile(r'[.!?](?:["\'’”])?$')
+SENT = re.compile(r'[.!?]["\'’”]?$')
 
 def coverage(lines):
     words, breaks = [], set()

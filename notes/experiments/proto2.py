@@ -1,5 +1,5 @@
 import re, types, mdformat, mdformat.plugins as P
-SENT = re.compile(r'[.!?](?:["\'’”])?$')
+SENT = re.compile(r'[.!?]["\'’”]?$')
 CLAUSE = re.compile(r'[,;:—]$')          # rule 5's own punctuation
 
 def make(mode):
@@ -13,8 +13,7 @@ def make(mode):
         for m in re.finditer(r'\x00+', text):
             seg = text[i:m.start()]; out.append(seg)
             at = m.start() in author
-            keep = bool(SENT.search(seg)) or (
-                at if mode == "add-only" else (at and bool(CLAUSE.search(seg))))
+            keep = SENT.search(seg) or (at and (mode == "add-only" or CLAUSE.search(seg)))
             out.append("\n" if keep else " "); i = m.end()
         out.append(text[i:]); return "".join(out)
     return types.SimpleNamespace(CHANGES_AST=False, RENDERERS={},

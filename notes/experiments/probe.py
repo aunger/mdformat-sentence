@@ -1,4 +1,4 @@
-import re, types, mdformat, mdformat.plugins as P
+import types, mdformat, mdformat.plugins as P
 from mdformat.renderer import WRAP_POINT
 
 seen = []

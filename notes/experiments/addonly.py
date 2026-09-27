@@ -1,5 +1,4 @@
 import types, mdformat, mdformat.plugins as P
-from mdformat.renderer import WRAP_POINT
 
 calls = []
 def inline_pp(text, node, context):

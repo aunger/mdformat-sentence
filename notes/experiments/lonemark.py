@@ -24,37 +24,37 @@ It establishes four things:
 """
 import itertools
 import re
+import sys
 import unicodedata
 
 TERMINATORS = set(".!?。！？")
 CLOSERS = set("\"'’”»›«‹“‘‟‛„」』》〉*_~")
 OPENERS = set("\"'“‘‟‛«‹»›¿¡„‚「『《〈*_~[(\\")
-NBSP = {chr(c) for c in range(0x3000) if unicodedata.category(chr(c)) == "Zs" and c != 0x20}
+NBSP = {chr(c) for c in range(sys.maxunicode + 1) if unicodedata.category(chr(c)) == "Zs"} - {" "}
 GLYPH_OPEN = set("«‹「『《〈")
 GLYPH_CLOSE = set("»›」』》〉")
+TAIL = "".join(CLOSERS | NBSP)  # skipped by the sentence-end test
+HEAD = "".join(OPENERS | NBSP)  # skipped by the capital test
+LONE = TAIL + HEAD
 
 
 def is_lone(seg):
-    return bool(seg) and all(c in CLOSERS | OPENERS | NBSP for c in seg)
+    return bool(seg) and not seg.strip(LONE)
 
 
 def ends_sentence(seg):
-    i = len(seg) - 1
-    while i >= 0 and (seg[i] in CLOSERS or seg[i] in NBSP):
-        i -= 1
-    return i >= 0 and seg[i] in TERMINATORS
+    return seg.rstrip(TAIL)[-1:] in TERMINATORS
 
 
 def opens_sentence(seg):
     """True or False for the first testable character; None if there is none."""
-    for ch in seg:
-        if ch in OPENERS or ch in NBSP:
-            continue
-        return ch.isdigit() or (ch.isalpha() and not ch.islower())
-    return None
+    ch = seg.lstrip(HEAD)[:1]
+    if not ch:
+        return None
+    return ch.isdigit() or (ch.isalpha() and not ch.islower())
 
 
-def spec_roles(segs, glyph_open=GLYPH_OPEN, glyph_close=GLYPH_CLOSE):
+def spec_roles(segs, glyph_open=GLYPH_OPEN):
     """§3.3: CJK marks and guillemets by glyph, every other lone mark by what precedes it."""
     roles = {}
     for i, s in enumerate(segs):
@@ -62,7 +62,7 @@ def spec_roles(segs, glyph_open=GLYPH_OPEN, glyph_close=GLYPH_CLOSE):
             continue
         if s[0] in glyph_open:
             roles[i] = "open"
-        elif s[0] in glyph_close:
+        elif s[0] in GLYPH_CLOSE:
             roles[i] = "close"
         else:
             roles[i] = "close" if i > 0 and ends_sentence(segs[i - 1]) else "open"
@@ -79,15 +79,9 @@ def emit(segs, roles):
         k = i  # the terminator test looks back past every closing mark
         while k > 0 and roles.get(k) == "close":
             k -= 1
-        term = ends_sentence(segs[k])
-        j, cap = i + 1, None  # an opening mark defers the capital test
-        while j < len(segs):
-            if roles.get(j) == "open":
-                j += 1
-                continue
-            cap = opens_sentence(segs[j])
-            break
-        out.append(("\n" if term and cap else " ") + right)
+        breaks = ends_sentence(segs[k]) and next(  # an opening mark defers the capital test
+            (opens_sentence(s) for j, s in enumerate(segs[i + 1:], i + 1) if roles.get(j) != "open"), None)
+        out.append(("\n" if breaks else " ") + right)
     return "".join(out)
 
 
@@ -95,12 +89,12 @@ def split(text):
     return re.split(r" +", text)
 
 
-def run(text, **glyphs):
+def run(text, glyph_open=GLYPH_OPEN):
     segs = split(text)
-    return emit(segs, spec_roles(segs, **glyphs))
+    return emit(segs, spec_roles(segs, glyph_open))
 
 
-def show(label, text, got, want):
+def show(label, got, want):
     ok = "ok  " if got == want else "FAIL"
     print(f"{ok} {label}")
     for line in got.split("\n"):
@@ -136,7 +130,7 @@ FIXTURES = [
     ("nested quotes, spaced", "Il a dit. « “ Oui. ” » Puis il part.",
      "Il a dit.\n« “ Oui. ” »\nPuis il part."),
 ]
-passed = sum(show(label, t, run(t), want) for label, t, want in FIXTURES)
+passed = sum(show(label, run(t), want) for label, t, want in FIXTURES)
 print(f"\n{passed} of {len(FIXTURES)} fixtures hold\n")
 
 
@@ -144,11 +138,10 @@ def layouts(text):
     """The distinct word layouts over every open/close reading of the lone marks."""
     segs = split(text)
     idx = [i for i, s in enumerate(segs) if is_lone(s)]
-    seen = {}
+    seen = set()
     for reading in itertools.product(("open", "close"), repeat=len(idx)):
         out = emit(segs, dict(zip(idx, reading)))
-        words = tuple(" ".join(w for w in ln.split() if not is_lone(w)) for ln in out.split("\n"))
-        seen.setdefault(words, reading)
+        seen.add(tuple(" ".join(w for w in ln.split() if not is_lone(w)) for ln in out.split("\n")))
     return seen, 2 ** len(idx)
 
 
