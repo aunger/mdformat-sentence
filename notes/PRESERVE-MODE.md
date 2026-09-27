@@ -51,6 +51,18 @@ Measured: a paragraph hard-wrapped at 62 columns keeps all of those breaks forev
 
 **Status.** Survives, and remains the only survivor. Everything below is an attempt to fix its one real defect, the monotone accretion of junk.
 
+**What it would add, in three borrowed tests.**
+Panache's semantic-wrap suite (`crates/panache-formatter/tests/format/semantic_wrap.rs`, MIT) has three tests that pass under add-only and fail under the sentence-only design `DESIGN.md` specifies.
+Each turns on a line break the author typed mid-paragraph, which sentence-only turns into a space.
+
+| Panache test | input | add-only, as Panache expects | sentence-only, as specified |
+| --- | --- | --- | --- |
+| `adds_sentence_breaks_and_preserves_existing_breaks` | `First sentence ends here. A question asks:` + newline + `then it continues.` | break after `here.`, and the authored break after `asks:` stays | `First sentence ends here.` + newline + `A question asks: then it continues.` |
+| `preserves_authored_clause_break_after_comma` | `First clause,` + newline + `second clause. Next sentence. Done.` | the authored break after `clause,` stays | `First clause, second clause.` + newline + `Next sentence.` + newline + `Done.` |
+| `abbreviations_do_not_trigger_breaks` | `We use tools, e.g. the parser,` + newline + `and more. End.` | `e.g.` joins, and the authored break after `parser,` stays | `We use tools, e.g. the parser, and more.` + newline + `End.` |
+
+They are recorded here rather than in `DESIGN.md` §6.4 because they test a mode the specification does not adopt; if add-only is ever built, they are its first fixtures.
+
 ______________________________________________________________________
 
 ## 3. Idea: preserve only breaks at clause punctuation

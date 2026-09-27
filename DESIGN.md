@@ -38,7 +38,7 @@ The plugin serves any Markdown whose author wants one sentence per line, and res
 Only the shipped *default rule set* is narrow: it is tuned for English prose of the kind this repository and its corpus are made of, because that is what there was to measure against (§3.3).
 An audience whose abbreviations differ does not need a different plugin, it needs a different rules file, and §4 ships a second one for academic prose.
 
-The whole configuration surface is one option and one rules file, both about sentence *detection* (§4).
+The whole configuration surface is one option and a set of rules beside it, both about sentence *detection* (§4).
 
 ## 2. Name, packaging and the seam
 
@@ -91,6 +91,7 @@ So a plugin at this seam turns selected `WRAP_POINT`s into `\n`, and §3.4 narro
 Guard: return unchanged unless `node.parent is not None and node.parent.type == "paragraph"`.
 An inline node's parent is the block that owns it, so the test is exact rather than heuristic.
 No inline node with a null parent is reachable in mdformat 1.0.0, so the first conjunct is defensive, and it is how `mdformat-gfm` writes the same guard.
+A second early return follows §2.5's warning check: a text with no `WRAP_POINT` has no gap to decide, which is every paragraph under `--wrap keep`, so it too is returned unchanged before any segmentation or walk of the node.
 
 Why this seam and no other:
 
@@ -209,9 +210,10 @@ Normative.
 ### 3.1 Segmentation
 
 ```
+atoms = walk(node)                                # once per inline node: child offsets and types
 for each section in inline_text.split("\n"):     # hard breaks; newlines inside inline HTML
     segs  = re.split(r"\x00+", section)
-    state = scan(segs)                            # §3.3's cross-segment facts
+    state = scan(segs, atoms)                     # §3.3's cross-segment facts
     emit  = [segs[0]]
     for i in range(len(segs) - 1):
         emit.append("\n" if is_sentence_break(segs, i, state) else " ")
@@ -224,10 +226,12 @@ Three things about that loop carry the whole design.
 
 **Segments are the atoms and gaps are the only legal break positions.**
 No other position is ever a break.
-An authored soft line break is not one of them either: `text()` turns it into a wrap point like any other space (§2.2), so it arrives here as a gap and not as a section boundary, which is why §2.5 says a hand-broken paragraph leaves broken at sentences only.
+An authored soft line break is not one of them either: `text()` turns it into a wrap point like any other space (§2.2), so it arrives here as a gap and not as a section boundary.
+`node.children` still marks it as a `softbreak`, so keeping it is mechanically possible; this design declines to (§2.5), and `notes/PRESERVE-MODE.md` records the alternatives and why an opt-in add-only mode is the one that survives.
 
-**`scan` also reads the node, for type and nothing else.**
-It walks `node.children`, renders each through `child.render(context)` and accumulates lengths, which gives the start offset and type of every child in `inline_text`; the sum equals `len(inline_text)` exactly, and a mismatch is a §3.6 failure.
+**The node is read once, for type and nothing else.**
+Before the section loop, `walk` renders each of `node.children` through `child.render(context)` and accumulates lengths, which gives the start offset and type of every child in `inline_text`; the sum equals `len(inline_text)` exactly, and a mismatch is a §3.6 failure.
+Each section's `scan` reads the offsets that fall inside it, so a paragraph with hard breaks is still rendered once, not once per section.
 That is what §3.3's opaque-atom check reads, since whether a segment begins a code span, an image or an autolink is a fact about a node rather than about text.
 Child offsets add type information at existing positions and never add a position.
 mdformat has already collapsed each link, image and code span into a single segment with literal interior spaces, so punctuation cannot detach from its token — `Lorem (ipsum sit). Dolor amet.` segments as `['Lorem', '(ipsum', 'sit).', 'Dolor', 'amet.']` and `sit).` is one atom.
@@ -238,7 +242,7 @@ A literal space is carried through `textwrap` as a preserved character and resto
 That single decision is what makes the output width-independent, and it is why this plugin emits no `\x00` at all.
 
 **`is_sentence_break` sees the whole segment list.**
-It cannot be a function of two adjacent segments, for the reasons in §3.3: bracket depth accumulates from the start of the section, the French closer rule looks one segment back, and the opener rule defers forward.
+It cannot be a function of two adjacent segments, for the reasons in §3.3: bracket depth accumulates from the start of the section, the closer rule looks back past closing marks, and the opener rule defers forward.
 `scan` computes those once per section.
 
 ### 3.2 Masking
@@ -269,7 +273,7 @@ The link-text part admits one level of nested brackets, and that is not decorati
 No masking rule is going to catch every construct, and a counter that can go negative turns one missed atom into a wrong answer for the rest of the section, whereas a clamped one loses only the segment it missed.
 
 Masking does not feed sentence detection, because §3.3's closer set already excludes backtick, `)` and `]`, so a terminator inside a code span or a link destination fails the terminator test unmasked.
-The autolink and raw-HTML pattern needs no equivalent argument: its terminator is an ASCII `>`, and the closer set's guillemets are `»` and `›`.
+The autolink and raw-HTML pattern needs no equivalent argument: its terminator is an ASCII `>`, and the closer set's angle marks, the four guillemets and `》` `〉`, are other codepoints.
 
 **Masking does not preserve length**, because no rule reads a position inside a masked segment.
 Every other rule in §3.3 reads the *raw* segment: the terminator test by the sentence above, the capital rule by skipping the opener set, which carries `[`, `(` and backslash for exactly this reason, and the block-construct rule because `<div>` and `<table>` match the raw-HTML pattern above — a masked reading would blank away the one guard `is_md_equal` cannot replace.
@@ -287,8 +291,8 @@ This is the entire substance of the plugin.
 
 ```
 terminators  UAX #29 STerm ∪ ATerm, 170 codepoints
-closers      " ' ’ ” » › « ‹ “ ‘      plus  * _ ~
-openers      " ' “ ‘ « ‹ » › ¿ ¡ „ ‚  plus  * _ ~ [ ( \
+closers      " ' ’ ” » › « ‹ “ ‘ ‟ ‛ „ 」 』 》 〉    plus  * _ ~
+openers      " ' “ ‘ ‟ ‛ « ‹ » › ¿ ¡ „ ‚ 「 『 《 〈  plus  * _ ~ [ ( \
 ```
 
 **The terminators are a Unicode property rather than a list.**
@@ -305,11 +309,25 @@ One case is out of reach rather than decided.
 `Close` is 195 codepoints and contains every bracket, so adopting it re-arms all three of the cases below, and the set here is not even a subset of it, since `*`, `_` and `~` are `Other`.
 It is a purpose-built set instead: the marks that can follow a terminator *and still leave the sentence ended*.
 
+**No-break spaces are transparent to every scan in this section.**
+mdformat makes a wrap point only of an ordinary space, a tab or a newline (§2.2), so a no-break space stays inside its segment.
+French typeset as its typography prescribes therefore arrives with `«`, a no-break space and `Ceci` as one segment, and `important.`, a no-break space and `»` as another.
+Wherever this section skips closers or openers, it skips no-break spaces too: in the sentence-end test, in the capital test's opener scan, in deciding whether a segment is only quotation marks, and in stripping `at`.
+A no-break space here means any Unicode `Zs` character other than U+0020, which is exactly the set of horizontal spaces mdformat never breaks at.
+Without this, a sentence ending in a no-break space and `»` is never found, and one opening with `«` and a no-break space never passes the capital test, so correctly typeset French gets no breaks at all.
+
 `“` and `‘` are in both sets deliberately: they open in English and close in German.
+The rare `‟` and `‛` are in both for the same kind of reason: they open Greek nested quotations and some Polish and Russian ones, and German transcriptions sometimes close with them, `„Darf ich?‟ Sie lachte.`
+So is `„`, which opens in German, Polish and many other languages and closed quotations in older Italian books, `villaggio.„ Quegli`.
+Its single low twin `‚` is an opener only, because it is nearly indistinguishable from a comma, and a comma must stay out of the closer set (below).
 So are the guillemets, and for the same reason: French and Swiss German write «…» while German and Austrian usage reverses them to »…«, so each of the four marks both opens and closes depending on the language.
 Leaving `«` out of the closers is what would silently drop every sentence end in `»Ist das ein Test?« Dann ging er.`
+The CJK marks are the exception, and each sits in one set only: `「` `『` `《` `〈` open and `」` `』` `》` `〉` close.
+The corner brackets hold those roles in every CLDR 48.2 locale that quotes with them; CLDR lists no locale quoting with the angle brackets, which Chinese uses for titles; and a search made to find a reversed use of any of the eight found none.
+`notes/experiments/cldrquotes.py` reproduces the CLDR half, and `notes/QUOTE-ROLES.md` records the search.
+Unicode's general category is no guide to this: it files the low marks `„` and `‚` as opening punctuation too, and they do not always open, as the lone-mark rule below shows.
 Inside a segment the overlap costs nothing, because a closer is tested after a terminator and an opener before a capital, and neither test is reached from the position the other is asked about.
-**A mark standing alone as its own segment is the one place where it does cost something, and set membership must not decide it there** — see the two structural rules below, which decide by what precedes the mark instead.
+**A mark standing alone as its own segment is the one place where it does cost something, and membership in both sets cannot decide it there**; the structural rules below decide it, by glyph where that is safe and otherwise by what precedes the mark.
 
 **Clause punctuation is not a closer, and that is what handles `e.g.,`**
 A terminator followed by `,` `;` or `:` is not a sentence end, because the test scans back over *closers* only and none of those three is one, so the scan meets a character that is neither closer nor terminator and fails.
@@ -621,13 +639,33 @@ Requiring an alphabetic character rather than merely a non-lowercase one happens
 **Quotation marks are language-specific.**
 Two structural rules follow, neither of them about any one language:
 
-- A segment consisting only of quotation or markup characters is read as *closing* when the segment before it ends in a terminator, and as *opening* otherwise.
-  Membership in the two sets above cannot decide it, because every guillemet and both of `“` `‘` are in both sets; what the mark is doing is determined by what it follows, not by which language wrote it.
-- A segment read as closing is never a break candidate, and when the segment to the left is such a mark, the terminator test looks one segment further back.
+- A segment consisting only of quotation or markup characters is a *lone mark*, and two kinds of lone mark take their role from their glyph.
+  The CJK marks do, because they never change direction: `「` `『` `《` `〈` open and `」` `』` `》` `〉` close.
+  A lone guillemet does too, read the French way: `«` and `‹` open, `»` and `›` close.
+  French is the one convention that spaces guillemets off their words, so a lone guillemet is almost always French, while German `»Text«` and Finnish `»teksti»` touch their words, where position decides and direction never matters.
+  One French usage points the other way: an older tradition, which Canada's Bureau de la traduction still describes, opens each continuation paragraph of a long quotation with `»`.
+  It costs nothing, because that mark opens a paragraph, and with no segment before it either reading leaves it on the first line with the words after it.
+  Counting open quotations would be the language-free alternative, and it fails on ordinary French: a quotation can close in a paragraph it did not open in, as dialogue does when `«` opens the exchange, a dash marks each reply, and `»` closes it at the end.
+  Every other lone mark, a straight quote, `“` `”` `‘` `’` `‟` `‛`, or a low `„` `‚`, keeps the older rule: closing when the segment before it ends in a terminator, opening otherwise.
+  The low marks look like openers and are not reliably so: Italian books of about 1860 to 1920 closed quotations with `„`, spaced off in print, as in De Amicis's `degli “ umiliati del villaggio. „ Quegli era un avvocato`, which the older rule reads correctly and a glyph reading would push onto the next line.
+  Transcriptions attach the mark instead, `villaggio.„ Quegli`, and that form needs no rule of its own, because `„` is a closer.
+- A segment read as closing is never a break candidate, and when the segment to the left is such a mark, the terminator test looks back past it and any closing marks before it.
   French spaces its closer off — `« Ceci est important. »` — which puts the closer in a segment of its own and breaks the naive rule twice, once by orphaning the mark onto the next line and once by failing to see the terminator.
+  That happens only when the space typed is an ordinary one; with the no-break space French typography prescribes, the mark stays in its word's segment and the no-break-space rule above handles it.
 - A segment read as *opening* defers the capital test to the next segment rather than failing it.
   Returning "no opener found" is not the same as "no sentence opens here".
-  This is the rule that keeps `Il a dit. « Ceci est important. »` breaking after `dit.`: the lone `«` follows no terminator, so it is opening markup and the capital test moves on to `Ceci`.
+  This is the rule that keeps `Il a dit. « Ceci est important. »` breaking after `dit.`: the lone `«` opens by its glyph, so the capital test moves on to `Ceci`.
+
+**One lone mark's role decides which line it lands on, never whether a break happens.**
+Verified by simulation over seventeen texts with a lone mark between two words, in French, German, Finnish, English, Italian, Japanese and Chinese: every combination of readings, 64 in all, puts the same words on each line, and only the marks move.
+So a wrong reading of one mark costs a quotation mark stranded at the wrong end of a line, which is why a glyph decides only for marks whose direction is certain or whose one exception is harmless.
+Lone marks side by side are different, because there the readings do move breaks: nested quotations spaced French-style, `Il a dit. « “ Oui. ” » Puis il part.`, break correctly only when all four marks are read as the rules above read them, and the break after `»` needs the look-back to pass both closing marks.
+`notes/experiments/lonemark.py` reproduces all of this.
+
+**Guillemets around a word or a fragment need nothing of their own.**
+French uses them for a term being mentioned, a title, irony, or a fragment quoted inside a sentence, and it punctuates the two cases differently: a quoted complete sentence keeps its period inside, `Elle m'a dit : « Donnez-moi votre ticket. »`, while a fragment takes none and the sentence's own period falls outside, `Il l'appelle « le patron ».`
+A mark in mid-sentence decides nothing, because no terminator stands beside it, and `».` is not a lone mark at all but a closer followed by the sentence's terminator.
+Verified by simulation of the rules above, with ordinary spaces: `Le mot « chat » désigne un animal. Puis il part.`, `Il l'appelle « le patron ». Puis il part.` and `Il a crié « Stop ! » et il est parti.` each break exactly where a French reader expects, and only there.
 
 **The cascade has two results; the opener scan has three.**
 Every check in this section either vetoes a break or abstains, and none can force one, because `break` takes only `no` and `allow` (§4) and the table is consulted only at candidate gaps.
@@ -708,12 +746,40 @@ ______________________________________________________________________
 
 ## 4. Config surface
 
-One option and one rules file.
+One option, and rules that live in the same table.
 
 | Option | Type | Default | Meaning |
 | --- | --- | --- | --- |
 | `require_sentence_capital` | bool | `true` | `word. lowercase` is not a boundary |
-| `rules_file` | path | none | a TOML rules file, which lists the shipped sets its own rules build on |
+
+**`[plugin.sentence]` is itself a rules file whenever it holds a rules-file key.**
+Once it holds any of `schema`, `include`, `macros` or `rule`, everything this section says about a rules file applies to it, a mandatory `include` among the rest; while it holds none, the shipped default applies, as it does with no configuration at all.
+mdformat checks only that a plugin's table is a table, so the nested arrays pass its validation and reach the plugin intact, verified against mdformat 1.0.0; at the root of `.mdformat.toml` they are rejected, since mdformat allows only its own eight keys there.
+A separate rules file is named the way any rules file names another, through `include`, so there is no option for it:
+
+```toml
+# .mdformat.toml
+wrap = "no"
+
+[plugin.sentence]
+schema  = 1
+include = ['default', './team.toml']
+
+[[plugin.sentence.rule]]
+at    = '(?i:st)'
+break = 'allow'
+
+  [[plugin.sentence.rule.example]]
+  input = '''
+He walked down Main St. Then he left.
+'''
+  output = '''
+He walked down Main St.
+Then he left.
+'''
+```
+
+`team.toml`'s rules are laid down after the default's and before the ones written here, so the table's own rules win any gap they disagree about.
 
 Abbreviations are **not** settable on the command line.
 A list of tokens is the wrong thing to type into a shell, and once rules carry patterns and examples it stops being a list at all.
@@ -729,12 +795,13 @@ That is the whole of the question, and an empty array answers it in the one way 
 So a file overrides an inherited rule by writing a later one that matches the same token, without knowing or repeating how the earlier one was expressed, and removes a rule by writing `break = 'allow'` for what it matched.
 Several bases compose through the array and only through it, because TOML forbids a duplicate key and a second `include` line is a parse error rather than a second base.
 A name that is not a shipped set is a load error, as is a cycle, and both resolve before any pattern compiles.
+The table is compiled once and cached, keyed on the config file it came from, its `[plugin.sentence]` table and `cli_include`, and never rebuilt per paragraph, since the hook runs for every paragraph and twice under `--wrap no` (§2.3).
 
 **`schema` is the format version, and the loader checks it.**
 A file whose `schema` this version does not recognize is a load error naming the one it does, so a future incompatible format is refused rather than half-read into rules that look plausible.
 
 **There is no `language` key**, because nothing would read it.
-Case folding is per-pattern (§3.3), quote direction is decided by what a mark follows rather than by which language wrote it, and the terminators are a Unicode property, so no check left in this design takes a language.
+Case folding is per-pattern (§3.3), quote direction is decided by a mark's glyph or by what it follows rather than by which language wrote it, and the terminators are a Unicode property, so no check left in this design takes a language.
 What a set is for belongs in a comment at the top of it and in its filename, where a reader sees it and no one expects it to do anything.
 
 **What an `include` entry names, and where a path starts from.**
@@ -742,13 +809,15 @@ A bare word carrying no path separator and no `.toml` suffix is a shipped set, a
 Anything else is a path, resolved relative to the file the `include` is written in, so a rules file and the files it builds on travel together.
 That is deliberately neither the config file's directory nor the working directory: an included file is a neighbor of the file naming it, and resolving against anything else breaks as soon as the pair is copied somewhere.
 
-**A relative `rules_file` resolves against the config file mdformat read**, found the way mdformat finds it.
+**For `[plugin.sentence]`, the file the `include` is written in is the `.mdformat.toml` mdformat read**, found the way mdformat finds it.
 The plugin walks up from the directory of `context.options["mdformat"]["filename"]` to the nearest `.mdformat.toml`, which is exactly what `_conf.py`'s `read_toml_opts` does for that file, and resolves against the directory it stops in.
 With no config file on the way up, or no filename to start from (`''` under `mdformat.text()`, `'-'` for stdin), it resolves against the working directory; an absolute path is used as written.
 
-**Where a value came from is not visible at this seam**, so no rule can depend on it.
-`_cli.py` binds the config file's path as a local and merges TOML-set and CLI-set plugin options into one mapping, so a plugin sees `rules_file` as a bare string either way; mdformat's own `is_excluded` can tell them apart only because it runs inside `run()`, where that local is still in scope.
-The cost falls on the command line: a relative `--sentence-rules-file` resolves against the config directory whenever one exists, not against the shell's directory, so a path typed at the shell is safest absolute.
+**The command line has its own key, so it can come last.**
+`--sentence-include PATH` may be given more than once, and its argparse `dest` is `cli_include` rather than `include`.
+That matters because mdformat merges command-line plugin options over the config file's with a plain dict update, so a flag writing to `include` would replace the config's list outright instead of adding to it.
+Under its own key both lists survive the merge, verified against mdformat 1.0.0, and the plugin lays the rules down in the order last-match-wins wants: the config's includes, then the config's own rules, then the command line's includes, so the command line wins as it does everywhere else in mdformat.
+Its relative paths resolve against the working directory, since a separate key is also what lets the plugin tell that they were typed at a shell.
 
 **What an included file contributes is rules and macros, never the notation.**
 The `$name` sets of §3.3 are the pattern language rather than rule content, so every file gets them and no file can shadow them.
@@ -949,7 +1018,7 @@ CLI spelling is short, because mdformat namespaces only the argparse `dest` and 
 
 ```
 --sentence-no-require-sentence-capital
---sentence-rules-file PATH
+--sentence-include PATH        repeatable; dest is cli_include
 ```
 
 Every default must be `None`, for the reason in §2.4.
@@ -980,7 +1049,7 @@ Nothing in `_api.py` or `_cli.py` wraps plugin code in `try`/`except`, so a malf
   Reachable, and declined.
   With a front-matter plugin named in `--extensions` a `lang:` key survives as a node this seam reaches by walking to the root, and hand-scanning for it needs no YAML parser and no dependency.
   It is declined because it would be silently conditional on an unrelated plugin being named: `--extensions` is a whitelist (§2.1), so a user who does not name the front-matter plugin gets the shipped rules with nothing saying why, which is the failure mode `include` was just made mandatory to avoid.
-  The language mechanism here is a rules file named by `rules_file` or `include`, which is explicit and needs no plugin.
+  The language mechanism here is a rules set named by `include`, in `[plugin.sentence]` or on the command line, which is explicit and needs no plugin.
 
 ______________________________________________________________________
 
@@ -1138,22 +1207,18 @@ rumdl has its own blind spots, this design intends to do better in places, and w
 1. The positive control, before anything else.
    Every other check in §6.2 passes with the plugin disabled — an identity function deletes nothing, changes no render, and is trivially width-independent — so until one test fails when the plugin is absent, a green suite does not distinguish a working plugin from an inert one.
 1. §6.1, which is three lines and catches most of what can go wrong.
-1. The sentence-detection fixtures, which are where the remaining complexity actually lives: abbreviations, initials, the capital rule, footnote references, CJK, French spaced closers, German quotes, the `?"` case, bracket depth, and block constructs.
+1. The sentence-detection fixtures, which are where the remaining complexity actually lives: abbreviations, initials, the capital rule, footnote references, CJK, CJK quotation marks spaced off their words, French spaced closers, guillemets around a word or a fragment, French dialogue that closes in a later paragraph, a continuation paragraph opening with `»`, nested quotations spaced French-style, the historical Italian closing `„`, Greek and Polish quotations opening with `‟` and `‛`, German quotes, the `?"` case, bracket depth, and block constructs.
 
-**Six of them come from Panache's semantic-wrap suite**, paraphrased rather than copied.
-Three hold as Panache states them; the other three turn on an authored soft break, which this design deliberately does not preserve (§2.5), and are kept with the output it does produce so the divergence is pinned rather than rediscovered.
+**Three of them come from Panache's semantic-wrap suite**, paraphrased rather than copied, and hold as Panache states them.
+Three more from the same suite turn on keeping an authored soft break, which this design does not do (§2.5); `notes/PRESERVE-MODE.md` keeps them as examples of what an add-only mode would add.
 Panache is MIT and is a working implementation of this same cascade, so its expectations are worth borrowing even under §6.3's caution about oracles.
 
 | case | input | required |
 | --- | --- | --- |
 | inline list markers | `Hear from us in 60 days. 1. Tell us your name. 2. Describe the error.` | `1.` and `2.` end lines, never start them |
-| an authored break, not kept | `First sentence ends here. A question asks:` + newline + `then it continues.` | `First sentence ends here.` + newline + `A question asks: then it continues.` |
-| an authored clause break, not kept | `First clause,` + newline + `second clause. Next sentence. Done.` | `First clause, second clause.` + newline + `Next sentence.` + newline + `Done.` |
-| an abbreviation across an authored break | `We use tools, e.g. the parser,` + newline + `and more. End.` | `We use tools, e.g. the parser, and more.` + newline + `End.` |
 | one long sentence | eighty-eight columns with no interior terminator | unchanged, at every width |
 | a trailing newline | `Only one sentence.` | no empty line is emitted |
 
 The first is the strongest block-construct test available and it is the one this list previously omitted altogether.
 Both of its gaps matter and in opposite directions: the gap before `1.` must not break, because that puts an enumerator at line start where `paragraph()` escapes it to `1\.`, and the gap after `1.` must break, which leaves the marker at the end of a line where it is harmless.
 The escape is the enumerator's remedy as the four-space indent is the HTML opener's (§3.3), and like the indent it is invisible to `is_md_equal`, which reads `1\.` as the `1.` it renders to.
-The second, third and fourth record a real cost rather than a pass: an authored soft break reaches this seam as an ordinary wrap point (§3.1), so under `--wrap no` it is gone before the plugin runs, and only a hard break survives as a section boundary.

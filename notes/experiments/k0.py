@@ -1,5 +1,5 @@
 import re, difflib
-SENT=re.compile(r'[.!?](?:["\'’”])?$')
+SENT=re.compile(r'[.!?]["\'’”]?$')
 def gaps(ls):
     w=[];b=set()
     for i,l in enumerate(ls):
@@ -33,16 +33,15 @@ EDITS = {
  "A: append a sentence to a line (don't break it)":
    [*P[:2], "and cascade down the paragraph. Nobody notices at first.", *P[3:]],
  "B: join the two lines at the sentence boundary":
-   ["Because the cascade picks by width,","an edit upstream can change which candidate wins,",
-    "and cascade down the paragraph. The tool reports success,","and the author sees a diff,",
-    "which is the failure this design prevents."],
+   [*P[:2], f"{P[2]} {P[3]}", *P[4:]],
 }
+clause_before=sum(1 for l in P[:-1] if l.rstrip().endswith(","))
+cov_P, out_P = cov(P), apply(P)
 for name,E in EDITS.items():
     out=apply(E)
-    clause_before=sum(1 for l in P[:-1] if l.rstrip().endswith(","))
     clause_after=sum(1 for l in out[:-1] if l.rstrip().endswith(","))
     print(f"{name}")
-    print(f"   coverage {cov(P):.2f} -> {cov(E):.2f}   branch = {'REWRAP' if cov(E)==0.0 else 'repair'}")
-    print(f"   diff {dl(apply(P),out):2d} lines   clause breaks {clause_before} -> {clause_after}")
+    print(f"   coverage {cov_P:.2f} -> {cov(E):.2f}   branch = {'REWRAP' if cov(E)==0.0 else 'repair'}")
+    print(f"   diff {dl(out_P,out):2d} lines   clause breaks {clause_before} -> {clause_after}")
     for l in out: print("      |",l)
     print()

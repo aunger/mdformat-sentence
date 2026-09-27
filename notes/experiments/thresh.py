@@ -1,5 +1,5 @@
 import re, difflib
-SENT=re.compile(r'[.!?](?:["\'’”])?$')
+SENT=re.compile(r'[.!?]["\'’”]?$')
 def gaps(ls):
     w=[];b=set()
     for i,l in enumerate(ls):
@@ -32,10 +32,10 @@ BASE=["Alpha one runs on,","and continues here,","and ends here. Beta two starts
       "and ends here. Delta four starts,","and runs on,","and continues,",
       "and runs further,","and ends here."]
 print(f"paragraph: {len(BASE)} lines, coverage = {cov(BASE):.2f}\n")
+# the edit: author breaks ONE more sentence by hand, nudging coverage up one notch
+E=list(BASE); E[2]="and ends here."; E.insert(3,"Beta two starts,")
 for k in (0.4, 0.5, 0.6):
     before = apply(BASE,k)
-    # the edit: author breaks ONE more sentence by hand, nudging coverage up one notch
-    E=list(BASE); E[2]="and ends here."; E.insert(3,"Beta two starts,")
     after = apply(E,k)
     print(f"k={k}:  cov {cov(BASE):.2f} -> {cov(E):.2f}   "
           f"remedy {'REWRAP' if cov(BASE)<k else 'repair'} -> {'REWRAP' if cov(E)<k else 'repair'}"

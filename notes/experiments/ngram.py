@@ -1,7 +1,7 @@
 import json, re, time, urllib.parse, urllib.request, statistics
 URL="https://books.google.com/ngrams/json"
-def q(c,y0=1990,y1=2019):
-    p=urllib.parse.urlencode({"content":c,"year_start":y0,"year_end":y1,"corpus":"en-2019","smoothing":3})
+def q(c):
+    p=urllib.parse.urlencode({"content":c,"year_start":1990,"year_end":2019,"corpus":"en-2019","smoothing":3})
     with urllib.request.urlopen(f"{URL}?{p}",timeout=45) as r: return json.load(r)
 def series(c):
     try: d=q(c)

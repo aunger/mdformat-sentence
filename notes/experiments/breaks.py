@@ -42,24 +42,25 @@ for p in paras(CORPUS):
         nxt_raw = p[i+1].strip()
         nxt = re.sub(r'[^\w\s]', '', nxt_raw).split()
         markup = bool(MARKUP_END.search(l.rstrip())) or bool(MARKUP_START.match(nxt_raw))
-        unpunct.append((s, nxt[0].lower() if nxt else '', markup))
+        unpunct.append((nxt[0].lower() if nxt else '', markup))
 
 print(f"author line breaks        : {total}")
 print(f"  unpunctuated            : {len(unpunct)}  ({100*len(unpunct)/total:.0f}%)")
-mk = sum(1 for *_, m in unpunct if m)
+mk = sum(1 for _, m in unpunct if m)
 print(f"    of those, at a link / code span / emphasis boundary (rules 10, 11): {mk}")
 print("      -> the corpus prose carries 12 reference links, 3 code spans and 5")
 print("         emphasis runs across 122 lines, and 10 of those lines open with")
 print("         a link, so these are real rule 10/11 positions rather than an")
 print("         absence of material. It still uses links lightly for a document")
 print("         of its length, so treat the share, not the count, as the result.")
-rule6 = [(s, w) for s, w, m in unpunct if not m]
+rule6 = [w for w, m in unpunct if not m]
 print(f"\n  removing those leaves {len(rule6)} rule 6 breaks, which is the row a")
 print("  break-word list is actually aimed at.")
 print("\nrecovered by a break-word list (word following the break):")
 for name, ws in (("core+extended (36)", CORE+EXT), ("admitted (14)", ADMITTED)):
-    hu = sum(1 for _, w, _m in unpunct if w in set(ws))
-    h6 = sum(1 for _, w in rule6 if w in set(ws))
+    ws = set(ws)
+    hu = sum(1 for w, _ in unpunct if w in ws)
+    h6 = sum(1 for w in rule6 if w in ws)
     print(f"  {name:20s} unpunctuated {hu:3d}/{len(unpunct)}   rule 6 only {h6:3d}/{len(rule6)}"
           f"   residual: {len(rule6)-h6}/{total}"
           f" = {100*(len(rule6)-h6)/total:.0f}% of all breaks still undetectable")

@@ -9,18 +9,18 @@
 
 Needs mdformat 1.0.0.
 """
-import contextlib, io, logging, os, sys, tempfile, types
+import contextlib, io, logging, os, tempfile, types
 from pathlib import Path
 
-import mdformat, mdformat.plugins as P
+import mdformat.plugins as P
 from mdformat._cli import run, validate_wrap_arg
 from mdformat._conf import InvalidConfError, read_toml_opts
 from mdformat.renderer import LOGGER
 
 print("1. the two validators disagree about `wrap`\n")
 print(f"   {'value':<12} {'--wrap (CLI)':<34} .mdformat.toml")
-for lit, txt in (('"keep"', "keep"), ('"no"', "no"), ('"sentence"', "sentence"),
-                 ("1", "1"), ("2", "2"), ("80", "80")):
+for lit in ('"keep"', '"no"', '"sentence"', "1", "2", "80"):
+    txt = lit.strip('"')
     try:
         cli = repr(validate_wrap_arg(txt))
     except ValueError as e:

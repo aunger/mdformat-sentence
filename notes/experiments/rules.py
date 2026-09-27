@@ -35,6 +35,6 @@ for p in paras(CORPUS):
         else:                c['6']+=1
 t=sum(c.values())
 print(f"total author line breaks: {t}")
-for k in ('4','5','10/11','6'):
+for k in c:
     print(f"  rule {k:5s}: {c[k]:3d}  ({100*c[k]/t:.0f}%)")
 print(f"\n  breaks classified 4 or 5 that are ALSO at a markup boundary: {overlap}")

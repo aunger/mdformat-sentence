@@ -1,7 +1,6 @@
 import re, types, mdformat, mdformat.plugins as P
-from mdformat.renderer import WRAP_POINT
 
-SENT = re.compile(r'[.!?](?:["\'’”])?$')
+SENT = re.compile(r'[.!?]["\'’”]?$')
 
 def make(add_only):
     def pp(text, node, context):

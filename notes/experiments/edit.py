@@ -1,5 +1,5 @@
 import re, difflib
-SENT=re.compile(r'[.!?](?:["\'’”])?$')
+SENT=re.compile(r'[.!?]["\'’”]?$')
 
 P = ["Because the cascade picks by width,",
      "an edit upstream can change which candidate wins,",
@@ -21,7 +21,7 @@ def triage(lines):
     w,brk,ends=gaps(lines)
     if all(j in brk for j in ends): return lines           # PRESERVE
     out,cur=[],[]                                          # REWRAP sentence-per-line
-    for i,x in enumerate(w):
+    for x in w:
         cur.append(x)
         if SENT.search(x): out.append(" ".join(cur)); cur=[]
     if cur: out.append(" ".join(cur))
