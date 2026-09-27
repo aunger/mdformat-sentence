@@ -38,7 +38,7 @@ The plugin serves any Markdown whose author wants one sentence per line, and res
 Only the shipped *default rule set* is narrow: it is tuned for English prose of the kind this repository and its corpus are made of, because that is what there was to measure against (§3.3).
 An audience whose abbreviations differ does not need a different plugin, it needs a different rules file, and §4 ships a second one for academic prose.
 
-The whole configuration surface is one option and one rules file, both about sentence *detection* (§4).
+The whole configuration surface is one option and a set of rules beside it, both about sentence *detection* (§4).
 
 ## 2. Name, packaging and the seam
 
@@ -717,12 +717,40 @@ ______________________________________________________________________
 
 ## 4. Config surface
 
-One option and one rules file.
+One option, and rules that live in the same table.
 
 | Option | Type | Default | Meaning |
 | --- | --- | --- | --- |
 | `require_sentence_capital` | bool | `true` | `word. lowercase` is not a boundary |
-| `rules_file` | path | none | a TOML rules file, which lists the shipped sets its own rules build on |
+
+**`[plugin.sentence]` is itself a rules file whenever it holds a rules-file key.**
+Once it holds any of `schema`, `include`, `macros` or `rule`, everything this section says about a rules file applies to it, a mandatory `include` among the rest; while it holds none, the shipped default applies, as it does with no configuration at all.
+mdformat checks only that a plugin's table is a table, so the nested arrays pass its validation and reach the plugin intact, verified against mdformat 1.0.0; at the root of `.mdformat.toml` they are rejected, since mdformat allows only its own eight keys there.
+A separate rules file is named the way any rules file names another, through `include`, so there is no option for it:
+
+```toml
+# .mdformat.toml
+wrap = "no"
+
+[plugin.sentence]
+schema  = 1
+include = ['default', './team.toml']
+
+[[plugin.sentence.rule]]
+at    = '(?i:st)'
+break = 'allow'
+
+  [[plugin.sentence.rule.example]]
+  input = '''
+He walked down Main St. Then he left.
+'''
+  output = '''
+He walked down Main St.
+Then he left.
+'''
+```
+
+`team.toml`'s rules are laid down after the default's and before the ones written here, so the table's own rules win any gap they disagree about.
 
 Abbreviations are **not** settable on the command line.
 A list of tokens is the wrong thing to type into a shell, and once rules carry patterns and examples it stops being a list at all.
@@ -751,13 +779,15 @@ A bare word carrying no path separator and no `.toml` suffix is a shipped set, a
 Anything else is a path, resolved relative to the file the `include` is written in, so a rules file and the files it builds on travel together.
 That is deliberately neither the config file's directory nor the working directory: an included file is a neighbor of the file naming it, and resolving against anything else breaks as soon as the pair is copied somewhere.
 
-**A relative `rules_file` resolves against the config file mdformat read**, found the way mdformat finds it.
+**For `[plugin.sentence]`, the file the `include` is written in is the `.mdformat.toml` mdformat read**, found the way mdformat finds it.
 The plugin walks up from the directory of `context.options["mdformat"]["filename"]` to the nearest `.mdformat.toml`, which is exactly what `_conf.py`'s `read_toml_opts` does for that file, and resolves against the directory it stops in.
 With no config file on the way up, or no filename to start from (`''` under `mdformat.text()`, `'-'` for stdin), it resolves against the working directory; an absolute path is used as written.
 
-**Where a value came from is not visible at this seam**, so no rule can depend on it.
-`_cli.py` binds the config file's path as a local and merges TOML-set and CLI-set plugin options into one mapping, so a plugin sees `rules_file` as a bare string either way; mdformat's own `is_excluded` can tell them apart only because it runs inside `run()`, where that local is still in scope.
-The cost falls on the command line: a relative `--sentence-rules-file` resolves against the config directory whenever one exists, not against the shell's directory, so a path typed at the shell is safest absolute.
+**The command line has its own key, so it can come last.**
+`--sentence-include PATH` may be given more than once, and its argparse `dest` is `cli_include` rather than `include`.
+That matters because mdformat merges command-line plugin options over the config file's with a plain dict update, so a flag writing to `include` would replace the config's list outright instead of adding to it.
+Under its own key both lists survive the merge, verified against mdformat 1.0.0, and the plugin lays the rules down in the order last-match-wins wants: the config's includes, then the config's own rules, then the command line's includes, so the command line wins as it does everywhere else in mdformat.
+Its relative paths resolve against the working directory, since a separate key is also what lets the plugin tell that they were typed at a shell.
 
 **What an included file contributes is rules and macros, never the notation.**
 The `$name` sets of §3.3 are the pattern language rather than rule content, so every file gets them and no file can shadow them.
@@ -958,7 +988,7 @@ CLI spelling is short, because mdformat namespaces only the argparse `dest` and 
 
 ```
 --sentence-no-require-sentence-capital
---sentence-rules-file PATH
+--sentence-include PATH        repeatable; dest is cli_include
 ```
 
 Every default must be `None`, for the reason in §2.4.
@@ -989,7 +1019,7 @@ Nothing in `_api.py` or `_cli.py` wraps plugin code in `try`/`except`, so a malf
   Reachable, and declined.
   With a front-matter plugin named in `--extensions` a `lang:` key survives as a node this seam reaches by walking to the root, and hand-scanning for it needs no YAML parser and no dependency.
   It is declined because it would be silently conditional on an unrelated plugin being named: `--extensions` is a whitelist (§2.1), so a user who does not name the front-matter plugin gets the shipped rules with nothing saying why, which is the failure mode `include` was just made mandatory to avoid.
-  The language mechanism here is a rules file named by `rules_file` or `include`, which is explicit and needs no plugin.
+  The language mechanism here is a rules set named by `include`, in `[plugin.sentence]` or on the command line, which is explicit and needs no plugin.
 
 ______________________________________________________________________
 
