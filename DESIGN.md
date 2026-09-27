@@ -306,6 +306,13 @@ One case is out of reach rather than decided.
 `Close` is 195 codepoints and contains every bracket, so adopting it re-arms all three of the cases below, and the set here is not even a subset of it, since `*`, `_` and `~` are `Other`.
 It is a purpose-built set instead: the marks that can follow a terminator *and still leave the sentence ended*.
 
+**No-break spaces are transparent to every scan in this section.**
+mdformat makes a wrap point only of an ordinary space, a tab or a newline (§2.2), so a no-break space stays inside its segment.
+French typeset as its typography prescribes therefore arrives with `«`, a no-break space and `Ceci` as one segment, and `important.`, a no-break space and `»` as another.
+Wherever this section skips closers or openers, it skips no-break spaces too: in the sentence-end test, in the capital test's opener scan, in deciding whether a segment is only quotation marks, and in stripping `at`.
+A no-break space here means any Unicode `Zs` character other than U+0020, which is exactly the set of horizontal spaces mdformat never breaks at.
+Without this, a sentence ending in a no-break space and `»` is never found, and one opening with `«` and a no-break space never passes the capital test, so correctly typeset French gets no breaks at all.
+
 `“` and `‘` are in both sets deliberately: they open in English and close in German.
 So are the guillemets, and for the same reason: French and Swiss German write «…» while German and Austrian usage reverses them to »…«, so each of the four marks both opens and closes depending on the language.
 Leaving `«` out of the closers is what would silently drop every sentence end in `»Ist das ein Test?« Dann ging er.`
@@ -626,6 +633,7 @@ Two structural rules follow, neither of them about any one language:
   Membership in the two sets above cannot decide it, because every guillemet and both of `“` `‘` are in both sets; what the mark is doing is determined by what it follows, not by which language wrote it.
 - A segment read as closing is never a break candidate, and when the segment to the left is such a mark, the terminator test looks one segment further back.
   French spaces its closer off — `« Ceci est important. »` — which puts the closer in a segment of its own and breaks the naive rule twice, once by orphaning the mark onto the next line and once by failing to see the terminator.
+  That happens only when the space typed is an ordinary one; with the no-break space French typography prescribes, the mark stays in its word's segment and the no-break-space rule above handles it.
 - A segment read as *opening* defers the capital test to the next segment rather than failing it.
   Returning "no opener found" is not the same as "no sentence opens here".
   This is the rule that keeps `Il a dit. « Ceci est important. »` breaking after `dit.`: the lone `«` follows no terminator, so it is opening markup and the capital test moves on to `Ceci`.
