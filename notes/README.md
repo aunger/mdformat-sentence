@@ -11,8 +11,7 @@ can re-run them rather than take them on trust.
 | `PRESERVE-MODE.md` | Why the plugin does not try to preserve an author's existing line breaks. The longest-running open question about this design, answered. |
 | `MDFORMAT-WRAP-AND-OVERRIDES.md` | Where mdformat reads `wrap`, what a plugin can see and override about it, and what `--wrap sentence` would cost upstream. A reference for whoever later decides whether to patch, to ask, or how to implement §2.5's warning. |
 | `corpus/` | The one corpus that gives honest answers about layout heuristics, and why. |
-| `experiments/` | Eighteen short programs.
-Nine need mdformat and nine are stdlib only, two of which need the network. |
+| `experiments/` | Eighteen short programs. Nine need mdformat and nine are stdlib only, two of which need the network. |
 
 ## Running them
 
