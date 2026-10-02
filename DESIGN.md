@@ -610,24 +610,6 @@ The figures above are from the period-less forms, which measure *index use versu
 rumdl admits a token only if it is "almost always followed by something, not sentence-final", and files this class under "Reference abbreviations — followed by what they refer to".
 The conditions above make that criterion operational instead of assuming it holds for the bare token.
 
-**A sentence never opens with a block-construct marker, and this applies to every terminator.**
-If the next segment would start `#`, `>`, `-`/`*`/`+`, a bare `\d+[.)]`, a setext or thematic run at line start, or an HTML block opener, the gap is not a sentence boundary.
-The HTML entry is the one it is easy to omit, because mdformat's remedy for it is not an escape character.
-`paragraph()` prefixes four spaces to any line matching an `HTML_SEQUENCES` opener that can interrupt a paragraph, so `Do not use it. <div> is a block element.` broken at the sentence end comes back as `'Do not use it.\n    <div> is a block element.\n'`.
-Verified by execution against mdformat 1.0.0, with `<div>`, `<table>` and `<!-- -->`.
-`is_md_equal` passes on all three, so §6.2's render-equality gate cannot catch this one and the rule is the only guard.
-
-**Why it passes is worth stating, because it is not that the check is weak.**
-Nothing is wrong with the render.
-The four spaces are mdformat repairing it: they keep the `<div>` a lazy continuation line inside the paragraph, where it stays inline HTML, so the HTML differs from the unbroken source only in that one space became a newline, and `is_md_equal` reduces every whitespace run to a single space before comparing.
-Break the same gap without the indent and the check does fire, because `<div>` at line start becomes an HTML block and the paragraph ends early.
-What survives the repair is damage to the *source*: four spaces this plugin never asked for, on a line it promised would gain nothing but a newline.
-A gate that compares rendered HTML is structurally blind to that, whatever else it is good for.
-
-This rule is **unconditional and independent of the capital test**, and that matters.
-It is the only thing preventing a break from putting a construct at a line start where mdformat would escape it, and because this plugin has no `avoid_escapes` option (§4.1), it is the only protection there is.
-Requiring an alphabetic character rather than merely a non-lowercase one happens to suppress the same cases, but a `lowercase_names` pattern broad enough to admit `#` or `-` would otherwise re-arm them.
-
 **Quotation marks are language-specific.**
 Two structural rules follow, neither of them about any one language:
 
@@ -700,11 +682,12 @@ The same experiment *without* pinning produces 78- and 61-character lines at `--
 
 Idempotency across mdformat's two-pass render follows from the same construction.
 On the second pass the inserted `\n` re-parses as a softbreak and the literal spaces re-collapse, so every gap is a `\x00` again and the identical content re-derives the identical breaks.
-That holds only because no break decision consults a width, and because §3.3's block-construct rule guarantees mdformat adds no escape on the first pass that would change the second pass's tokens.
+That holds only because no break decision consults a width, and because §3.5's line-start rule guarantees mdformat adds no escape on the first pass that would change the second pass's tokens.
 
 ### 3.5 Correctness rules
 
-Two, both non-negotiable.
+Two kinds of gap never break, whatever §3.3 decides.
+Both are about the line a break would create rather than about sentences, which is why they live here, and no rule, exemption or option reaches either.
 
 **Edge safety.**
 A gap is ineligible when the last character of the segment to its left, or the first character of the segment to its right, is whitespace that `str.strip()` would delete.
@@ -714,12 +697,25 @@ mdformat's `paragraph()` strips each line after wrapping, so a break at such a g
 The rule is small because of §3.4: only sentence gaps can break at all, and every other gap is already pinned, which is the same mechanism the guard uses.
 An ineligible sentence gap is simply pinned like its neighbors.
 
-**Tilde sections are declined outright.**
-A run of three or more tildes at a line start opens a fenced code block and changes the render.
-This is an upstream mdformat defect, not ours — plain mdformat with no plugin and no extensions reproduces it — but our breaks reach it far more often, so the blast radius is ours.
-A section containing `~{3,}` is returned unchanged, with every gap pinned — every gap in the section, not only the gaps adjacent to the tilde run.
-Pinning only the gaps on either side of the run is not sufficient, because a break taken anywhere else in the section can put the run at a line start by another route; pinning the whole section emits no `\n` and no `\x00` in it, so it stays a single line and the run can only reach a line start if it already was one.
-A section containing a tilde fence is not one anybody is line-breaking for readability anyway.
+**Line-start safety.**
+A gap is ineligible when the word after it would start a line with a block construct: `#`, `>`, `-`/`*`/`+`, a bare `\d+[.)]`, a setext or thematic run, a run of three or more tildes, or an HTML block opener.
+It is the only thing preventing a break from putting a construct at a line start where mdformat would escape it, and because this plugin has no `avoid_escapes` option (§4.1), it is the only protection there is.
+The HTML entry is the one it is easy to omit, because mdformat's remedy for it is not an escape character.
+`paragraph()` prefixes four spaces to any line matching an `HTML_SEQUENCES` opener that can interrupt a paragraph, so `Do not use it. <div> is a block element.` broken at the sentence end comes back as `'Do not use it.\n    <div> is a block element.\n'`.
+Verified by execution against mdformat 1.0.0, with `<div>`, `<table>` and `<!-- -->`.
+`is_md_equal` passes on all three, so §6.2's render-equality gate cannot catch this one and the rule is the only guard.
+
+**Why it passes is worth stating, because it is not that the check is weak.**
+Nothing is wrong with the render.
+The four spaces are mdformat repairing it: they keep the `<div>` a lazy continuation line inside the paragraph, where it stays inline HTML, so the HTML differs from the unbroken source only in that one space became a newline, and `is_md_equal` reduces every whitespace run to a single space before comparing.
+Break the same gap without the indent and the check does fire, because `<div>` at line start becomes an HTML block and the paragraph ends early.
+What survives the repair is damage to the *source*: four spaces this plugin never asked for, on a line it promised would gain nothing but a newline.
+A gate that compares rendered HTML is structurally blind to that, whatever else it is good for.
+
+**The tilde entry covers an upstream mdformat defect.**
+A run of three or more tildes at a line start opens a fenced code block, and `paragraph()` does not escape it, so plain mdformat with no plugin breaks the render whenever its own word wrap puts such a run at a line start.
+Verified against mdformat 1.0.0: `Some text here and ~~~ more text after it.` formatted at `--wrap 10` comes back as a code block.
+Here only a newline this plugin emits can start a line, since every other gap is pinned (§3.4), so refusing the one break directly before the run is enough, and the rest of the section breaks as usual: `` Use `~~~` for fences. Then indent the block. `` still breaks after `fences.`
 
 ### 3.6 Failure policy
 
@@ -1068,7 +1064,7 @@ Nothing in `_api.py` or `_cli.py` wraps plugin code in `try`/`except`, so a malf
 
 - **Any width, column or line-length option.** §1.
 - **`avoid_escapes`.**
-  Unnecessary: §3.3's block-construct rule is unconditional, so no break can land before `#`, `>`, `-`, an enumerator or an HTML block opener, and no escape and no four-space indent is ever added.
+  Unnecessary: §3.5's line-start rule is unconditional, so no break can land before `#`, `>`, `-`, an enumerator or an HTML block opener, and no escape and no four-space indent is ever added.
 - **A "honor `--wrap`" mode** that would let mdformat wrap inside a sentence.
   That is a coherent product — GNU Emacs's `fill-paragraph-semlf` is exactly it — but it reintroduces geometric line breaks and therefore forfeits §1's property, which is the only reason this plugin exists.
   Anyone who wants it wants a different tool.
@@ -1236,7 +1232,7 @@ rumdl has its own blind spots, this design intends to do better in places, and w
 1. The positive control, before anything else.
    Every other check in §6.2 passes with the plugin disabled — an identity function deletes nothing, changes no render, and is trivially width-independent — so until one test fails when the plugin is absent, a green suite does not distinguish a working plugin from an inert one.
 1. §6.1, which is three lines and catches most of what can go wrong.
-1. The sentence-detection fixtures, which are where the remaining complexity actually lives: abbreviations, initials, camelCase and `lowercase_names` sentence openers, an index abbreviation before a punctuated number (`In Fig. 3, the curve`), a hyphenated word ending in a capital (`Jay-Z. He left.`), the capital rule, footnote references, CJK, CJK quotation marks spaced off their words, French spaced closers, guillemets around a word or a fragment, French dialogue that closes in a later paragraph, sentences ending inside parentheses and brackets, a period inside a code span or a link destination, a continuation paragraph opening with `»`, Finnish and Swedish quotations opening with `”` and `’`, nested quotations spaced French-style and English-style, a spaced `¿`, the historical Italian closing `„`, Greek and Polish quotations opening with `‟` and `‛`, German quotes, the `?"` case, bracket depth, and block constructs.
+1. The sentence-detection fixtures, which are where the remaining complexity actually lives: abbreviations, initials, camelCase and `lowercase_names` sentence openers, an index abbreviation before a punctuated number (`In Fig. 3, the curve`), a hyphenated word ending in a capital (`Jay-Z. He left.`), the capital rule, footnote references, CJK, CJK quotation marks spaced off their words, French spaced closers, guillemets around a word or a fragment, French dialogue that closes in a later paragraph, sentences ending inside parentheses and brackets, a period inside a code span or a link destination, a continuation paragraph opening with `»`, Finnish and Swedish quotations opening with `”` and `’`, nested quotations spaced French-style and English-style, a spaced `¿`, the historical Italian closing `„`, Greek and Polish quotations opening with `‟` and `‛`, German quotes, the `?"` case, bracket depth, and block constructs, including a word opening with `~~~` after a sentence end and a section that merely mentions one.
 
 **Three of them come from Panache's semantic-wrap suite**, paraphrased rather than copied, and hold as Panache states them.
 Three more from the same suite turn on keeping an authored soft break, which this design does not do (§2.5); `notes/PRESERVE-MODE.md` keeps them as examples of what an add-only mode would add.
