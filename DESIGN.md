@@ -242,7 +242,7 @@ A literal space is carried through `textwrap` as a preserved character and resto
 That single decision is what makes the output width-independent, and it is why this plugin emits no `\x00` at all.
 
 **`is_sentence_break` sees the whole segment list.**
-It cannot be a function of two adjacent segments, for the reasons in §3.3: bracket depth accumulates from the start of the section, the closer rule looks back past closing marks, and the opener rule defers forward.
+It cannot be a function of two adjacent segments, for the reasons in §3.3: bracket depth accumulates from the start of the section, and a run of lone marks is one gap whose break the words on either side of the whole run decide.
 `scan` computes those once per section.
 
 ### 3.2 Masking
@@ -291,8 +291,8 @@ This is the entire substance of the plugin.
 
 ```
 terminators  UAX #29 STerm ∪ ATerm, 170 codepoints
-closers      " ' ’ ” » › « ‹ “ ‘ ‟ ‛ „ 」 』 》 〉    plus  * _ ~
-openers      " ' “ ‘ ‟ ‛ « ‹ » › ¿ ¡ „ ‚ 「 『 《 〈  plus  * _ ~ [ ( \
+closers      " ' ’ ” » › « ‹ “ ‘ ‟ ‛ „ 」 』 》 〉        plus  * _ ~
+openers      " ' ’ ” “ ‘ ‟ ‛ « ‹ » › ¿ ¡ „ ‚ 「 『 《 〈  plus  * _ ~ [ ( \
 ```
 
 **The terminators are a Unicode property rather than a list.**
@@ -312,11 +312,13 @@ It is a purpose-built set instead: the marks that can follow a terminator *and s
 **No-break spaces are transparent to every scan in this section.**
 mdformat makes a wrap point only of an ordinary space, a tab or a newline (§2.2), so a no-break space stays inside its segment.
 French typeset as its typography prescribes therefore arrives with `«`, a no-break space and `Ceci` as one segment, and `important.`, a no-break space and `»` as another.
-Wherever this section skips closers or openers, it skips no-break spaces too: in the sentence-end test, in the capital test's opener scan, in deciding whether a segment is only quotation marks, and in stripping `at`.
+Wherever this section skips closers or openers, it skips no-break spaces too: in the sentence-end test, in the capital test's skip over openers, in deciding whether a segment is only quotation marks, and in stripping `at`.
 A no-break space here means any Unicode `Zs` character other than U+0020, which is exactly the set of horizontal spaces mdformat never breaks at.
 Without this, a sentence ending in a no-break space and `»` is never found, and one opening with `«` and a no-break space never passes the capital test, so correctly typeset French gets no breaks at all.
 
 `“` and `‘` are in both sets deliberately: they open in English and close in German.
+`”` and `’` are in both for the mirror reason: they close in English and open in Finnish and Swedish, which write `”…”` and `’…’` with the same mark at both ends.
+Leaving them out of the openers is what would silently drop the break before every sentence there that opens with a quotation, `Se oli selvää. ”Tule mukaan!” hän pyysi.`
 The rare `‟` and `‛` are in both for the same kind of reason: they open Greek nested quotations and some Polish and Russian ones, and German transcriptions sometimes close with them, `„Darf ich?‟ Sie lachte.`
 So is `„`, which opens in German, Polish and many other languages and closed quotations in older Italian books, `villaggio.„ Quegli`.
 Its single low twin `‚` is an opener only, because it is nearly indistinguishable from a comma, and a comma must stay out of the closer set (below).
@@ -325,9 +327,9 @@ Leaving `«` out of the closers is what would silently drop every sentence end i
 The CJK marks are the exception, and each sits in one set only: `「` `『` `《` `〈` open and `」` `』` `》` `〉` close.
 The corner brackets hold those roles in every CLDR 48.2 locale that quotes with them; CLDR lists no locale quoting with the angle brackets, which Chinese uses for titles; and a search made to find a reversed use of any of the eight found none.
 `notes/experiments/cldrquotes.py` reproduces the CLDR half, and `notes/QUOTE-ROLES.md` records the search.
-Unicode's general category is no guide to this: it files the low marks `„` and `‚` as opening punctuation too, and they do not always open, as the lone-mark rule below shows.
+Unicode's general category is no guide to this: it files the low marks `„` and `‚` as opening punctuation too, and both have closed quotations in print (`notes/QUOTE-ROLES.md`).
 Inside a segment the overlap costs nothing, because a closer is tested after a terminator and an opener before a capital, and neither test is reached from the position the other is asked about.
-**A mark standing alone as its own segment is the one place where it does cost something, and membership in both sets cannot decide it there**; the structural rules below decide it, by glyph where that is safe and otherwise by what precedes the mark.
+**A mark standing alone as its own segment is the one place where it does cost something, and membership in both sets cannot decide it there**; the rules below decide it, by shape for the guillemets and the right-hand curly quotes, by set for a mark in only one, and otherwise by what precedes it.
 
 **Clause punctuation is not a closer, and that is what handles `e.g.,`**
 A terminator followed by `,` `;` or `:` is not a sentence end, because the test scans back over *closers* only and none of those three is one, so the scan meets a character that is neither closer nor terminator and fails.
@@ -378,8 +380,8 @@ Each rule carries up to three patterns, one per position, each `fullmatch`ed aga
 | key | matches |
 | --- | --- |
 | `at` | the terminator-bearing segment, stripped as below |
-| `before_full` | the segment before that one, raw |
-| `after_full` | the segment after the gap, raw |
+| `before_full` | the word before that one, raw |
+| `after_full` | the word after the gap, raw |
 
 **Only `at` is stripped, and the `_full` suffix on the other two says so.**
 They are the segments as they arrive, which is what makes *unpunctuated* expressible: `before_full = '$upper$letter*'` says a capitalized word carrying no punctuation, which `Paris,` and `at` and `1890` each fail for a different reason.
@@ -395,9 +397,9 @@ The section is §3.1's unit, the inline text between hard breaks, so this is a s
 For the `st` discriminator below that is the safe direction: `St. Louis is a city.` opens its section, the discriminator says nothing, and the unconditional rule for `st` keeps the line whole.
 A rule whose verdict is `no` and whose condition is on `before_full` has the opposite exposure, and its author should carry an example for the section-start case.
 
-**Positions are counted from the terminator rather than from the gap**, which is what carries the second-order lookback below.
-Where a spaced-off closer stands as its own segment, as French writes `« Ceci est important. »`, the terminator test steps back past it and `at` and `before_full` step back with it, so `at` is `important` and not `»`.
-The consequence worth stating is that the closer segment is then invisible to every pattern, and no rule can ask whether one was there.
+**Positions are counted from the words on either side of a gap, not from the gap's own neighbors.**
+Where spaced-off marks stand as segments of their own, as French writes `« Ceci est important. »`, the whole run of them between two words is one gap (below): `at` and `before_full` read leftward from the word carrying the terminator, and `after_full` reads the word after the run, so `at` is `important` and not `»`.
+The consequence worth stating is that a lone mark is invisible to every pattern, and no rule can ask whether one was there.
 
 **What `at` sees is the stripped candidate**, and every shipped rule depends on it.
 Before matching, the candidate loses its trailing terminator and the closers behind it, its footnote references by the grammar above, and any leading run of the opener set, so `(Fig.` and `hand.[^1]` both arrive as the bare word.
@@ -500,7 +502,7 @@ What it costs settles it.
 Its companion constant, a fifteen-character minimum sentence length, is width machinery and §1 declines it on sight.
 
 **Where the line between the table and the code sits.**
-Everything that decides by looking at one candidate, one segment back and one segment forward is a rule in the table, and is therefore overridable.
+Everything that decides by looking at one candidate, the word before it and the word after the gap is a rule in the table, and is therefore overridable.
 Everything else is code, and is not.
 
 | check | in the table | why |
@@ -508,7 +510,7 @@ Everything else is code, and is not.
 | abbreviations, dotted initialisms, single initials | **yes** | three positions and nothing else |
 | `require_sentence_capital` | its lowercase half could be | kept as one option because it is inherited whole (§4) |
 | an opaque atom opens a sentence | no | tests the node's type, which no text pattern sees |
-| quotation open versus close | no | needs the segment before the segment before |
+| runs of lone marks and their roles | no | a run can be any length, which no three-position rule spans |
 | bracket depth | no | accumulated across a section, and a safety rule |
 | block constructs, masking, the footnote strip | no | safety rules, and a rules file must not be able to defeat them |
 
@@ -639,27 +641,31 @@ Requiring an alphabetic character rather than merely a non-lowercase one happens
 **Quotation marks are language-specific.**
 Two structural rules follow, neither of them about any one language:
 
-- A segment consisting only of quotation or markup characters is a *lone mark*, and two kinds of lone mark take their role from their glyph.
-  The CJK marks do, because they never change direction: `「` `『` `《` `〈` open and `」` `』` `》` `〉` close.
-  A lone guillemet does too, read the French way: `«` and `‹` open, `»` and `›` close.
-  French is the one convention that spaces guillemets off their words, so a lone guillemet is almost always French, while German `»Text«` and Finnish `»teksti»` touch their words, where position decides and direction never matters.
-  One French usage points the other way: an older tradition, which Canada's Bureau de la traduction still describes, opens each continuation paragraph of a long quotation with `»`.
-  It costs nothing, because that mark opens a paragraph, and with no segment before it either reading leaves it on the first line with the words after it.
-  Counting open quotations would be the language-free alternative, and it fails on ordinary French: a quotation can close in a paragraph it did not open in, as dialogue does when `«` opens the exchange, a dash marks each reply, and `»` closes it at the end.
-  Every other lone mark, a straight quote, `“` `”` `‘` `’` `‟` `‛`, or a low `„` `‚`, keeps the older rule: closing when the segment before it ends in a terminator, opening otherwise.
-  The low marks look like openers and are not reliably so: Italian books of about 1860 to 1920 closed quotations with `„`, spaced off in print, as in De Amicis's `degli “ umiliati del villaggio. „ Quegli era un avvocato`, which the older rule reads correctly and a glyph reading would push onto the next line.
-  Transcriptions attach the mark instead, `villaggio.„ Quegli`, and that form needs no rule of its own, because `„` is a closer.
-- A segment read as closing is never a break candidate, and when the segment to the left is such a mark, the terminator test looks back past it and any closing marks before it.
-  French spaces its closer off — `« Ceci est important. »` — which puts the closer in a segment of its own and breaks the naive rule twice, once by orphaning the mark onto the next line and once by failing to see the terminator.
+- A segment consisting only of quotation or markup characters is a *lone mark*, and one or more of them standing between two words is a *run*.
+  **A run is one gap, and the two words decide it.**
+  The terminator test and the rules table read the word on the left, the capital test reads the word on the right, and the marks in between are skipped by all three.
+  The marks decide only where in the run the newline goes: after the marks read as closing, and before the first mark read as opening.
+  French spaces its marks off, `« Ceci est important. »` with ordinary spaces, which puts each mark in a segment of its own, and `Il a dit. « Ceci est important. » Puis il part.` breaks after `dit.` and after `»`, with each mark on the side it belongs to.
   That happens only when the space typed is an ordinary one; with the no-break space French typography prescribes, the mark stays in its word's segment and the no-break-space rule above handles it.
-- A segment read as *opening* defers the capital test to the next segment rather than failing it.
-  Returning "no opener found" is not the same as "no sentence opens here".
-  This is the rule that keeps `Il a dit. « Ceci est important. »` breaking after `dit.`: the lone `«` opens by its glyph, so the capital test moves on to `Ceci`.
 
-**One lone mark's role decides which line it lands on, never whether a break happens.**
-Verified by simulation over seventeen texts with a lone mark between two words, in French, German, Finnish, English, Italian, Japanese and Chinese: every combination of readings, 64 in all, puts the same words on each line, and only the marks move.
-So a wrong reading of one mark costs a quotation mark stranded at the wrong end of a line, which is why a glyph decides only for marks whose direction is certain or whose one exception is harmless.
-Lone marks side by side are different, because there the readings do move breaks: nested quotations spaced French-style, `Il a dit. « “ Oui. ” » Puis il part.`, break correctly only when all four marks are read as the rules above read them, and the break after `»` needs the look-back to pass both closing marks.
+- A lone mark's role comes from the first of these that applies to its first character.
+
+  1. **Its shape, for the guillemets and the right-hand curly quotes:** `«` and `‹` open, and `»`, `›`, `”` and `’` close.
+     The guillemets are read the French way: French is the one convention that spaces them off their words, so a lone guillemet is almost always French, while German `»Text«` and Finnish `»teksti»` touch their words, where position decides and direction never matters.
+     One French usage points the other way: an older tradition, which Canada's Bureau de la traduction still describes, opens each continuation paragraph of a long quotation with `»`.
+     It costs nothing, because that mark opens a paragraph, and with no word before it no break is in question.
+     `”` and `’` open only in Finnish and Swedish, and only touching their words, so a spaced one closes.
+  1. **Its set, for a mark in only one:** the CJK marks, `¿`, `¡`, `‚`, `[`, `(` and backslash, each in one set, take that set's role.
+  1. **What precedes it, for every other mark**, a straight quote, `“` `‘` `‟` `‛`, `„`, or markup: closing when the segment before it ends in a terminator, opening otherwise.
+     `„` is here rather than among the openers by shape because Italian books of about 1860 to 1920 closed quotations with it, spaced off in print, as in De Amicis's `degli “ umiliati del villaggio. „ Quegli era un avvocato`, which this rule reads correctly and a shape would push onto the next line.
+     Transcriptions attach the mark instead, `villaggio.„ Quegli`, and that form needs no rule of its own, because `„` is a closer.
+
+  Counting open quotations would be the language-free alternative, and it fails on ordinary French: a quotation can close in a paragraph it did not open in, as dialogue does when `«` opens the exchange, a dash marks each reply, and `»` closes it at the end.
+
+**A mark's role decides which line it lands on, never whether a break happens.**
+That holds by construction, since only the words around a run decide its break, and it is verified by simulation: over twenty-one texts with lone marks, alone and side by side, in French, German, Finnish, English, Italian, Japanese and Chinese, every combination of readings, 116 in all, puts the same words on each line.
+So a wrong reading costs a quotation mark stranded at the wrong end of a line and nothing more.
+The one such cost left in the shipped readings is a spaced opening `“` after a sentence end, which the third rule reads as closing: `He said. “ ‘ Yes. ’ ” Then he left.` leaves the `“` at the end of the first line.
 `notes/experiments/lonemark.py` reproduces all of this.
 
 **Guillemets around a word or a fragment need nothing of their own.**
@@ -667,16 +673,16 @@ French uses them for a term being mentioned, a title, irony, or a fragment quote
 A mark in mid-sentence decides nothing, because no terminator stands beside it, and `».` is not a lone mark at all but a closer followed by the sentence's terminator.
 Verified by simulation of the rules above, with ordinary spaces: `Le mot « chat » désigne un animal. Puis il part.`, `Il l'appelle « le patron ». Puis il part.` and `Il a crié « Stop ! » et il est parti.` each break exactly where a French reader expects, and only there.
 
-**The cascade has two results; the opener scan has three.**
+**The cascade has two results, and so does the capital test.**
 Every check in this section either vetoes a break or abstains, and none can force one, because `break` takes only `no` and `allow` (§4) and the table is consulted only at candidate gaps.
 So the cascade is a conjunction: a gap breaks when nothing has objected, the order the checks run in is free, and an opaque atom satisfying the capital test does not override the block-construct rule vetoing the same gap.
 A `Break / NoBreak / unmatched` result for the cascade would therefore carry an arm that nothing ever returns, which is an invitation rather than a clarification.
 
-The opener scan is the one place the third state is real.
-Looking forward past opening markup for a character to test, it can find one that passes, find one that fails, or reach the end of the segment having found none, and the third is not the second: the quotation rule above turns on exactly that difference.
-A scan that reaches the end of the paragraph still having found none reports failure, because no sentence opens there at all.
+The capital test once needed a third result, for a segment holding nothing but opening marks, so that the quotation rule could tell "nothing to test here" from "no sentence opens here".
+Runs removed the need: such a segment is a lone mark inside a run, and the test reads the word after the run instead.
+With no word after the run, at the end of a section, no sentence opens and no break is in question.
 
-Isolation, which is the usual argument for the three-valued form, is already had another way here.
+Isolation, which is the usual argument for a three-valued form, is already had another way here.
 A rule in the table is isolated by its mandatory examples (§4), and the checks that stay in code are isolated by §6.2's hand-written fixture pairs.
 Adding a forcing verdict would give the cascade a genuine third result, and this is the paragraph to revisit if one ever arrives.
 
@@ -1207,7 +1213,7 @@ rumdl has its own blind spots, this design intends to do better in places, and w
 1. The positive control, before anything else.
    Every other check in §6.2 passes with the plugin disabled — an identity function deletes nothing, changes no render, and is trivially width-independent — so until one test fails when the plugin is absent, a green suite does not distinguish a working plugin from an inert one.
 1. §6.1, which is three lines and catches most of what can go wrong.
-1. The sentence-detection fixtures, which are where the remaining complexity actually lives: abbreviations, initials, the capital rule, footnote references, CJK, CJK quotation marks spaced off their words, French spaced closers, guillemets around a word or a fragment, French dialogue that closes in a later paragraph, a continuation paragraph opening with `»`, nested quotations spaced French-style, the historical Italian closing `„`, Greek and Polish quotations opening with `‟` and `‛`, German quotes, the `?"` case, bracket depth, and block constructs.
+1. The sentence-detection fixtures, which are where the remaining complexity actually lives: abbreviations, initials, the capital rule, footnote references, CJK, CJK quotation marks spaced off their words, French spaced closers, guillemets around a word or a fragment, French dialogue that closes in a later paragraph, a continuation paragraph opening with `»`, Finnish and Swedish quotations opening with `”` and `’`, nested quotations spaced French-style and English-style, a spaced `¿`, the historical Italian closing `„`, Greek and Polish quotations opening with `‟` and `‛`, German quotes, the `?"` case, bracket depth, and block constructs.
 
 **Three of them come from Panache's semantic-wrap suite**, paraphrased rather than copied, and hold as Panache states them.
 Three more from the same suite turn on keeping an authored soft break, which this design does not do (§2.5); `notes/PRESERVE-MODE.md` keeps them as examples of what an add-only mode would add.
