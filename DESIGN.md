@@ -425,11 +425,11 @@ Patterns are ordinary `re` syntax with our own classes injected, so `{1}`, alter
 The classes are spelled `$name` and expand to explicit ranges at build time:
 
 ```
-sets       $upper $lower $oletter $numeric $mark $sterm $aterm $scontinue $close
-sequence   $grapheme
+$upper $lower $oletter $numeric $extend $sterm $aterm $scontinue $close
 ```
 
-The sets are UAX #29 Sentence_Break property values of the same names, so `$upper` folds titlecase in and leaves both Georgian scripts out, exactly as the standard defines.
+Each is the UAX #29 Sentence_Break property value of the same name, so `$upper` folds titlecase in and leaves both Georgian scripts out, exactly as the standard defines, and `$extend` is the combining marks and joiners that the standard lets trail a character.
+A grapheme cluster is deliberately not among them: no rule needs one, `.$extend*` covers an accented letter in either normalization form, and a faithful one would vendor three more Unicode files for a 62,000-character pattern.
 
 **The tables are generated and vendored, not looked up.**
 Python's `unicodedata` does not expose Sentence_Break at all, so there is nothing to look up at runtime, and while `uniseg` and `regex` both carry the property, §2's dependency line is mdformat only.
@@ -440,7 +440,7 @@ Lowercase POSIX spellings are a **load error**, not a synonym: UAX #29 `Numeric`
 A rules file may define its own macros in a `[macros]` table, referencing earlier ones, which is the notation CLDR and ICU already use for this job.
 Built-in names cannot be shadowed, so `$upper` means one thing everywhere.
 
-A set expands bare inside a bracket and grouped outside it; a sequence and a macro are always grouped, and both are a load error inside a bracket.
+A set expands bare inside a bracket and grouped outside it; a macro is always grouped, and is a load error inside a bracket.
 Both rules exist because naive substitution is silently wrong: `$roman.*` expanded without grouping compiles as `[IVXLCDM]+|[ivxlcdm]+.*`, where the `.*` binds to the second alternative alone and the first matches a bare roman numeral anywhere.
 
 **Patterns carry no anchors, because every one of them is `fullmatch`ed.**
@@ -461,7 +461,7 @@ Anchoring is implied by the matcher, which makes writing it a silent narrowing r
   It does not match a hyphenated word either, since a hyphen is not a letter, and it leaves quoted filenames alone, since a backtick is not a letter either.
   Its cost is a bare unquoted filename: `Edit config.test.js. Then run the tests.` joins, and a user who hits that writes one `allow` rule.
 
-- **Single capital initials**, also a shipped rule: `at = '$upper$mark*'`.
+- **Single capital initials**, also a shipped rule: `at = '$upper$extend*'`.
   `J. K. Rowling`.
   The predicate is exactly one letter that is UAX #29 `Upper`, plus any combining marks, so a decomposed `É` counts as one letter and `Mr` does not match.
   Its known cost is unchanged: `He got an A. Then he left.` loses that break, because a lone capital before a period has the same shape whether it is an initial or a word.
@@ -820,7 +820,7 @@ Its relative paths resolve against the working directory, since a separate key i
 **What an included file contributes is rules and macros, never the notation.**
 The `$name` sets of §3.3 are the pattern language rather than rule content, so every file gets them and no file can shadow them.
 `$letter`, `$roman`, `$whole` and `$mixed` are **not** among them: they are `[macros]` in the default file, so a file including nothing must define its own, and using `$whole` without defining it is an undefined-macro error rather than a silent no-op.
-`$letter` carries trailing marks, `(?:$upper|$lower|$oletter)$mark*`, so a decomposed `É` counts as one letter wherever it is used.
+`$letter` carries trailing marks, `(?:$upper|$lower|$oletter)$extend*`, so a decomposed `É` counts as one letter wherever it is used.
 That is the intended split, because it is what lets a user narrow `$roman` to reject `iiiv` while leaving `$numeric` meaning one thing everywhere.
 
 **Every string in a rules file is a literal string**, `'…'` for patterns and `'''…'''` for examples.
@@ -836,7 +836,7 @@ schema  = 1
 include = []
 
 [macros]
-letter = '(?:$upper|$lower|$oletter)$mark*'
+letter = '(?:$upper|$lower|$oletter)$extend*'
 roman = '[IVXLCDM]+|[ivxlcdm]+'
 whole = '(?:$numeric)+|(?:$roman)'
 mixed = '(?:$roman)|(?:$numeric).*|.*(?:$numeric)'
@@ -932,7 +932,7 @@ He holds a Ph.D. Cambridge gave it to him.
 '''
 
 [[rule]]
-at    = '$upper$mark*'
+at    = '$upper$extend*'
 break = 'no'
 
   [[rule.example]]
