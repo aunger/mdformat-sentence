@@ -361,43 +361,46 @@ At a candidate gap every rule whose patterns match is considered, and the last o
 Ordering is what makes a rule overridable without knowing how it was written: a later rule matching `st` settles `st`, whatever pattern an earlier rule used to reach it.
 Last rather than first, because a macro's later definition already overrides its earlier one, and a file cannot be half assignment and half matcher without being a trap.
 
-Each rule carries up to three patterns, one per position, each `fullmatch`ed against a single segment.
+Each rule carries up to five patterns, each `fullmatch`ed against a single word, and a rule matches only where all of its patterns do.
 
 | key | matches |
 | --- | --- |
-| `at` | the terminator-bearing segment, stripped as below |
-| `before_full` | the word before that one, raw |
+| `at` | the word carrying the terminator, stripped as below |
+| `before` | the word before that one, stripped |
+| `after` | the word after the gap, stripped |
+| `before_full` | the word before, raw |
 | `after_full` | the word after the gap, raw |
 
-**Only `at` is stripped, and the `_full` suffix on the other two says so.**
-They are the segments as they arrive, which is what makes *unpunctuated* expressible: `before_full = '$upper$letter*'` says a capitalized word carrying no punctuation, which `Paris,` and `at` and `1890` each fail for a different reason.
-A stripped `before` and `after`, and a raw `at_full`, are the three names the convention leaves free for when something needs them.
+**The bare keys are stripped and the `_full` keys are raw.**
+`before` and `after` lose any leading run of the opener set and any trailing run of closers, terminators, footnote references and clause punctuation, `,` `;` `:`.
+Stripped is what an index needs: `after = '$whole'` holds for `3`, `3,`, `3.` and `(3)` alike, where a raw pattern would have to spell out every punctuation that can follow a number.
+Raw is what makes *unpunctuated* expressible: `before_full = '$upper$letter*'` says a capitalized word carrying no punctuation, which `Paris,` and `at` and `1890` each fail for a different reason.
 No separate condition is needed for it, and none is offered.
+A raw `at_full` is the one name the convention still leaves free for when something needs it.
 
-**`before_full` is the empty string when the candidate opens the section**, and that is what makes *nothing precedes* sayable without a keyword for it.
+**`before` and `before_full` are the empty string when the candidate opens the section**, and that is what makes *nothing precedes* sayable without a keyword for it.
 `before_full = ''` matches there and nowhere else, while any pattern requiring a character fails there.
 The section is §3.1's unit, the inline text between hard breaks, so this is a section start rather than a document one.
-`after_full` is never empty, because a gap has a segment on each side by definition.
+`after_full` is never empty, because a gap has a word on each side by definition; `after` is empty only when that word is nothing but punctuation.
 
-**A `before_full` condition simply does not match at a section start**, so a rule carrying one stays silent there and whatever the table had already decided stands.
+**A condition on `before` or `before_full` simply does not match at a section start**, so a rule carrying one stays silent there and whatever the table had already decided stands.
 For the `st` discriminator below that is the safe direction: `St. Louis is a city.` opens its section, the discriminator says nothing, and the unconditional rule for `st` keeps the line whole.
-A rule whose verdict is `no` and whose condition is on `before_full` has the opposite exposure, and its author should carry an example for the section-start case.
+A rule whose verdict is `no` and whose condition is on `before` or `before_full` has the opposite exposure, and its author should carry an example for the section-start case.
 
 **Positions are counted from the words on either side of a gap, not from the gap's own neighbors.**
-Where spaced-off marks stand as segments of their own, as French writes `« Ceci est important. »`, the whole run of them between two words is one gap (below): `at` and `before_full` read leftward from the word carrying the terminator, and `after_full` reads the word after the run, so `at` is `important` and not `»`.
+Where spaced-off marks stand as segments of their own, as French writes `« Ceci est important. »`, the whole run of them between two words is one gap (below): `at`, `before` and `before_full` read leftward from the word carrying the terminator, and `after` and `after_full` read the word after the run, so `at` is `important` and not `»`.
 The consequence worth stating is that a lone mark is invisible to every pattern, and no rule can ask whether one was there.
 
 **What `at` sees is the stripped candidate**, and every shipped rule depends on it.
 Before matching, the candidate loses its trailing terminator and the closers behind it, its footnote references by the grammar above, and any leading run of the opener set, so `(Fig.` and `hand.[^1]` both arrive as the bare word.
-The last hyphen-separated component is tested as well, so `Wrangell-St.` matches via `st`.
 That is why the shipped rules are written `mr|mrs|ms|dr` with no dots: a pattern reaching for punctuation has nothing to match against.
+Nothing else is transformed: a hyphenated word is matched whole, so a rule that wants `Wrangell-St.` writes the hyphen into its own pattern, as the shipped `st` rule does with `(?:.*-)?`.
 
 **Every pattern matches case-sensitively, and a pattern wanting otherwise says so** with `re`'s own scoped flag: `at = '(?i:fig|vol|ch|sec)'`.
 Nothing is folded by key or by position, because a rule that folds where it was not asked to is worse than one that does not fold where it should be.
 
-A folded `$lower.*` matches any letter at all, so an index rule under blanket folding suppresses every break rather than only the ones opening lowercase.
-`$roman` fails the same way and more quietly: it is homo-case for the measured reason below, and folded `[IVXLCDM]+` matches `Vic` and `Di` in full.
-Neither can happen when folding is asked for one pattern at a time.
+`$roman` shows what blanket folding would cost: it is homo-case for the measured reason below, and a folded `[IVXLCDM]+` matches `Vic` and `Di` in full, so an index rule would swallow a capitalized word as a numeral.
+That cannot happen when folding is asked for one pattern at a time.
 The converse mistake is cheap: an `at` pattern that forgets the flag matches nothing that is capitalized, and the rule's mandatory example (§4) fails.
 
 Case-insensitivity is therefore `re`'s, which is **simple** case folding rather than full.
@@ -456,7 +459,7 @@ Anchoring is implied by the matcher, which makes writing it a silent narrowing r
   This is `U.S.`, `U.K.`, `Ph.D.`, `a.m.`, `e.g.`, `i.e.` and German `z.B.` in one line, with no entry for any of them, and it needs no `(?i:…)` because `$letter` already spans both cases.
   It is written against the stripped candidate, so `Ph.D.` arrives as `Ph.D` and the pattern asks for letters between the dots and a letter at the end.
   That is what makes it safe, and the alternative wording, ends in a dot and contains two or more, is wrong three ways: it claims every run of periods indiscriminately where the ellipsis rule below counts them, and it claims version numbers and IP addresses.
-  It also cannot collide with the hyphen refinement above, since a hyphen is not a letter, and it leaves quoted filenames alone, since a backtick is not a letter either.
+  It does not match a hyphenated word either, since a hyphen is not a letter, and it leaves quoted filenames alone, since a backtick is not a letter either.
   Its cost is a bare unquoted filename: `Edit config.test.js. Then run the tests.` joins, and a user who hits that writes one `allow` rule.
 
 - **Single capital initials**, also a shipped rule: `at = '$upper$mark*'`.
@@ -535,16 +538,12 @@ Measured, as the share of each token's ten commonest continuations that are nume
 Each of these precedes a number rather than a name, and three of them are also ordinary English: a `fig` is a fruit, `no` is a negation, a `sec` is a moment.
 `He ate a fig.`, `The answer was no.` and `Wait a sec.` all end sentences, and all three lose that boundary if the rule is unconditional, which is what rumdl and `mdformat-sembr` both do.
 
-So these suppress a break only when the follower matches one of two shipped patterns, **whole** `(?:$numeric)+|(?:$roman)` or **mixed** `(?:$roman)|(?:$numeric).*|.*(?:$numeric)`, or when it opens with a lowercase letter.
+So these suppress a break only when the word after them, stripped, matches one of two shipped patterns, **whole** `(?:$numeric)+|(?:$roman)` or **mixed** `(?:$roman)|(?:$numeric).*|.*(?:$numeric)`.
+Stripped is what keeps `In Fig. 3, the curve…` and `See Vol. II, p. 4.` on one line, since `after` sees `3` and `II` where the raw word is `3,` and `II,`.
 `fig vol ch sec` take **whole**; `no` takes **mixed**, which also admits designators like `6c` and `C-3` and page ranges like `12-14`.
 `$roman` is homo-case for a measured reason: a case-folded `[IVXLCDM]+` matches `Vic` and `Di` in full, since those are all roman letters, and a capitalized word after `Fig.` or `Vol.` would be swallowed as a numeral.
 **mixed** costs two false joins in technical prose, `UTF-8` and `Python3`, both of which match its ends-with-a-digit half.
 `No. 5`, `Fig. 3`, `Vol. II`, `Ch. IV` and `Vol. I` hold; `He ate a fig. Then he left.` breaks.
-
-**The lowercase half is deliberately redundant with `require_sentence_capital`.**
-At the option's default the capital rule has already suppressed those breaks and the clause does nothing.
-With the option turned off it is the only thing between `Smith et al. showed that…` and a break, and likewise for `vol. iii` and `ch. iv`, whose lowercase roman numerals the index token does not admit.
-The class carries its own guard for the same reason the block-construct rule below does: a safety property a user-facing flag can switch off is not one the rest of the design can rely on.
 
 A digit-only test would be wrong, because roman numerals are ordinary for volumes, chapters and sections and digits alone would split `Vol. II`.
 Measured: `Ch` has the single letter `D` among its five commonest continuations, so single-character labels are real and not a corner case.
@@ -571,7 +570,7 @@ So it ships in `academic.toml` instead (§4), in a form tighter than any index c
 [[rule]]
 before_full = '(?i:et)'
 at          = '(?i:al)'
-after_full  = '$numeric{4}'
+after       = '$numeric{4}'
 break       = 'no'
 ```
 
@@ -836,13 +835,51 @@ whole = '(?:$numeric)+|(?:$roman)'
 mixed = '(?:$roman)|(?:$numeric).*|.*(?:$numeric)'
 
 [[rule]]
-at    = '(?i:mr|mrs|ms|dr|prof|sr|jr|st|vs)'
+at    = '(?i:mr|mrs|ms|dr|prof|sr|jr|vs)'
 break = 'no'
 
+  [[rule.example]]
+  input = '''
+Ask Dr. Smith about it.
+'''
+  output = '''
+Ask Dr. Smith about it.
+'''
+
+# Saint or Street: this cannot tell, and keeps both whole.
 [[rule]]
-at         = '(?i:fig|vol|ch|sec)'
-after_full = '$whole|$lower.*'
-break      = 'no'
+at    = '(?i:(?:.*-)?st)'
+break = 'no'
+
+  [[rule.example]]
+  input = '''
+We drove to Wrangell-St. Elias today.
+'''
+  output = '''
+We drove to Wrangell-St. Elias today.
+'''
+
+  [[rule.example]]
+  input = '''
+He lives on Main St. Then he left.
+'''
+  output = '''
+He lives on Main St. Then he left.
+'''
+
+  [[rule.example]]
+  input = '''
+It came first. Then more followed.
+'''
+  output = '''
+It came first.
+Then more followed.
+'''
+
+[[rule]]
+at    = '(?i:fig|vol|ch|sec)'
+after = '$whole'
+break = 'no'
 
   [[rule.example]]
   input = '''
@@ -854,9 +891,9 @@ Then he left.
 '''
 
 [[rule]]
-at         = '(?i:no)'
-after_full = '$mixed|$lower.*'
-break      = 'no'
+at    = '(?i:no)'
+after = '$mixed'
+break = 'no'
 
   [[rule.example]]
   input = '''
@@ -946,7 +983,7 @@ include = ['default']
 [[rule]]
 before_full = '(?i:et)'
 at          = '(?i:al)'
-after_full  = '$numeric{4}'
+after       = '$numeric{4}'
 break       = 'no'
 
   [[rule.example]]
@@ -959,9 +996,9 @@ The result held.
 '''
 
 [[rule]]
-at         = '(?i:fig|vol|ch|sec|eq|eqn|tbl|p|pp)'
-after_full = '$mixed|$lower.*'
-break      = 'no'
+at    = '(?i:fig|vol|ch|sec|eq|eqn|tbl|p|pp)'
+after = '$mixed'
+break = 'no'
 
   [[rule.example]]
   input = '''
@@ -979,22 +1016,22 @@ It covers the default's four index tokens and five more, with the looser followe
 `cf` is not here either, for the reason it is absent from the default, which academic prose does not change.
 
 **Lifting one token out of a shipped rule is the case the ordering exists for.**
-A manual full of street addresses and no saints overrides `st` without knowing that the default grouped it with eight other titles:
+A manual full of street addresses and no doctors overrides `dr`, the abbreviation for *Drive*, without knowing that the default grouped it with seven titles:
 
 ```toml
 schema  = 1
 include = ['default']
 
 [[rule]]
-at    = '(?i:st)'
+at    = '(?i:dr)'
 break = 'allow'
 
   [[rule.example]]
   input = '''
-He walked down Main St. Then he left.
+He lives on Elm Dr. Then he left.
 '''
   output = '''
-He walked down Main St.
+He lives on Elm Dr.
 Then he left.
 '''
 ```
@@ -1166,7 +1203,7 @@ It is a tripwire, and worth its cost as one: it is the row that catches any futu
 **The minimality row keeps the shipped sets honest**, and it runs over every file the package ships, not only the default.
 Each set is loaded with its own includes and tested on the rules it defines, so `academic.toml` must justify its own two rules but may shadow the default's index rule, which it does on purpose; a gate that forbade that would forbid the override the ordering exists to allow.
 For each rule, build a fixture where the table's verdict at some gap is that rule's, then require that removing the rule changes the output there.
-A conditional rule needs two fixtures, one where its `before_full` or `after_full` pattern holds and one where it does not, so the row also catches a condition that has quietly become unreachable.
+A conditional rule needs two fixtures, one where its condition on a neighboring word holds and one where it does not, so the row also catches a condition that has quietly become unreachable.
 Ordering makes this stronger than a removal test alone: a rule that is never the last match for any gap is fully shadowed by a later one, and the fixture cannot be built at all.
 A rule no fixture can distinguish was copied from somewhere else and is silently widening the exclusion.
 The checks living in code rather than in the table — the opaque-atom check, the block-construct rule, bracket depth, inline atoms, the footnote strip — cannot be tested by removal and need hand-written fixture pairs instead.
@@ -1199,7 +1236,7 @@ rumdl has its own blind spots, this design intends to do better in places, and w
 1. The positive control, before anything else.
    Every other check in §6.2 passes with the plugin disabled — an identity function deletes nothing, changes no render, and is trivially width-independent — so until one test fails when the plugin is absent, a green suite does not distinguish a working plugin from an inert one.
 1. §6.1, which is three lines and catches most of what can go wrong.
-1. The sentence-detection fixtures, which are where the remaining complexity actually lives: abbreviations, initials, the capital rule, footnote references, CJK, CJK quotation marks spaced off their words, French spaced closers, guillemets around a word or a fragment, French dialogue that closes in a later paragraph, sentences ending inside parentheses and brackets, a period inside a code span or a link destination, a continuation paragraph opening with `»`, Finnish and Swedish quotations opening with `”` and `’`, nested quotations spaced French-style and English-style, a spaced `¿`, the historical Italian closing `„`, Greek and Polish quotations opening with `‟` and `‛`, German quotes, the `?"` case, bracket depth, and block constructs.
+1. The sentence-detection fixtures, which are where the remaining complexity actually lives: abbreviations, initials, an index abbreviation before a punctuated number (`In Fig. 3, the curve`), a hyphenated word ending in a capital (`Jay-Z. He left.`), the capital rule, footnote references, CJK, CJK quotation marks spaced off their words, French spaced closers, guillemets around a word or a fragment, French dialogue that closes in a later paragraph, sentences ending inside parentheses and brackets, a period inside a code span or a link destination, a continuation paragraph opening with `»`, Finnish and Swedish quotations opening with `”` and `’`, nested quotations spaced French-style and English-style, a spaced `¿`, the historical Italian closing `„`, Greek and Polish quotations opening with `‟` and `‛`, German quotes, the `?"` case, bracket depth, and block constructs.
 
 **Three of them come from Panache's semantic-wrap suite**, paraphrased rather than copied, and hold as Panache states them.
 Three more from the same suite turn on keeping an authored soft break, which this design does not do (§2.5); `notes/PRESERVE-MODE.md` keeps them as examples of what an add-only mode would add.
