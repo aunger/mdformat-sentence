@@ -38,7 +38,7 @@ The plugin serves any Markdown whose author wants one sentence per line, and res
 Only the shipped *default rule set* is narrow: it is tuned for English prose of the kind this repository and its corpus are made of, because that is what there was to measure against (§3.3).
 An audience whose abbreviations differ does not need a different plugin, it needs a different rules file, and §4 ships a second one for academic prose.
 
-The whole configuration surface is one option and a set of rules beside it, both about sentence *detection* (§4).
+The whole configuration surface is a set of rules about sentence *detection* (§4), and there is no option.
 
 ## 2. Name, packaging and the seam
 
@@ -135,13 +135,12 @@ for action in group._group_actions:
     action.dest = f"plugin.{plugin_id}.{action.dest}"
 ```
 
-So `dest="require_sentence_capital"` lands at `options["mdformat"]["plugin"]["sentence"]["require_sentence_capital"]`, and the visible flag text is whatever string the plugin passes to `add_argument`.
+So `dest="cli_include"` lands at `options["mdformat"]["plugin"]["sentence"]["cli_include"]`, and the visible flag text is whatever string the plugin passes to `add_argument`.
 That is why §4 can spell the flags short, and why changing the CLI prefix later costs nothing else.
 
 **`default` must be `None` or `argparse.SUPPRESS`.**
 The same loop emits a `DeprecationWarning` otherwise, warning that the plugin's default will always override any value configured in TOML.
-A plugin that writes `action="store_false", default=True` silently defeats its own TOML config.
-Use `action="store_const", const=False, default=None` and resolve the default inside the plugin rather than in argparse.
+A plugin that sets any other default silently defeats its own TOML config, so `--sentence-include` uses `action="append"` with `default=None` and the plugin resolves the absence itself.
 
 ### 2.5 The three wrap modes
 
@@ -341,7 +340,7 @@ A reference glues to the word it annotates, so `The matter at hand.[^1] This is�
 
 **Which checks apply, by terminator.**
 
-| terminator | the rules table | `require_sentence_capital` |
+| terminator | the rules table | the capital test |
 | --- | --- | --- |
 | ATerm | yes | yes |
 | STerm | no | yes |
@@ -352,7 +351,7 @@ Folding the CJK terminators into STerm costs nothing: a CJK opening is alphabeti
 **A `!` or `?` is not unambiguous, so STerm takes the capital test too.**
 Brand names end in them, `Panic! at the Disco` and `Yahoo! bought it`, and a question can belong to a quoted phrase rather than to the sentence carrying it, `A "Is this a test?" guide to the whole subject…`.
 Every one of those continues with a lowercase word, so the capital test joins them all, and it does so wherever the closer stands: French spaces it off, `« Vraiment ? » dit-il en partant.`, and the lowercase `dit-il` holds the line together just the same.
-The cost is the one ATerm already pays, that a sentence opening lowercase after `!` or `?` is not broken, and `require_sentence_capital = false` removes it for both.
+The cost is the one ATerm already pays, that a sentence opening with a lowercase word after `!` or `?` is not broken, unless that word is one of the two kinds the capital test lets through (below).
 What remains out of reach is a capitalized follower, `Yahoo! Finance reported it.`, which breaks, and no rule can say otherwise while the table is closed to STerm; `at_full`, held free in §3.3's naming, is the route if it ever matters.
 
 **Rules are an ordered decision table, and the last match wins.**
@@ -467,14 +466,20 @@ Anchoring is implied by the matcher, which makes writing it a silent narrowing r
   The predicate is exactly one letter that is UAX #29 `Upper`, plus any combining marks, so a decomposed `É` counts as one letter and `Mr` does not match.
   Its known cost is unchanged: `He got an A. Then he left.` loses that break, because a lone capital before a period has the same shape whether it is an initial or a word.
 
-- **`require_sentence_capital`** (default true): the next sentence must open with a digit, or with an alphabetic character that is not lowercase.
+- **The capital test**: the next sentence must open with a digit, or with an alphabetic character that is not lowercase.
   The alphabetic conjunct is load-bearing: a bare *not lowercase* is a wider set that admits `#`, `>` and `-`, and the paragraph below turns on the difference.
   Digits matter: `1976 was hot.` is a sentence opening.
   **Writing the case half as *not lowercase* rather than as *uppercase* is what carries the caseless scripts.**
   CJK, Arabic, Hebrew, Devanagari, Thai and Ethiopic are alphabetic and neither upper nor lower, so each passes without a clause of its own, while `a` and `ω` still fail.
-  An *uppercase* test admits only the scripts that have case, which would leave Arabic and Hebrew prose unbreakable and the option the only way out.
+  An *uppercase* test admits only the scripts that have case, which would leave Arabic and Hebrew prose unbreakable.
   Both Georgian scripts pass too, because UAX #29 places Mkhedruli and Mtavruli in `OLetter` rather than in `Lower` and `Upper`: Georgian does not open sentences with Mtavruli, so the standard declines to treat it as a capital.
   Opening markup is skipped first, using the opener set above.
+  **Two kinds of lowercase word pass anyway.**
+  A camelCase word, opening lowercase with a capital later, `iOS`, `macOS`, `gRPC`, `iPhone`, is a name, so `The phone shipped in 2007. iOS came later.` breaks.
+  Measured over 13.0 million words of English documentation, from MDN, GitHub Docs, VS Code, Flutter, React Native, Xamarin and .NET, that adds 106 correct breaks and no wrong one; `notes/experiments/camelcase.py` reproduces the count, and `camelcase.tsv` beside it holds each position with the verdict it was given on reading.
+  And a word matching a rules file's `lowercase_names` pattern (§4) passes, for the names camelCase cannot see: `npm`, `pnpm`, `dotnet-trace`.
+  The same documentation has about thirty sentences opening with such a name, and no pattern could list them for every project, so the default names none.
+  There is no switch to turn the test off: a document that opens sentences with ordinary lowercase words gets no break there, which is the same trade every other check in this section takes, a long line rather than a wrong break.
 
 - **An opaque inline atom opens a sentence**, whatever it contains.
   A segment beginning a code span, an image or an autolink counts as a sentence opening regardless of case, because it renders as a thing rather than as prose and case does not apply to it.
@@ -497,7 +502,7 @@ Everything else is code, and is not.
 | check | in the table | why |
 | --- | --- | --- |
 | abbreviations, dotted initialisms, single initials | **yes** | three positions and nothing else |
-| `require_sentence_capital` | its lowercase half could be | kept as one option because it is inherited whole (§4) |
+| the capital test and its two exemptions | no, though `lowercase_names` lives in rules files | it applies after every terminator, and the table only after ATerm |
 | an opaque atom opens a sentence | no | tests the node's type, which no text pattern sees |
 | runs of lone marks and their roles | no | a run can be any length, which no three-position rule spans |
 | bracket depth | no | accumulated across a section, and a safety rule |
@@ -510,7 +515,7 @@ A block-construct rule that a file could countermand would let a rules file brea
 **Partly measured.**
 The repository corpus exercises none of these tokens, but Google Books English 2019 does; `notes/experiments/ngram.py` reproduces the figures, and the method's one real limitation is recorded at the end of this block.
 
-A rule only ever does work when the next token is capitalized or a digit, because the break before a lowercase word is suppressed already — by `require_sentence_capital` at its default, and by the conditional class's own lowercase clause whatever that option is set to.
+A rule only ever does work when the next token is capitalized or a digit, because the capital test has already suppressed the break before a lowercase word.
 That reframes the question for every one of them, from *is it also a word* to *what does it suppress that the capital rule does not already*, and it sorts them into three jobs and one mistake.
 
 | tokens | job | also a word, or sentence-final | form |
@@ -619,9 +624,9 @@ Break the same gap without the indent and the check does fire, because `<div>` a
 What survives the repair is damage to the *source*: four spaces this plugin never asked for, on a line it promised would gain nothing but a newline.
 A gate that compares rendered HTML is structurally blind to that, whatever else it is good for.
 
-This rule is **unconditional and independent of `require_sentence_capital`**, and that matters.
+This rule is **unconditional and independent of the capital test**, and that matters.
 It is the only thing preventing a break from putting a construct at a line start where mdformat would escape it, and because this plugin has no `avoid_escapes` option (§4.1), it is the only protection there is.
-Requiring an alphabetic character rather than merely a non-lowercase one happens to suppress the same cases, but a user who sets `require_sentence_capital = false` would otherwise re-arm all of them.
+Requiring an alphabetic character rather than merely a non-lowercase one happens to suppress the same cases, but a `lowercase_names` pattern broad enough to admit `#` or `-` would otherwise re-arm them.
 
 **Quotation marks are language-specific.**
 Two structural rules follow, neither of them about any one language:
@@ -737,14 +742,10 @@ ______________________________________________________________________
 
 ## 4. Config surface
 
-One option, and rules that live in the same table.
-
-| Option | Type | Default | Meaning |
-| --- | --- | --- | --- |
-| `require_sentence_capital` | bool | `true` | `word. lowercase` is not a boundary |
+No option: the configuration is rules, and they live in the same table as mdformat's own.
 
 **`[plugin.sentence]` is itself a rules file whenever it holds a rules-file key.**
-Once it holds any of `schema`, `include`, `macros` or `rule`, everything this section says about a rules file applies to it, a mandatory `include` among the rest; while it holds none, the shipped default applies, as it does with no configuration at all.
+Once it holds any of `schema`, `include`, `macros`, `lowercase_names` or `rule`, everything this section says about a rules file applies to it, a mandatory `include` among the rest; while it holds none, the shipped default applies, as it does with no configuration at all.
 mdformat checks only that a plugin's table is a table, so the nested arrays pass its validation and reach the plugin intact, verified against mdformat 1.0.0; at the root of `.mdformat.toml` they are rejected, since mdformat allows only its own eight keys there.
 A separate rules file is named the way any rules file names another, through `include`, so there is no option for it:
 
@@ -787,6 +788,12 @@ So a file overrides an inherited rule by writing a later one that matches the sa
 Several bases compose through the array and only through it, because TOML forbids a duplicate key and a second `include` line is a parse error rather than a second base.
 A name that is not a shipped set is a load error, as is a cycle, and both resolve before any pattern compiles.
 The table is compiled once and cached, keyed on the config file it came from, its `[plugin.sentence]` table and `cli_include`, and never rebuilt per paragraph, since the hook runs for every paragraph and twice under `--wrap no` (§2.3).
+
+**`lowercase_names` lets a lowercase name open a sentence.**
+It is a pattern like every other key, fullmatched against the stripped word after the gap, and a word it matches passes the capital test (§3.3): `lowercase_names = 'npm|pnpm|gzip|dotnet-.*'`.
+The patterns of every file in a composition apply together, so a file can add names and none can take one away; the default names none.
+It is a key of the file rather than a rule because it answers a different question, whether a word may open a sentence rather than whether a period ends one, and because it applies after `!` and `?`, where the table is closed.
+It needs no example: it can only let a break through before a word its author named.
 
 **`schema` is the format version, and the loader checks it.**
 A file whose `schema` this version does not recognize is a load error naming the one it does, so a future incompatible format is refused rather than half-read into rules that look plausible.
@@ -1046,20 +1053,13 @@ That command is deliberately **not** an mdformat flag.
 CLI spelling is short, because mdformat namespaces only the argparse `dest` and leaves the flag text to the plugin (§2.4):
 
 ```
---sentence-no-require-sentence-capital
 --sentence-include PATH        repeatable; dest is cli_include
 ```
 
-Every default must be `None`, for the reason in §2.4.
+Its default must be `None`, for the reason in §2.4.
 
-As with any mdformat plugin, these are CLI- and TOML-only: `mdformat.text()` does not populate `options["mdformat"]["plugin"]`, so a library caller gets the defaults.
+As with any mdformat plugin, the flag and `[plugin.sentence]` are CLI- and TOML-only: `mdformat.text()` does not populate `options["mdformat"]["plugin"]`, so a library caller gets the shipped default.
 An undocumented escape hatch exists and the test harnesses use it — `options={"plugin": {"sentence": {...}}}` reaches the seam via the splat at `_api.py:29` — but it is not a supported mdformat interface.
-
-**`require_sentence_capital` is inherited, and that is the whole of its provenance.**
-rumdl has it under the same name with the same default, and its trigger was one issue reporting that lowercase English prose did not reflow ([rvben/rumdl#514](https://github.com/rvben/rumdl/issues/514)); no argument from any language was attached to it there or here.
-It is kept because it now costs nothing, not because a need for it has been shown, and the widened test in §3.3 removes the one principled use it had.
-Turning it off is not free: it makes every abbreviation absent from the shipped set a break site, so `Dept. of Defense` breaks after `Dept.`
-It re-arms nothing that protects the output, though: the conditional abbreviations and the block-construct rule both carry their own guards (§3.3).
 
 **One rough edge inherited from mdformat, stated rather than worked around.**
 Nothing in `_api.py` or `_cli.py` wraps plugin code in `try`/`except`, so a malformed rules file surfaces as an uncaught traceback, and `sys.exit()` from a plugin would kill a `mdformat.text()` caller's process rather than just the CLI.
@@ -1236,7 +1236,7 @@ rumdl has its own blind spots, this design intends to do better in places, and w
 1. The positive control, before anything else.
    Every other check in §6.2 passes with the plugin disabled — an identity function deletes nothing, changes no render, and is trivially width-independent — so until one test fails when the plugin is absent, a green suite does not distinguish a working plugin from an inert one.
 1. §6.1, which is three lines and catches most of what can go wrong.
-1. The sentence-detection fixtures, which are where the remaining complexity actually lives: abbreviations, initials, an index abbreviation before a punctuated number (`In Fig. 3, the curve`), a hyphenated word ending in a capital (`Jay-Z. He left.`), the capital rule, footnote references, CJK, CJK quotation marks spaced off their words, French spaced closers, guillemets around a word or a fragment, French dialogue that closes in a later paragraph, sentences ending inside parentheses and brackets, a period inside a code span or a link destination, a continuation paragraph opening with `»`, Finnish and Swedish quotations opening with `”` and `’`, nested quotations spaced French-style and English-style, a spaced `¿`, the historical Italian closing `„`, Greek and Polish quotations opening with `‟` and `‛`, German quotes, the `?"` case, bracket depth, and block constructs.
+1. The sentence-detection fixtures, which are where the remaining complexity actually lives: abbreviations, initials, camelCase and `lowercase_names` sentence openers, an index abbreviation before a punctuated number (`In Fig. 3, the curve`), a hyphenated word ending in a capital (`Jay-Z. He left.`), the capital rule, footnote references, CJK, CJK quotation marks spaced off their words, French spaced closers, guillemets around a word or a fragment, French dialogue that closes in a later paragraph, sentences ending inside parentheses and brackets, a period inside a code span or a link destination, a continuation paragraph opening with `»`, Finnish and Swedish quotations opening with `”` and `’`, nested quotations spaced French-style and English-style, a spaced `¿`, the historical Italian closing `„`, Greek and Polish quotations opening with `‟` and `‛`, German quotes, the `?"` case, bracket depth, and block constructs.
 
 **Three of them come from Panache's semantic-wrap suite**, paraphrased rather than copied, and hold as Panache states them.
 Three more from the same suite turn on keeping an authored soft break, which this design does not do (§2.5); `notes/PRESERVE-MODE.md` keeps them as examples of what an add-only mode would add.
