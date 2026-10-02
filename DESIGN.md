@@ -719,20 +719,13 @@ Here only a newline this plugin emits can start a line, since every other gap is
 
 ### 3.6 Failure policy
 
-Rebuild the emitted section from the input: replace the *i*th run of `\x00` in the input section with the *i*th separator the loop chose, and require byte equality with what was actually emitted.
-On mismatch, return the text untouched.
+The plugin backs off from a paragraph it cannot trust, which is one whose walk does not add up (§3.1): the lengths of the rendered pieces must sum to the paragraph exactly, or no offset the walk gives can be believed.
+Backing off emits no break at all: every run of wrap points becomes one space, so the paragraph is one line in every wrap mode, exactly as if it held no sentence end.
+Handing the text back untouched would not be the same thing, because it would leave mdformat's wrap points in place, and at `--wrap 80` mdformat would then width-wrap that one paragraph, against §2.2's promise that no `WRAP_POINT` survives and §1's that no output depends on a width.
 
-Two reconstructions that look equivalent and are not.
-
-Do *not* recover the input by scanning the emitted string for `\n` and `" "`: mdformat has already collapsed each link, image and code span into a single segment with literal interior spaces (§3.1), so a scan turns those spaces into wrap points too and the check fails on every paragraph carrying a multi-word link.
-
-Do *not* use `"\x00".join(segs) == section` either.
-`re.split(r"\x00+", ...)` collapses a run of wrap points (§2.3), so that comparison is false for every section containing one, and a single tab at the end of a line produces one: `text()` turns the tab into a space and then into a `\x00`, and the following `softbreak()` contributes a second, which is measurable as `'Alpha\x00beta.\x00\x00gamma\x00delta.'` from `"Alpha beta.\t\ngamma delta."`.
-Every such paragraph would be handed back untouched and never broken at all.
-It is also the weaker check, because it never looks at the emitted string and therefore cannot see the error it exists to catch.
-
-The alternative is writing corrupted prose into the user's file.
-"Untouched" is a coherent degraded mode here rather than a failure: the paragraph is simply left to mdformat, which under `--wrap no` puts it on one line and under `--wrap keep` leaves it alone.
+**Text preservation is a test, not a runtime check.**
+With the loop of §3.1, the emitted section and the input with each wrap point replaced by its chosen separator are one splice of the same choices, and cannot differ.
+What such a check would catch, emission that alters the text between wrap points, is a coding error, and §6.2's text-preservation row catches it over every fixture and the corpus instead.
 
 ______________________________________________________________________
 
@@ -1184,6 +1177,7 @@ Run it over the fixtures, over `notes/corpus/`, and over a fuzz corpus that the 
 | idempotency vs baseline | 0 regressions |
 | whitespace deletions vs baseline | 0 |
 | structural property | pass |
+| text preservation | the output fullmatches the input with each run of wrap points replaced by one newline or one space |
 | positive control | must fail when the plugin is absent |
 | locality (§1's promise) | one inserted word changes exactly one line |
 | minimality | every shipped rule is the last match for something |
