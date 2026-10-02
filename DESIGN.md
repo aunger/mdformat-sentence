@@ -805,7 +805,8 @@ That is deliberately neither the config file's directory nor the working directo
 
 **For `[plugin.sentence]`, the file the `include` is written in is the `.mdformat.toml` mdformat read**, found the way mdformat finds it.
 The plugin walks up from the directory of `context.options["mdformat"]["filename"]` to the nearest `.mdformat.toml`, which is exactly what `_conf.py`'s `read_toml_opts` does for that file, and resolves against the directory it stops in.
-With no config file on the way up, or no filename to start from (`''` under `mdformat.text()`, `'-'` for stdin), it resolves against the working directory; an absolute path is used as written.
+Input on stdin, filename `'-'`, has no directory of its own, so the walk starts from the working directory, which is also where `_cli.py` starts its own search for stdin; stopping at the working directory instead would read `[plugin.sentence]` from a parent's `.mdformat.toml` and resolve its paths somewhere else.
+With no config file on the way up, or under `mdformat.text()` (filename `''`), which reads no config file at all, it resolves against the working directory; an absolute path is used as written.
 
 **The command line has its own key, so it can come last.**
 `--sentence-include PATH` may be given more than once, and its argparse `dest` is `cli_include` rather than `include`.
