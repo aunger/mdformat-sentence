@@ -149,7 +149,7 @@ ______________________________________________________________________
 
 §3.3 treats a run of lone marks between two words as one gap: the words on either side decide whether it breaks, and the marks' roles decide only where in the run the newline goes.
 A wrong role can then strand a mark at the wrong end of a line, and can never add or remove a break.
-Over twenty-one texts, with marks alone and side by side, every combination of readings, 116 in all, puts the same words on each line.
+Over twenty-two texts, with marks alone and side by side, every combination of readings, 120 in all, puts the same words on each line.
 
 The run rule replaced an earlier design that decided each gap separately, with the terminator test looking back past closing marks and the capital test skipping forward past opening ones.
 That design held for one mark between two words, but with marks side by side the readings moved breaks: `Il a dit. « “ Oui. ” » Puis il part.` had sixteen readings and four different layouts, and an opening mark followed by a closing one, `Il a dit. « » Puis il part.`, lost its break outright.

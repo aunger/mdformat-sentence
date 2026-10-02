@@ -230,9 +230,10 @@ An authored soft line break is not one of them either: `text()` turns it into a 
 `node.children` still marks it as a `softbreak`, so keeping it is mechanically possible; this design declines to (§2.5), and `notes/PRESERVE-MODE.md` records the alternatives and why an opt-in add-only mode is the one that survives.
 
 **The node is read once, for type and nothing else.**
-Before the section loop, `walk` renders each of `node.children` through `child.render(context)` and accumulates lengths, which gives the start offset and type of every child in `inline_text`; the sum equals `len(inline_text)` exactly, and a mismatch is a §3.6 failure.
+Before the section loop, `walk` renders each of `node.children` through `child.render(context)` and accumulates lengths, which gives the start offset and type of every piece of `inline_text`; the sum equals `len(inline_text)` exactly, and a mismatch is a §3.6 failure.
+It descends into emphasis and every other node with children, locating the children's renderings inside the parent's, except into the atoms of §3.2, which it records whole.
 Each section's `scan` reads the offsets that fall inside it, so a paragraph with hard breaks is still rendered once, not once per section.
-That is what §3.3's opaque-atom check reads, since whether a segment begins a code span, an image or an autolink is a fact about a node rather than about text.
+Both of §3.3's uses read it, the opaque-atom check and bracket depth, since whether a span is a code span, an image or a link is a fact about a node rather than about text.
 Child offsets add type information at existing positions and never add a position.
 mdformat has already collapsed each link, image and code span into a single segment with literal interior spaces, so punctuation cannot detach from its token — `Lorem (ipsum sit). Dolor amet.` segments as `['Lorem', '(ipsum', 'sit).', 'Dolor', 'amet.']` and `sit).` is one atom.
 
@@ -245,43 +246,30 @@ That single decision is what makes the output width-independent, and it is why t
 It cannot be a function of two adjacent segments, for the reasons in §3.3: bracket depth accumulates from the start of the section, and a run of lone marks is one gap whose break the words on either side of the whole run decide.
 `scan` computes those once per section.
 
-### 3.2 Masking
+### 3.2 Inline atoms
 
-Within a segment, find the spans below and discard them, then count what is left: masking yields a number per segment, not a string.
-The number is that segment's bracket delta over the unmasked remainder, `[` and `(` counting +1 and `]` and `)` counting -1.
-The patterns, verified by execution against the eleven forms below the block:
+An *atom* is an inline node the walk of §3.1 records whole: a link, an image, a code span, raw inline HTML, and any leaf of a type this plugin does not know, such as one a math plugin adds.
+Autolinks are links, so `<https://x.y/a)b>` is one atom.
+Only `text` leaves are prose; every other node with children, emphasis, strong emphasis, strikethrough, is a container the walk descends into.
+Verified against mdformat 1.0.0, with links and code spans inside emphasis and strong emphasis, strikethrough from `mdformat-gfm`, a badge `[![b](i)](t)`, raw HTML, and an autolink containing `)`: the pieces' lengths add up exactly, and every bracket in link syntax, a URL or code lands inside an atom.
 
-```
-code span            (?<!\\)(?<!`)(`+)(?!`)(?:[^`]|`(?!\1(?!`)))*?(?<!`)\1(?!`)
-link/image dest      \[(?:[^\[\]]|\[[^\[\]]*\])*\]
-                     \((?:[^()\\\s]|\\.|\((?:[^()\\]|\\.)*\))*(?:\s+"[^"]*")?\)
-reference label      \[(?:[^\[\]]|\[[^\[\]]*\])*\]\[[^\]]*\]
-autolink / raw HTML  (?<!\\)<(?:[/!?]?[A-Za-z][^<>]*
-                     |[A-Za-z][A-Za-z0-9+.\-]*:[^<>\s]*|[^<>\s@]+@[^<>\s]+)>
-```
+Atoms have two consumers.
 
-Each pattern is one line; the link-destination and autolink patterns are split above only to fit the page.
-The eleven forms they were checked against are `[t](u)`, `![t](u)`, `[![t](u)](v)`, `[![t](u)][r]`, `[t](u/a_(b))`, `[t](u "title")`, `[t][r]`, `[t]`, `[a [b] c](u)`, two links in one segment, and `` `code` ``.
-Each contributes a delta of zero, which is the only property the depth counter needs, but not every one masks away completely: eight do, `![t](u)` leaves a bare `!`, two links in one segment leave the text between them, and `[t]` matches no pattern and survives whole, balanced.
-A second consumer of masking would have to handle those three residues itself.
-
-Masking has exactly one consumer here: bracket-depth counting (§3.3), where an unmasked `)` inside a URL drives depth negative and corrupts every later gap in the section.
-The two link patterns start at the opening `[`, not at the `]`, and that is load-bearing rather than cosmetic: masking only `](dest)` leaves the link's `[` counted with nothing left to close it, so depth never returns to zero and every gap after the first link in a section is wrongly held to be inside brackets.
-Masking the whole link is what makes §3.3's discriminator — a complete bracket group within one segment is link syntax — true of the mechanism and not just of the intent.
-The link-text part admits one level of nested brackets, and that is not decoration: `[![badge](img)](target)` is the ordinary badge idiom, and a link-text pattern of `[^\]]*` stops at the image's `]`, masks `[![badge](img)` and leaves a bare `](target)` behind, which drives depth below zero and puts every following gap one level too shallow — so the next prose citation is read as unbracketed and split.
+**Bracket depth counts prose brackets only.**
+Each segment contributes a delta, `[` and `(` counting +1 and `]` and `)` counting -1, over the characters of its prose leaves, so a `)` inside a URL or a code span is never counted at all.
+That is what keeps one link from driving depth negative and corrupting every later gap in the section.
 **Depth is also clamped at zero.**
-No masking rule is going to catch every construct, and a counter that can go negative turns one missed atom into a wrong answer for the rest of the section, whereas a clamped one loses only the segment it missed.
-
-Masking does not feed sentence detection, because §3.3's closer set already excludes backtick, `)` and `]`, so a terminator inside a code span or a link destination fails the terminator test unmasked.
-The autolink and raw-HTML pattern needs no equivalent argument: its terminator is an ASCII `>`, and the closer set's angle marks, the four guillemets and `》` `〉`, are other codepoints.
-
-**Masking does not preserve length**, because no rule reads a position inside a masked segment.
-Every other rule in §3.3 reads the *raw* segment: the terminator test by the sentence above, the capital rule by skipping the opener set, which carries `[`, `(` and backslash for exactly this reason, and the block-construct rule because `<div>` and `<table>` match the raw-HTML pattern above — a masked reading would blank away the one guard `is_md_equal` cannot replace.
-§3.6 indexes the *i*th run of `\x00` in the input, an ordinal rather than an offset.
+Prose has unbalanced brackets of its own, `1) first`, and a counter that can go negative turns one of them into a wrong answer for the rest of the section, whereas a clamped one loses only the segment it is in.
 
 **The clamp applies to the running total once per segment** — `depth = max(0, depth + delta)` — and not after each bracket character.
 The two differ: at carry-in zero a segment containing `)(` leaves depth at 1 per character and 0 per segment.
 Depth is consulted only at a gap, which is where the per-segment form clamps, and per character would need two numbers per segment rather than one, the net and the minimum prefix sum.
+
+**A terminator inside an atom never ends a sentence.**
+The sentence-end test fails for a segment whose last character lies inside an atom, so `` Install the `foo.` Then run… `` and `See the [docs](https://ex.com/a.b.) The next…` do not break after the atom.
+That is what lets `)` and `]` be closers (§3.3) without re-arming either case.
+
+Every rule in §3.3 still reads the *raw* segment text; the atoms only say where one begins and ends.
 
 ### 3.3 Sentence detection
 
@@ -291,7 +279,7 @@ This is the entire substance of the plugin.
 
 ```
 terminators  UAX #29 STerm ∪ ATerm, 170 codepoints
-closers      " ' ’ ” » › « ‹ “ ‘ ‟ ‛ „ 」 』 》 〉        plus  * _ ~
+closers      " ' ’ ” » › « ‹ “ ‘ ‟ ‛ „ 」 』 》 〉        plus  * _ ~ ] )
 openers      " ' ’ ” “ ‘ ‟ ‛ « ‹ » › ¿ ¡ „ ‚ 「 『 《 〈  plus  * _ ~ [ ( \
 ```
 
@@ -306,7 +294,7 @@ One case is out of reach rather than decided.
 `A moment…… Nobody moved.` carries no terminator at all, so no candidate gap exists there, and §3.3's rules act only at candidate gaps.
 
 **The closer set is not UAX #29 `Close`, and must not become it.**
-`Close` is 195 codepoints and contains every bracket, so adopting it re-arms all three of the cases below, and the set here is not even a subset of it, since `*`, `_` and `~` are `Other`.
+`Close` is 195 codepoints and contains every opening bracket as well as every closing one, and the set here is not even a subset of it, since `*`, `_` and `~` are `Other`.
 It is a purpose-built set instead: the marks that can follow a terminator *and still leave the sentence ended*.
 
 **No-break spaces are transparent to every scan in this section.**
@@ -341,17 +329,15 @@ Anyone who later adds clause punctuation to the closer set, which is a tempting 
 The closer set is for marks that can follow a terminator *and still end the sentence*; a comma after a period means the abbreviation was not a sentence end at all.
 UAX #29 encodes the same idea as a `SContinue` set of 31 codepoints, and none is needed here: the scan crosses closers only, so everything else stops it, which covers those 31 and every other mark besides.
 
-The closer set **excludes** `)`, `]`, `}` and backtick.
-This is the root fix for a family of bugs rather than a patch for any one of them.
-Three consequences:
-`` Install the `foo.` Then run… `` does not break after the code span;
-`See the [docs](https://ex.com/a.b.) The next…` does not break after the link;
-`An array like (1, 2, 3.) Then…` does not break after the parenthetical.
-The cost is that a sentence genuinely ending inside parentheses — `He left. (He came back.) Then…` — is not detected, and that is accepted: detecting it means putting `)` in the closer set, which re-arms all three cases above.
+**`)` and `]` are closers, because a sentence can end inside brackets.**
+`He left. (He came back.) Then he left again.` breaks after `back.)`, and `The editor wrote it. [This was later retracted.] Readers noticed.` after `retracted.]`.
+The cases that once kept them out are atoms now: a period inside a code span or a link destination never ends a sentence (§3.2).
+A parenthetical ending in an abbreviation or a number and followed by a capital, `We tested browsers (Chrome, Firefox, etc.) Most passed.`, breaks after it, which is right, because the capitalized word opens a new sentence.
+`}` and backtick stay out: neither closes anything in prose.
 
 Before testing for a terminator, strip a trailing run of footnote references: `(\[\^[^\]\s]+\])+$`.
 A reference glues to the word it annotates, so `The matter at hand.[^1] This is…` yields the single segment `hand.[^1]`, which ends in `]` and would otherwise match nothing.
-Use that narrow grammar rather than adding `]` to the closer set, so a bare `[1]` or a citation like `[Smith 2020]` still opens no sentence.
+`]` being a closer does not reach this case, because the period stands before the whole reference rather than before its closing bracket; the narrow grammar strips the reference so the test sees `hand.`, and a bare `[1]` or a citation like `[Smith 2020]` after a period is still not a sentence end.
 
 **Which checks apply, by terminator.**
 
@@ -512,7 +498,7 @@ Everything else is code, and is not.
 | an opaque atom opens a sentence | no | tests the node's type, which no text pattern sees |
 | runs of lone marks and their roles | no | a run can be any length, which no three-position rule spans |
 | bracket depth | no | accumulated across a section, and a safety rule |
-| block constructs, masking, the footnote strip | no | safety rules, and a rules file must not be able to defeat them |
+| block constructs, inline atoms, the footnote strip | no | safety rules, and a rules file must not be able to defeat them |
 
 The safety row is the one that is deliberate rather than merely difficult.
 A block-construct rule that a file could countermand would let a rules file break the render, which §6.2's gate cannot catch, so no verdict reaches it.
@@ -655,7 +641,7 @@ Two structural rules follow, neither of them about any one language:
      One French usage points the other way: an older tradition, which Canada's Bureau de la traduction still describes, opens each continuation paragraph of a long quotation with `»`.
      It costs nothing, because that mark opens a paragraph, and with no word before it no break is in question.
      `”` and `’` open only in Finnish and Swedish, and only touching their words, so a spaced one closes.
-  1. **Its set, for a mark in only one:** the CJK marks, `¿`, `¡`, `‚`, `[`, `(` and backslash, each in one set, take that set's role.
+  1. **Its set, for a mark in only one:** the CJK marks, `¿`, `¡`, `‚`, `[`, `(` and backslash open, and the CJK marks, `]` and `)` close, each by the one set it is in.
   1. **What precedes it, for every other mark**, a straight quote, `“` `‘` `‟` `‛`, `„`, or markup: closing when the segment before it ends in a terminator, opening otherwise.
      `„` is here rather than among the openers by shape because Italian books of about 1860 to 1920 closed quotations with it, spaced off in print, as in De Amicis's `degli “ umiliati del villaggio. „ Quegli era un avvocato`, which this rule reads correctly and a shape would push onto the next line.
      Transcriptions attach the mark instead, `villaggio.„ Quegli`, and that form needs no rule of its own, because `„` is a closer.
@@ -663,7 +649,7 @@ Two structural rules follow, neither of them about any one language:
   Counting open quotations would be the language-free alternative, and it fails on ordinary French: a quotation can close in a paragraph it did not open in, as dialogue does when `«` opens the exchange, a dash marks each reply, and `»` closes it at the end.
 
 **A mark's role decides which line it lands on, never whether a break happens.**
-That holds by construction, since only the words around a run decide its break, and it is verified by simulation: over twenty-one texts with lone marks, alone and side by side, in French, German, Finnish, English, Italian, Japanese and Chinese, every combination of readings, 116 in all, puts the same words on each line.
+That holds by construction, since only the words around a run decide its break, and it is verified by simulation: over twenty-two texts with lone marks, alone and side by side, in French, German, Finnish, English, Italian, Japanese and Chinese, every combination of readings, 120 in all, puts the same words on each line.
 So a wrong reading costs a quotation mark stranded at the wrong end of a line and nothing more.
 The one such cost left in the shipped readings is a spaced opening `“` after a sentence end, which the third rule reads as closing: `He said. “ ‘ Yes. ’ ” Then he left.` leaves the `“` at the end of the first line.
 `notes/experiments/lonemark.py` reproduces all of this.
@@ -687,9 +673,9 @@ A rule in the table is isolated by its mandatory examples (§4), and the checks 
 Adding a forcing verdict would give the cascade a genuine third result, and this is the paragraph to revisit if one ever arrives.
 
 **No boundary inside brackets.**
-Depth counts `[` as well as `(`, as §3.2's per-segment deltas accumulated across the section and clamped at zero after each.
+Depth counts `[` as well as `(`, as §3.2's per-segment prose deltas accumulated across the section and clamped at zero after each.
 A citation like `[@Smith2020, p. 12-14]` is prose brackets and its `p.` is not a sentence end; without the guard it splits.
-The discriminator between prose brackets and link syntax is the seam itself: mdformat collapses wrap points inside a link, so a *complete* bracket group within one segment is link syntax, while a group arriving in pieces across segments is prose.
+Link syntax never counts, because a link is an atom (§3.2); only brackets in prose do.
 
 ### 3.4 Emission and the width-independence property
 
@@ -1183,7 +1169,7 @@ For each rule, build a fixture where the table's verdict at some gap is that rul
 A conditional rule needs two fixtures, one where its `before_full` or `after_full` pattern holds and one where it does not, so the row also catches a condition that has quietly become unreachable.
 Ordering makes this stronger than a removal test alone: a rule that is never the last match for any gap is fully shadowed by a later one, and the fixture cannot be built at all.
 A rule no fixture can distinguish was copied from somewhere else and is silently widening the exclusion.
-The checks living in code rather than in the table — the opaque-atom check, the block-construct rule, bracket depth, masking, the footnote strip — cannot be tested by removal and need hand-written fixture pairs instead.
+The checks living in code rather than in the table — the opaque-atom check, the block-construct rule, bracket depth, inline atoms, the footnote strip — cannot be tested by removal and need hand-written fixture pairs instead.
 
 Every oracle is **relative**: plain mdformat at the same width, with `extensions=set()` named explicitly.
 Absolute render equality is the wrong bar because mdformat itself already breaks the render on some inputs (§3.5's tilde fence), and holding ourselves to a standard mdformat does not meet means either failing forever or weakening the test until it says nothing.
@@ -1213,7 +1199,7 @@ rumdl has its own blind spots, this design intends to do better in places, and w
 1. The positive control, before anything else.
    Every other check in §6.2 passes with the plugin disabled — an identity function deletes nothing, changes no render, and is trivially width-independent — so until one test fails when the plugin is absent, a green suite does not distinguish a working plugin from an inert one.
 1. §6.1, which is three lines and catches most of what can go wrong.
-1. The sentence-detection fixtures, which are where the remaining complexity actually lives: abbreviations, initials, the capital rule, footnote references, CJK, CJK quotation marks spaced off their words, French spaced closers, guillemets around a word or a fragment, French dialogue that closes in a later paragraph, a continuation paragraph opening with `»`, Finnish and Swedish quotations opening with `”` and `’`, nested quotations spaced French-style and English-style, a spaced `¿`, the historical Italian closing `„`, Greek and Polish quotations opening with `‟` and `‛`, German quotes, the `?"` case, bracket depth, and block constructs.
+1. The sentence-detection fixtures, which are where the remaining complexity actually lives: abbreviations, initials, the capital rule, footnote references, CJK, CJK quotation marks spaced off their words, French spaced closers, guillemets around a word or a fragment, French dialogue that closes in a later paragraph, sentences ending inside parentheses and brackets, a period inside a code span or a link destination, a continuation paragraph opening with `»`, Finnish and Swedish quotations opening with `”` and `’`, nested quotations spaced French-style and English-style, a spaced `¿`, the historical Italian closing `„`, Greek and Polish quotations opening with `‟` and `‛`, German quotes, the `?"` case, bracket depth, and block constructs.
 
 **Three of them come from Panache's semantic-wrap suite**, paraphrased rather than copied, and hold as Panache states them.
 Three more from the same suite turn on keeping an authored soft break, which this design does not do (§2.5); `notes/PRESERVE-MODE.md` keeps them as examples of what an add-only mode would add.

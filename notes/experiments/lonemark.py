@@ -29,7 +29,7 @@ import sys
 import unicodedata
 
 TERMINATORS = set(".!?。！？")
-CLOSERS = set("\"'’”»›«‹“‘‟‛„」』》〉*_~")
+CLOSERS = set("\"'’”»›«‹“‘‟‛„」』》〉)]*_~")
 OPENERS = set("\"'’”“‘‟‛«‹»›¿¡„‚「『《〈[(*_~\\")
 NBSP = {chr(c) for c in range(sys.maxunicode + 1) if unicodedata.category(chr(c)) == "Zs"} - {" "}
 SHAPE_OPEN = set("«‹")          # guillemets, read the French way
@@ -135,6 +135,8 @@ FIXTURES = [
      "He said: “ ‘ Yes. ’ ”\nThen he left."),
     ("spaced Spanish ¿ opens by its set", "Dijo algo. ¿ Por qué ? Nadie sabe.",
      "Dijo algo.\n¿ Por qué ?\nNadie sabe."),
+    ("a sentence in spaced parentheses", "He left. ( He came back. ) Then more.",
+     "He left.\n( He came back. )\nThen more."),
     ("an opening mark before a closing one still breaks", "Il a dit. « » Puis il part.",
      "Il a dit.\n« » Puis il part."),
 ]
@@ -176,6 +178,7 @@ TEXTS = [
     "He said. “ ‘ Yes. ’ ” Then he left.",
     "He said. \" ' Yes. ' \" Then he left.",
     "Il a dit. « » Puis il part.",
+    "He left. ( He came back. ) Then more.",
 ]
 total, invariant = 0, True
 for t in TEXTS:
