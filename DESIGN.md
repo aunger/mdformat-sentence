@@ -778,6 +778,13 @@ Several bases compose through the array and only through it, because TOML forbid
 A name that is not a shipped set is a load error, as is a cycle, and both resolve before any pattern compiles.
 The table is compiled once and cached, keyed on the config file it came from, its `[plugin.sentence]` table and `cli_include`, and never rebuilt per paragraph, since the hook runs for every paragraph and twice under `--wrap no` (§2.3).
 
+**A file reached twice is spliced twice, and the loader warns when another file lies between the copies.**
+`academic` itself includes `default`, so `include = ["default", "academic"]` lays the default down twice in a row before academic's rules, and the second copy decides nothing the first had not; nothing is said.
+When another file's rules lie between two copies, the later copy can undo them without a sign.
+`include = ['./team.toml', 'academic']`, where `team.toml` includes the default and allows `st`, lays the default down again after `team.toml`, so the default's `st` rule is the last match again and the override is lost.
+That layout is warned about on stderr through `mdformat.renderer.LOGGER` (§2.5), once per compiled table, naming the file reached twice and the file between its copies.
+The warning reads the layout alone and does not ask whether the later copy overrides anything, so it can fire on a file that only adds rules, and when two included files each include the default, no order of the array avoids it.
+
 **`lowercase_names` lets a lowercase name open a sentence.**
 It is a pattern like every other key, fullmatched against the stripped word after the gap, and a word it matches passes the capital test (§3.3): `lowercase_names = 'npm|pnpm|gzip|dotnet-.*'`.
 The patterns of every file in a composition apply together, so a file can add names and none can take one away; the default names none.
