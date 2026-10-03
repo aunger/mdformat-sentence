@@ -12,7 +12,7 @@ can re-run them rather than take them on trust.
 | `MDFORMAT-WRAP-AND-OVERRIDES.md` | Where mdformat reads `wrap`, what a plugin can see and override about it, and what `--wrap sentence` would cost upstream. A reference for whoever later decides whether to patch, to ask, or how to implement §2.5's warning. |
 | `QUOTE-ROLES.md` | Which quotation marks always open or always close, in any language. Only the CJK marks do, which is why §3.3 reads them and the guillemets by glyph and every other lone mark by what precedes it. |
 | `corpus/` | The one corpus that gives honest answers about layout heuristics, and why. |
-| `experiments/` | Twenty-one short programs. Ten need mdformat or its parser, and eleven are stdlib only; three need the network, and one needs seven documentation repositories cloned. |
+| `experiments/` | Twenty-two short programs. Eleven need mdformat or its parser, and eleven are stdlib only; three need the network, and one needs seven documentation repositories cloned. |
 
 ## Running them
 
@@ -43,6 +43,7 @@ to it.
 | `secondpass.py` | yes | A `POSTPROCESSORS["root"]` hook can re-render, restoring mdformat's second pass when it would otherwise be skipped. Output matches the honest `--wrap no` exactly, over a bare paragraph and over lists, blockquotes and fenced code, once the already-finalized trailing newline is handled. |
 | `wrapsplit.py` | yes | Simulates splitting `do_wrap` into "produce wrap points" and "width-wrap". Under `--wrap keep` the plugin works, mdformat adds no geometric wrapping, and links survive as atoms. The feasibility check behind §5.6 of the wrap note. |
 | `wraparg.py` | yes | `wrap` as an *argument* rather than at the seam. The CLI and TOML validators are separate code and disagree; `--wrap sentence` is rejected at argument parsing today; and a renderer warning reaches stderr through `logging.lastResort` even with no handler attached, once per paragraph. |
+| `sourceeq.py` | yes | §6.2's source-equality row, run with a postprocessor that has no line-start rule. Ten container cases pass, nested and numbered lists among them; the HTML indent and the escape before `-` fail, and render equality passes all three. Stripping every leading `>` and whitespace instead of the containers' own prefix passes the HTML indent. |
 | `ngram.py` | no (network) | For each abbreviation, the share of its top Google Books continuations that are numerals. `et al` 100%, `Vol` 100%, `Fig` 97%, `No`/`no` 0%. The evidence behind §3.3's abbreviation classes. Needs outbound HTTPS. |
 | `lonemark.py` | no | §3.3's lone-mark rules, simulated. Seventeen quotation-mark fixtures hold, and a mark's role moves only the mark, alone or side by side: 120 readings of twenty-two texts. |
 | `camelcase.py` | parser | Sentence openers in 13.0 million words of English documentation: 113 camelCase words such as `iOS`, all but two real sentence starts and those two already held by brackets, and about thirty lowercase names such as `npm`. `camelcase.tsv` holds each camelCase position with its verdict. Needs the corpora its docstring names. |

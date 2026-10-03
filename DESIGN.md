@@ -1176,7 +1176,7 @@ Run it over the fixtures, over `notes/corpus/`, and over a fuzz corpus that the 
 | render equality vs baseline | 0 regressions |
 | idempotency vs baseline | 0 regressions |
 | whitespace deletions vs baseline | 0 |
-| structural property | pass |
+| source equality vs baseline | byte-identical once each added break is undone |
 | text preservation | the output fullmatches the input with each run of wrap points replaced by one newline or one space |
 | positive control | must fail when the plugin is absent |
 | locality (§1's promise) | one inserted word changes exactly one line |
@@ -1184,6 +1184,13 @@ Run it over the fixtures, over `notes/corpus/`, and over a fuzz corpus that the 
 
 **The requirement in each row is zero; the sample it is measured over is not yet fixed.**
 No generator for adversarial paragraphs and no fuzz corpus exists yet, so the harness of §6.4 sets those sizes when it is built, and until then a green row means only that the fixtures and `notes/corpus/` passed.
+
+**The source-equality row is where §3.5's line-start rule is tested.**
+Format each input with and without the plugin, both at `--wrap no`, and undo every line break the plugin added: join the line to the one before it with a space, after removing the prefix mdformat writes on every later line of the paragraph's containers, `> ` for a blockquote and, for a list item, as many spaces as its marker is wide.
+The result must be byte-identical to the baseline.
+Nothing else is undone, because a four-space indent or a backslash escape at the start of a new line is source damage that renders identically, so the render-equality row passes it and this one must not.
+The text-preservation row cannot see either, because it compares the seam's input with its output, and `paragraph()` adds both later.
+`notes/experiments/sourceeq.py` runs the row with a postprocessor that has no line-start rule: ten container cases pass, nested and numbered lists among them, while the HTML indent, at the top level and in a list item, and the escape before `-` fail, and render equality passes all three.
 
 **The locality row tests §1's leading promise, which nothing else does.**
 For each paragraph, insert a *neutral* token — a plain lowercase word carrying no terminator — into sentence *n*, format before and after, and require the diff to change exactly one line, sentence *n*'s.
@@ -1202,9 +1209,10 @@ The checks living in code rather than in the table — the opaque-atom check, th
 Every oracle is **relative**: plain mdformat at the same width, with `extensions=set()` named explicitly.
 Absolute render equality is the wrong bar because mdformat itself already breaks the render on some inputs (§3.5's tilde fence), and holding ourselves to a standard mdformat does not meet means either failing forever or weakening the test until it says nothing.
 
-Three traps in the harness itself.
+Four traps in the harness itself.
 `--extensions` is a whitelist, so every baseline must name `extensions=set()`;
 `--check` never validates;
+the source-equality row must remove exactly the containers' prefix, because stripping every leading `>` and whitespace also strips the four-space indent it exists to catch;
 and the quality harness must fail loudly rather than reporting an F1 for a plugin that never ran.
 
 ### 6.3 rumdl is a working implementation to learn from, not an oracle
