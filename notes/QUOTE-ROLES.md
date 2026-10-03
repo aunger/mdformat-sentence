@@ -147,17 +147,16 @@ ______________________________________________________________________
 
 `lonemark.py` runs §3.3's rules over plain strings.
 
-With one lone mark between two words, the role decides only which line the mark lands on.
-Over seventeen such texts, every combination of readings, 64 in all, puts the same words on each line.
-That is why a mis-read single mark is cheap, and why the glyph reading was worth adopting only where it is never, or harmlessly, wrong.
+§3.3 treats a run of lone marks between two words as one gap: the words on either side decide whether it breaks, and the marks' roles decide only where in the run the newline goes.
+A wrong role can then strand a mark at the wrong end of a line, and can never add or remove a break.
+Over twenty-two texts, with marks alone and side by side, every combination of readings, 120 in all, puts the same words on each line.
 
-With lone marks side by side the readings do move breaks.
-`Il a dit. « “ Oui. ” » Puis il part.` has sixteen readings and four different layouts.
-§3.3 as first written looked back only one segment for the terminator, which missed the break after `»`; looking back past every closing mark fixes it.
-English spaced the same way, `He said. “ ‘ Yes. ’ ” Then he left.`, still breaks in the right places, but the leading `“` follows a sentence end and so reads as closing, and the marks land on the wrong lines.
+The run rule replaced an earlier design that decided each gap separately, with the terminator test looking back past closing marks and the capital test skipping forward past opening ones.
+That design held for one mark between two words, but with marks side by side the readings moved breaks: `Il a dit. « “ Oui. ” » Puis il part.` had sixteen readings and four different layouts, and an opening mark followed by a closing one, `Il a dit. « » Puis il part.`, lost its break outright.
 
-One further change was considered and declined: letting the older rule also look past closing marks, so that `’ ”` after a terminator reads as two closers.
-It trades one case for another, because `” “` between two quotations would then read as two closers as well.
+The roles themselves come from shape for the guillemets and for `”` and `’`, from the set for a mark in only one, and from what precedes it for the rest.
+`”` and `’` joined the openers for Finnish and Swedish, which open with them, and a spaced one reads as closing because neither language spaces them; that also lands English nested quotes correctly, `He said: “ ‘ Yes. ’ ” Then he left.`
+The one misplacement left is a spaced opening `“` after a sentence end, which the older rule reads as closing: `He said. “ ‘ Yes. ’ ” Then he left.` leaves the `“` at the end of the first line.
 
 ______________________________________________________________________
 

@@ -1,22 +1,23 @@
 """Lone quotation marks: DESIGN.md §3.3, simulated.
 
-A lone mark is a segment made only of quotation or markup characters.
-This runs §3.3's sentence-end test, capital test and the two lone-mark
-rules over plain strings split at ordinary spaces, which is what the
-seam delivers for these texts. Stdlib only.
+A lone mark is a segment made only of quotation or markup characters, and
+a run is one or more of them between two words. This runs §3.3's
+sentence-end test, capital test and the lone-mark rules over plain strings
+split at ordinary spaces, which is what the seam delivers for these texts.
+Stdlib only.
 
 Terminators are cut down to the ones these texts use; the real set is
-UAX #29 STerm and ATerm. No rules table is consulted: none of these
-texts has an abbreviation in it.
+UAX #29 STerm and ATerm. No rules table, bracket depth or capital-test
+exemption is consulted: none of these texts needs one.
 
 It establishes four things:
   1. the fixtures of §6.4 for quotation marks break where §3.3 says;
-  2. one lone mark's role moves only the mark, never a break
-     (seventeen texts, 64 readings);
-  3. two lone marks side by side are different: their readings do
-     change the breaks. §3.3's readings break both examples correctly,
-     but the English marks land on the wrong lines, because a spaced
-     opening “ or " after a sentence end reads as closing;
+  2. a run of lone marks is one gap: the words on either side decide
+     whether it breaks, and the marks' roles only decide where in the
+     run the newline goes, so no reading of any mark, alone or side by
+     side, changes which words share a line;
+  3. what §3.3's own readings do with marks side by side, including the
+     known misplacement of a spaced opening “ after a sentence end;
   4. reading the low mark „ by its glyph would misplace the historical
      Italian closing „, spaced as it was printed, which the older rule
      places correctly. De Amicis, Il romanzo d'un maestro, 1900, p. 189;
@@ -28,11 +29,11 @@ import sys
 import unicodedata
 
 TERMINATORS = set(".!?。！？")
-CLOSERS = set("\"'’”»›«‹“‘‟‛„」』》〉*_~")
-OPENERS = set("\"'“‘‟‛«‹»›¿¡„‚「『《〈*_~[(\\")
+CLOSERS = set("\"'’”»›«‹“‘‟‛„」』》〉)]*_~")
+OPENERS = set("\"'’”“‘‟‛«‹»›¿¡„‚「『《〈[(*_~\\")
 NBSP = {chr(c) for c in range(sys.maxunicode + 1) if unicodedata.category(chr(c)) == "Zs"} - {" "}
-GLYPH_OPEN = set("«‹「『《〈")
-GLYPH_CLOSE = set("»›」』》〉")
+SHAPE_OPEN = set("«‹")          # guillemets, read the French way
+SHAPE_CLOSE = set("»›”’")       # and the right-hand curly quotes, never spaced to open
 TAIL = "".join(CLOSERS | NBSP)  # skipped by the sentence-end test
 HEAD = "".join(OPENERS | NBSP)  # skipped by the capital test
 LONE = TAIL + HEAD
@@ -47,51 +48,48 @@ def ends_sentence(seg):
 
 
 def opens_sentence(seg):
-    """True or False for the first testable character; None if there is none."""
     ch = seg.lstrip(HEAD)[:1]
-    if not ch:
-        return None
     return ch.isdigit() or (ch.isalpha() and not ch.islower())
 
 
-def spec_roles(segs, glyph_open=GLYPH_OPEN):
-    """§3.3: CJK marks and guillemets by glyph, every other lone mark by what precedes it."""
-    roles = {}
-    for i, s in enumerate(segs):
-        if not is_lone(s):
-            continue
-        if s[0] in glyph_open:
-            roles[i] = "open"
-        elif s[0] in GLYPH_CLOSE:
-            roles[i] = "close"
-        else:
-            roles[i] = "close" if i > 0 and ends_sentence(segs[i - 1]) else "open"
-    return roles
+def spec_role(segs, i, shape_open=SHAPE_OPEN):
+    """§3.3: by shape for guillemets and ” ’, by set for a mark in one set only,
+    and otherwise by what precedes it."""
+    ch = segs[i][0]
+    if ch in shape_open:
+        return "open"
+    if ch in SHAPE_CLOSE:
+        return "close"
+    if ch in OPENERS and ch not in CLOSERS:
+        return "open"
+    if ch in CLOSERS and ch not in OPENERS:
+        return "close"
+    return "close" if i > 0 and ends_sentence(segs[i - 1]) else "open"
+
+
+def spec_roles(segs, shape_open=SHAPE_OPEN):
+    return {i: spec_role(segs, i, shape_open) for i, s in enumerate(segs) if is_lone(s)}
 
 
 def emit(segs, roles):
-    out = [segs[0]]
-    for i in range(len(segs) - 1):
-        right = segs[i + 1]
-        if roles.get(i + 1) == "close":  # a closing mark is never a break candidate
-            out.append(" " + right)
-            continue
-        k = i  # the terminator test looks back past every closing mark
-        while k > 0 and roles.get(k) == "close":
-            k -= 1
-        breaks = ends_sentence(segs[k]) and next(  # an opening mark defers the capital test
-            (opens_sentence(s) for j, s in enumerate(segs[i + 1:], i + 1) if roles.get(j) != "open"), None)
-        out.append(("\n" if breaks else " ") + right)
-    return "".join(out)
+    """Words decide whether a run breaks; roles decide where in it."""
+    words = [i for i, s in enumerate(segs) if not is_lone(s)]
+    breaks = set()
+    for left, right in zip(words, words[1:]):
+        if ends_sentence(segs[left]) and opens_sentence(segs[right]):
+            run = range(left + 1, right)
+            opening = [i for i in run if roles.get(i) == "open"]
+            breaks.add(opening[0] if opening else right)  # newline goes before this segment
+    return segs[0] + "".join(("\n" if i in breaks else " ") + segs[i] for i in range(1, len(segs)))
 
 
 def split(text):
     return re.split(r" +", text)
 
 
-def run(text, glyph_open=GLYPH_OPEN):
+def run(text, shape_open=SHAPE_OPEN):
     segs = split(text)
-    return emit(segs, spec_roles(segs, glyph_open))
+    return emit(segs, spec_roles(segs, shape_open))
 
 
 def show(label, got, want):
@@ -127,8 +125,20 @@ FIXTURES = [
      "Zapytał.\n‛Dlaczego?’\nNikt nie wiedział."),
     ("‟ closing, as some German transcriptions have it", "„Darf ich?‟ Sie lachte.",
      "„Darf ich?‟\nSie lachte."),
-    ("nested quotes, spaced", "Il a dit. « “ Oui. ” » Puis il part.",
+    ("Finnish quotation opening with ”", "Se oli selvää. ”Tule mukaan!” hän pyysi.",
+     "Se oli selvää.\n”Tule mukaan!” hän pyysi."),
+    ("Swedish quotation opening with ’", "Han sa. ’Kom hit!’ Sedan gick han.",
+     "Han sa.\n’Kom hit!’\nSedan gick han."),
+    ("nested quotes, spaced French-style", "Il a dit. « “ Oui. ” » Puis il part.",
      "Il a dit.\n« “ Oui. ” »\nPuis il part."),
+    ("nested quotes, spaced English-style", "He said: “ ‘ Yes. ’ ” Then he left.",
+     "He said: “ ‘ Yes. ’ ”\nThen he left."),
+    ("spaced Spanish ¿ opens by its set", "Dijo algo. ¿ Por qué ? Nadie sabe.",
+     "Dijo algo.\n¿ Por qué ?\nNadie sabe."),
+    ("a sentence in spaced parentheses", "He left. ( He came back. ) Then more.",
+     "He left.\n( He came back. )\nThen more."),
+    ("an opening mark before a closing one still breaks", "Il a dit. « » Puis il part.",
+     "Il a dit.\n« » Puis il part."),
 ]
 passed = sum(show(label, run(t), want) for label, t, want in FIXTURES)
 print(f"\n{passed} of {len(FIXTURES)} fixtures hold\n")
@@ -145,8 +155,8 @@ def layouts(text):
     return seen, 2 ** len(idx)
 
 
-print("2. One lone mark between two words: its role moves only the mark\n")
-SINGLE = [
+print("2. A mark's role moves only the mark, alone or side by side\n")
+TEXTS = [
     "Il a dit. « Ceci est important. » Puis il part.",
     "« Vraiment ? » dit-il. Puis il part.",
     "Il a dit : « Oui. » Puis il part.",
@@ -164,24 +174,28 @@ SINGLE = [
     "» Finalement, la troisième raison est prudente. » Le ministre a ensuite parlé.",
     "degli “ umiliati del villaggio. „ Quegli era un avvocato",
     "他说： 《 你好。 》 然后走了。",
+    "Il a dit. « “ Oui. ” » Puis il part.",
+    "He said. “ ‘ Yes. ’ ” Then he left.",
+    "He said. \" ' Yes. ' \" Then he left.",
+    "Il a dit. « » Puis il part.",
+    "He left. ( He came back. ) Then more.",
 ]
 total, invariant = 0, True
-for t in SINGLE:
+for t in TEXTS:
     seen, n = layouts(t)
     total += n
     invariant &= len(seen) == 1
-print(f"{len(SINGLE)} texts, {total} readings; the same words on every line in all of them: {invariant}\n")
+print(f"{len(TEXTS)} texts, {total} readings; the same words on every line in all of them: {invariant}\n")
 
-print("3. Two lone marks side by side: the readings matter\n")
+print("3. §3.3's readings of marks side by side\n")
 for t in ("Il a dit. « “ Oui. ” » Puis il part.", "He said. “ ‘ Yes. ’ ” Then he left."):
-    seen, n = layouts(t)
-    print(f"{t}\n   {n} readings give {len(seen)} different word layouts; §3.3's reading gives")
+    print(t)
     for line in run(t).split("\n"):
         print(f"       {line}")
-print()
+print("   The leading “ after `said.` reads as closing, the older rule's known cost.\n")
 
 print("4. The rejected option: reading „ and ‚ by glyph\n")
 t = "degli “ umiliati del villaggio. „ Quegli era un avvocato"
 for label, got in (("older rule (§3.3)", run(t)),
-                   ("by glyph", run(t, glyph_open=GLYPH_OPEN | set("„‚")))):
+                   ("by glyph", run(t, shape_open=SHAPE_OPEN | set("„‚")))):
     print(f"   {label:18} {got!r}")
