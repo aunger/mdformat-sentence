@@ -11,7 +11,10 @@ UAX #29 STerm and ATerm. No rules table, bracket depth or capital-test
 exemption is consulted: none of these texts needs one.
 
 It establishes four things:
-  1. the fixtures of §6.4 for quotation marks break where §3.3 says;
+  1. the fixtures of §6.4 for quotation marks break where §3.3 says, and
+     §3.5's safety rules, tested where the newline actually lands in a run,
+     pin a run whose newline would open a line with ~~~ or end one in a
+     no-break space;
   2. a run of lone marks is one gap: the words on either side decide
      whether it breaks, and the marks' roles only decide where in the
      run the newline goes, so no reading of any mark, alone or side by
@@ -71,15 +74,26 @@ def spec_roles(segs, shape_open=SHAPE_OPEN):
     return {i: spec_role(segs, i, shape_open) for i, s in enumerate(segs) if is_lone(s)}
 
 
+BLOCK_START = re.compile(r"#|>|[-*+]|\d+[.)]|~~~|\[[ xX]\]")  # §3.5, cut down to these texts
+
+
+def safe(segs, i):
+    """§3.5 at the newline's actual neighbours: segs[i - 1] ends the line, segs[i] opens the next."""
+    return (segs[i - 1][-1:].strip() != "" and segs[i][:1].strip() != ""
+            and not BLOCK_START.match(segs[i]))
+
+
 def emit(segs, roles):
-    """Words decide whether a run breaks; roles decide where in it."""
+    """Words decide whether a run breaks; roles decide where in it; §3.5 can still refuse it there."""
     words = [i for i, s in enumerate(segs) if not is_lone(s)]
     breaks = set()
     for left, right in zip(words, words[1:]):
         if ends_sentence(segs[left]) and opens_sentence(segs[right]):
             run = range(left + 1, right)
             opening = [i for i in run if roles.get(i) == "open"]
-            breaks.add(opening[0] if opening else right)  # newline goes before this segment
+            at = opening[0] if opening else right  # newline goes before this segment
+            if safe(segs, at):
+                breaks.add(at)
     return segs[0] + "".join(("\n" if i in breaks else " ") + segs[i] for i in range(1, len(segs)))
 
 
@@ -139,6 +153,10 @@ FIXTURES = [
      "He left.\n( He came back. )\nThen more."),
     ("an opening mark before a closing one still breaks", "Il a dit. « » Puis il part.",
      "Il a dit.\n« » Puis il part."),
+    ("a run whose newline would open a line with ~~~ is pinned", 'It ended. " ~~~ Then more.',
+     'It ended. " ~~~ Then more.'),
+    ("a run whose newline would end a line in a no-break space is pinned",
+     "Il a dit. \xa0 Puis il part.", "Il a dit. \xa0 Puis il part."),
 ]
 passed = sum(show(label, run(t), want) for label, t, want in FIXTURES)
 print(f"\n{passed} of {len(FIXTURES)} fixtures hold\n")
