@@ -1,11 +1,11 @@
-"""Four facts about `wrap` as an *argument*, as opposed to `wrap` at the seam.
+"""Four facts about `wrap` as an *argument*, as opposed to `wrap` at the hook point.
 
 1. TOML validation is a separate gate from CLI validation, and they disagree.
 2. `--wrap sentence` is rejected by argparse today, which is the fail-loud
    property that makes it worth asking for upstream.
 3. mdformat.renderer.LOGGER has no handler of its own, so a warning raised
    outside the CLI's first pass is printed by logging.lastResort, not swallowed.
-4. A warning raised at the inline seam fires once per paragraph per pass.
+4. A warning raised at the inline hook point fires once per paragraph per pass.
 
 Needs mdformat 1.0.0.
 """
@@ -84,7 +84,7 @@ with tempfile.TemporaryDirectory() as d:
              contextlib.redirect_stderr(io.StringIO()) as err:
             run(argv)
         text = err.getvalue()
-        print(f"   {label}: seam calls {len(calls)}, "
+        print(f"   {label}: hook calls {len(calls)}, "
               f"lines on stderr {len(text.splitlines())}, "
               f"with the CLI prefix {text.count('Warning:')}")
 print("\n   Three paragraphs, three warnings: it fires per paragraph, not per"

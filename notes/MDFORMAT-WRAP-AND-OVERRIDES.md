@@ -17,7 +17,7 @@ Some citations moved from the ones in earlier notes, so re-read rather than trus
 | `experiments/wraparg.py` | `wrap` as an *argument*: the two validators, `--wrap sentence` today, and where a renderer warning actually goes. §5 and §7. |
 
 All three need mdformat 1.0.0.
-`experiments/probe.py` is the prior measurement of what reaches the seam under each mode, and §1 does not repeat it.
+`experiments/probe.py` is the prior measurement of what reaches the hook point under each mode, and §1 does not repeat it.
 
 ______________________________________________________________________
 
@@ -103,14 +103,14 @@ def update_mdit(mdit):
 ```
 
 Measured, `wrapkeep.py`.
-Under a caller who asked for `keep`, the baseline sees zero wrap points and returns the input byte for byte; with the assignment, 17 wrap points reach the seam and the paragraph comes out on two lines.
+Under a caller who asked for `keep`, the baseline sees zero wrap points and returns the input byte for byte; with the assignment, 17 wrap points reach the hook point and the paragraph comes out on two lines.
 It works because `build_mdit` calls `plugin.update_mdit(mdit)` at `_util.py:42`, after `mdit.options["mdformat"]` has been assigned at line 33 and before anything renders.
 
 Three consequences, all measured or read:
 
 1. **The second pass does not fire.**
    `_api.py:39` tests `options.get("wrap", DEFAULT_OPTS["wrap"]) != "keep"` against the **caller's** mapping, which still says `keep`, so the re-render at `_api.py:40` is skipped.
-   Seam calls stay at 1 where the honest `--wrap no` gives 2.
+   Calls at the hook point stay at 1 where the honest `--wrap no` gives 2.
    That is the pass `DESIGN.md` §2.3 relies on.
 1. **The option is global to the render.**
    There is one `mdit.options["mdformat"]` and every enabled plugin reads it, so they all see `wrap="no"` too.
@@ -143,7 +143,7 @@ Measured, `secondpass.py`.
 Of the four node types tried — `root`, `document`, `inline`, `paragraph` — three fire and `document` does not.
 `root` is the whole rendered document, applied by `RenderTreeNode.render` at `renderer/_tree.py:9-14` like any other postprocessor.
 
-A guarded re-render from `POSTPROCESSORS["root"]` takes seam calls from 1 back to 2 and produces output identical to the honest `--wrap no`, on a bare paragraph and on a document containing a list, a blockquote and a fenced code block.
+A guarded re-render from `POSTPROCESSORS["root"]` takes calls at the hook point from 1 back to 2 and produces output identical to the honest `--wrap no`, on a bare paragraph and on a document containing a list, a blockquote and a fenced code block.
 
 Two caveats, both measured:
 

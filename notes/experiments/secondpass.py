@@ -34,7 +34,7 @@ P.PARSER_EXTENSIONS
 print("reference: honest --wrap no, mdformat's own double render")
 plug, st = build(False, False, True); P.PARSER_EXTENSIONS["probe"]=plug
 ref = mdformat.text(SRC, options={"wrap":"no"}, extensions={"probe"})
-print(f"   inline seam calls: {st['inline']}")
+print(f"   inline hook calls: {st['inline']}")
 print(f"   output: {ref!r}\n")
 
 for label, rsp in (("route B alone (no second pass)", False),
@@ -42,7 +42,7 @@ for label, rsp in (("route B alone (no second pass)", False),
     plug, st = build(True, rsp, True); P.PARSER_EXTENSIONS["probe"]=plug
     out = mdformat.text(SRC, options={"wrap":"keep"}, extensions={"probe"})
     print(label)
-    print(f"   inline seam calls: {st['inline']}")
+    print(f"   inline hook calls: {st['inline']}")
     print(f"   matches reference: {out == ref}")
     print(f"   output: {out!r}\n")
 

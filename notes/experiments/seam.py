@@ -1,4 +1,4 @@
-"""The seam: an `inline` postprocessor against an `inline` renderer. DESIGN.md §2.2, §3.1.
+"""The hook point: an `inline` postprocessor against an `inline` renderer. DESIGN.md §2.2, §3.1.
 
 Both probes break after [.!?] before a capital or a `[`, and back off (one
 line, every gap a space) when the children's renderings do not add up to the
@@ -20,7 +20,11 @@ It establishes four things:
      where it did not the first, 47 characters against 49; the copy makes the
      two renderings equal;
   4. gfm's paragraph postprocessor escapes a task box `[X]` at the start of a
-     line a break created, whichever seam broke it, so §3.5 must refuse it.
+     line a break created, whichever hook broke it, so §3.5 must refuse it;
+  5. the walk is not what makes the postprocessor fail: a text-only postprocessor,
+     with no walk, loaded after gfm sees `xxxxMr.` as the task item's first word
+     at an integer width, so a rule that holds `Mr.` misses and the output depends
+     on the width. seam_mkdocs.py shows the same for mdformat-mkdocs.
 Needs mdformat 1.0.0 and mdformat-gfm 1.0.0.
 """
 import re
@@ -34,6 +38,7 @@ from mdformat.renderer import DEFAULT_RENDERERS
 
 BACKOFFS = []
 VETO_TASK_BOX = [False]
+HELD = {"Mr."}  # a stand-in for §3.3's titles rule
 
 
 def decide(text):
@@ -41,6 +46,8 @@ def decide(text):
     out = [segs[0]]
     for left, right in zip(segs, segs[1:]):
         brk = left[-1:] != "" and left[-1:] in ".!?" and (right[:1].isupper() or right[:1] == "[")
+        if left in HELD:
+            brk = False
         if VETO_TASK_BOX[0] and re.match(r"\[[ xX]\]", right):
             brk = False
         out += ["\n" if brk else " ", right]
@@ -85,6 +92,7 @@ def plugin(**surface):
 
 P.PARSER_EXTENSIONS["pp"] = plugin(POSTPROCESSORS={"inline": as_postprocessor})
 P.PARSER_EXTENSIONS["rr"] = plugin(RENDERERS={"inline": as_renderer})
+P.PARSER_EXTENSIONS["tt"] = plugin(POSTPROCESSORS={"inline": lambda t, n, c: decide(t) if applies(n, t) else t})
 
 
 def fmt(md, extensions, wrap):
@@ -99,20 +107,20 @@ orders = {subprocess.run([sys.executable, "-c", code], capture_output=True, text
                          env={"PYTHONHASHSEED": str(seed)}).stdout.strip() for seed in range(1, 5)}
 print(f"   PYTHONHASHSEED 1 to 4 give {len(orders)} distinct orders: {sorted(orders)}\n")
 
-print("2. A task-list item, gfm before and after each seam\n")
+print("2. A task-list item, gfm before and after each hook\n")
 TASK = "- [ ] Do the first thing. Then do the second thing.\n"
-for seam in ("pp", "rr"):
-    for order in (["gfm", seam], [seam, "gfm"]):
+for hook in ("pp", "rr"):
+    for order in (["gfm", hook], [hook, "gfm"]):
         for wrap in ("no", 40):
             out, backoffs = fmt(TASK, order, wrap)
-            print(f"   {seam} {str(order):16} --wrap {wrap!s:3} backoffs={len(backoffs)} {out!r}")
+            print(f"   {hook} {str(order):16} --wrap {wrap!s:3} backoffs={len(backoffs)} {out!r}")
 print()
 
 print("3. A reference used after text that names it\n")
 REF = "It cites \\[foo\\] early. Then [a link][foo] later.\n\n[foo]: https://x.y\n"
-for seam in ("pp", "rr"):
-    out, backoffs = fmt(REF, [seam], "no")
-    print(f"   {seam} backoffs={backoffs} {out.splitlines()[:2]}")
+for hook in ("pp", "rr"):
+    out, backoffs = fmt(REF, [hook], "no")
+    print(f"   {hook} backoffs={backoffs} {out.splitlines()[:2]}")
 print()
 
 print("4. A task box at the start of a line a break created\n")
@@ -122,3 +130,11 @@ for veto in (False, True):
     for order in (["gfm", "rr"], ["rr", "gfm"]):
         out, _ = fmt(BOX, order, "no")
         print(f"   veto={veto!s:5} {str(order):15} {out!r}")
+
+print("\n5. A rule on a task item's first word, text-only postprocessor against the renderer\n")
+VETO_TASK_BOX[0] = False
+TITLE = "- [ ] Mr. Smith left early. Then he came back.\n"
+for hook in ("tt", "rr"):
+    for order in (["gfm", hook], [hook, "gfm"]):
+        outs = {w: fmt(TITLE, order, w)[0] for w in ("no", 20, 40, 80)}
+        print(f"   {hook} {str(order):15} distinct outputs over --wrap no/20/40/80: {len(set(outs.values()))}")

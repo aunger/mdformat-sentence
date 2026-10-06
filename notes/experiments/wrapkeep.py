@@ -45,7 +45,7 @@ for label, override in (("A  baseline: wrap=keep, no trick", False),
     P.PARSER_EXTENSIONS["probe"] = plug
     out = mdformat.text(SRC, options={"wrap": "keep"}, extensions={"probe"})
     print(label)
-    print(f"   seam calls      : {len(calls)}   (2 = mdformat's double render fired)")
+    print(f"   hook calls      : {len(calls)}   (2 = mdformat's double render fired)")
     print(f"   wrap points seen: {sum(c.count(WRAP_POINT) for c in calls)}")
     print(f"   output          : {out!r}\n")
 

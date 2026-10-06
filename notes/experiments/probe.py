@@ -25,7 +25,7 @@ for wrap in ("keep", "no", 40):
     out = mdformat.text(SRC, options={"wrap": wrap}, extensions={"probe"})
     n = sum(s.count(WRAP_POINT) for s in seen)
     print(f"--- wrap={wrap!r} ---")
-    print("  seam sees   :", " | ".join(repr(s).replace("\\x00","<WP>") for s in seen))
+    print("  hook sees   :", " | ".join(repr(s).replace("\\x00","<WP>") for s in seen))
     print("  wrap points :", n)
     print("  output      :", repr(out))
     print()

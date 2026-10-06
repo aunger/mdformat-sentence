@@ -21,7 +21,7 @@ The case that motivates the whole question, a width-wrapped paragraph dropped in
 
 ______________________________________________________________________
 
-## 1. Ground: what the seam permits
+## 1. Ground: what the hook point permits
 
 Measured, `probe.py` and `addonly.py`.
 
@@ -86,7 +86,7 @@ Conventional markup languages like HTML and XML
 
 **Status.** Rejected. A keep rule that silently deletes nearly half an author's breaks is not a preserve mode.
 
-**Note on rules 10 and 11.** They break before and after hyperlinks and before inline markup, and unlike rule 6 those positions *are* trivially matchable; at this seam better than trivially, since mdformat already collapses a link into a single atom.
+**Note on rules 10 and 11.** They break before and after hyperlinks and before inline markup, and unlike rule 6 those positions *are* trivially matchable; at this hook point better than trivially, since mdformat already collapses a link into a single atom.
 They account for 8 of the 88 breaks on this corpus, whose prose holds 12 reference links across 122 lines with 10 of those lines opening with one.
 An earlier reading of this note put them at zero; that was the paragraph extractor deleting every line that starts with `[`, which is exactly the evidence, and `breaks.py` records the correction.
 So they recover 8 of the 40 unpunctuated breaks and leave 32 that nothing lexical reaches, and this corpus still says little about prose that uses links heavily.

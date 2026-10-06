@@ -3,7 +3,7 @@
 A lone mark is a segment made only of quotation or markup characters, and
 a run is one or more of them between two words. This runs §3.3's
 sentence-end test, capital test and the lone-mark rules over plain strings
-split at ordinary spaces, which is what the seam delivers for these texts.
+split at ordinary spaces, which is what the hook point delivers for these texts.
 Stdlib only.
 
 Terminators are cut down to the ones these texts use; the real set is

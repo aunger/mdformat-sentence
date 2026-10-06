@@ -19,7 +19,7 @@ print("SOURCE:", repr(SRC), "\n")
 out = mdformat.text(SRC, options={"wrap": "no"}, extensions={"probe"})
 for i,(t,kids,ctxt,repl,rends) in enumerate(calls,1):
     print(f"pass {i}")
-    print("   seam text :", repr(t).replace("\\x00","<WP>"))
+    print("   hook text :", repr(t).replace("\\x00","<WP>"))
     print("   children  :", kids)
     print("   context   :", ctxt, "| _replace available:", repl)
     print("   renderers :", rends, "...")
