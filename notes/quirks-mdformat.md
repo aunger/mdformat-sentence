@@ -32,6 +32,57 @@ The same state makes rendering impure: a second render of the children sees a gr
 `Some text here and ~~~ more text after it.` at `--wrap 10` comes back as a fenced code block, because `paragraph()` escapes other block syntax at a line start but not a run of three or more tildes.
 §3.5 refuses a break before such a run.
 
+## Unicode whitespace is deleted at a wrapped line edge
+
+**Filing candidate.** *Verified* 2026-10-07, no plugins loaded.
+
+```python
+import mdformat
+from mdformat._util import is_md_equal
+
+src = "aaaa bbbb\u00a0 cccc dddd\n"
+out = mdformat.text(src, options={"wrap": 10}, extensions=set())
+print(repr(out), is_md_equal(src, out))
+# 'aaaa bbbb\ncccc dddd\n' True
+```
+
+The U+00A0 is gone, and `is_md_equal` returns `True`; the CLI, which validates by default, accepts the same input with exit 0 and the character gone.
+U+1680 and U+2000 are deleted the same way, and at `--wrap 30` all three survive, because the character is then in the middle of a line.
+`paragraph()` strips each line after wrapping (`lines[i] = lines[i].strip()`, *read* in `renderer/_context.py`), and `str.strip()` removes far more than the three characters mdformat turns into wrap points (`quirks-cpython.md`).
+`is_md_equal` compares HTML after collapsing every run of `\s+` to one space (*read* in `_util.py`), so validation passes and the loss is silent.
+§3.5's edge-safety rule exists because of this.
+
+mdformat's changelog lists an earlier fix nearby, under 0.7.15: "`--wrap` converts Unicode whitespace to regular spaces and line feeds."
+`tests/data/wrap_width_50.md` also has a case titled "Only use space, tab and line feed as wrap points".
+Both were *read* at mdformat `56b24ef0c6cfdab501844925971204f858185547`, and they are the reason this does not look intended.
+
+## Emphasis escaping is not idempotent at narrow widths
+
+**Filing candidate.** *Verified* 2026-10-07, no plugins loaded.
+
+```python
+import mdformat
+
+s = "A * * b\n"
+for _ in range(3):
+    s = mdformat.text(s, options={"wrap": 5}, extensions=set())
+    print(repr(s))
+# 'A *\n\\* b\n'
+# 'A \\*\n\\* b\n'
+# 'A \\*\n\\* b\n'
+```
+
+The second format changes what the first produced, so `mdformat --check --wrap 5` exits 1 on a file that mdformat itself wrote.
+The third is stable.
+The cause was not investigated.
+
+mdformat's `tests/test_commonmark_spec.py` asserts that a second pass changes nothing (`md_new == md_2nd_pass`), but it parametrizes `wrap` over `["keep", "no", 60]` only (*read* at the same commit), so no test reaches a width this narrow.
+An earlier check made while reviewing the sibling plugin, `mdformat-semantic-line-breaks`, and not repeated here, reported that adding 5 and 8 to that list fails CommonMark spec example 55 and nothing else.
+
+This plugin's output does not depend on width (§2.5), so it never asks mdformat to wrap at 5.
+A newline it inserts at a sentence end could still put a `*` at the start of a line, and whether any sentence-only output can reach this case is untested.
+If §6.2's "idempotency vs baseline" row ever fails, check this entry before the plugin.
+
 ## The CLI and TOML disagree on `wrap = 1`
 
 **Compatibility risk, harmless here.** *Read.*
@@ -65,6 +116,16 @@ A plugin that walks up from the filename to find `.mdformat.toml` finds the file
 
 **Compatibility risk.** *Read* (`_api.py`).
 `options={"plugin": {"sentence": {...}}}` reaches `context.options` through `mdformat.text()`, which is not a supported interface; the test harnesses use it (§4).
+
+## Plugin option flags have three edges that §2.4 does not cover
+
+**Compatibility risk.** *Verified* 2026-10-07 by calling `make_arg_parser` from `mdformat/_cli.py` with stand-in plugins, no plugin installed.
+§2.4 covers the `dest` rewrite and the rule that a default must be `None` or `argparse.SUPPRESS`.
+Three edges sit around them:
+
+- **`store_true` trips the default rule by itself.** Its default is `False`, so the warning fires with the plugin's own flag and no other mistake: ``DeprecationWarning: The `default` (False) for ['--demo-flag'] from the 'demo' plugin, will always override any value configured in TOML.`` It is a `DeprecationWarning`, not a `UserWarning`, so `-W error::UserWarning` does not catch it. Write `default=None` beside `store_true`, or use `store_const` with `const=True, default=None`.
+- **The default metavar comes from the rewritten `dest`.** An option added as `--demo-count` with `type=int` and no `metavar` shows in `--help` as `--demo-count PLUGIN.DEMO.DEMO_COUNT`. Pass `metavar=`.
+- **Flag strings are not namespaced, so two plugins that register the same one collide.** `make_arg_parser` raises `ArgumentError: argument --only: conflicting option string: --only`. `run` calls it before reading any argument, with every installed plugin (`PARSER_EXTENSIONS`), enabled or not, so a user who has both installed loses the whole CLI. The Python API never references `_cli.py` and is unaffected.
 
 ## Plugin errors are not caught
 

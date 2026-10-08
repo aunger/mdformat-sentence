@@ -65,6 +65,18 @@ An mdformat-gfm bare URL as an opener was measured at 24 gaps in about 150,000 p
 
 **Intention.** `MATH-AND-OPENERS.md` sets out how named openers could be added, as a rules-file key rather than as rules, and what has to be measured first.
 
+### Clause breaks, rules 5 and 6
+
+**Observed.** §5.1 declines rule 5 because punctuation alone over-fires, and §5.2 shows that rule 6 is invisible to punctuation and mostly to vocabulary.
+The sibling plugin, `mdformat-semantic-line-breaks`, implements rule 5 from punctuation and patches the over-firing with a minimum line length that folds short lines back.
+Its parser research, a note named `docs/research/english-syntax-parsers.md` on a branch of that repository, reports spaCy `en_core_web_md` at 74.2 F1 on clause coordination against 52.9 for a part-of-speech heuristic, over 545 held-out UD English-EWT cases.
+It also reports that analyzing a whole paragraph at once made the output non-idempotent and analyzing one sentence at a time did not.
+Those figures are quoted, not reproduced: only that note's recommendation was read, and its benchmark programs live in that repository.
+
+**Intention.** If clause breaks are ever added they are a separate decision, and a parse is the mechanism to evaluate first.
+It would add a model dependency that this design's footprint, mdformat and `tomli` below Python 3.11, does not have.
+It would also need an answer to §6.1: a decision made from the whole sentence is still a function of the text, but only if the model is deterministic and analyzes one sentence at a time.
+
 ## Packaging and versions
 
 ### Widening the mdformat bound
@@ -73,6 +85,19 @@ An mdformat-gfm bare URL as an opener was measured at 24 gaps in about 150,000 p
 mdformat 0.7.17 and 0.7.22 were read and match, but only 1.0.0 was run.
 
 **Intention.** Move the bound only after §6's gate passes against the newer mdformat, which the non-blocking CI job runs.
+
+### One distribution or two, with the sibling plugin
+
+**Observed.** The sibling plugin implements the full cascade and this one the sentence-only subset.
+This design owns `RENDERERS["inline"]` (§2.2), which only one plugin can own (`TRADE-OFFS.md`).
+The sibling hooks `inline` as a postprocessor, which by §2.2's account would receive text with no wrap point and so have nothing to break, but whether the two compose cleanly is untested, because this plugin has no implementation yet.
+The sibling's research note recommends one distribution with a style option instead, `[plugin.linebreaks] style = "sentences"` or `"semantic"`, because packaging can express "requires" and "extras" but not "exactly one of these".
+It also reports, from two throwaway plugins demonstrating it, that when two installed plugins define a renderer for the same node type mdformat keeps the first and drops the other with a warning, and that two postprocessors both run and compound each other's breaks.
+Those points are from the note's recommendation and its section on co-installed plugins, which were read; the demonstrations were not re-run here.
+Nothing else in this repository's notes records the question.
+
+**Intention.** Settle it before either package is published, because the entry-point id is the binding constraint (§2.1) and changing it later breaks every configuration that names it.
+Keeping the two separate and letting them conflict loudly is a possible answer, and `TRADE-OFFS.md` already accepts that for the `inline` slot; the point is to decide rather than discover.
 
 ## Upstream
 

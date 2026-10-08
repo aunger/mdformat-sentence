@@ -9,6 +9,15 @@ The entries that are not missed breaks say so.
 
 ______________________________________________________________________
 
+## Scope (§1, §5)
+
+| cost | what it buys | kind |
+| --- | --- | --- |
+| Rule 5 is declined (§5.1). In the specification's own prose, 42% of the breaks are at clause punctuation (§5.2). | No comma rule that over-fires on serial lists, coordinate phrases and introductory adverbials, and no length floor to patch it. | missed breaks, the larger of the two scope costs |
+| Rule 6 is not implemented. 36% of the same breaks fall where there is no punctuation, and a 36-word break-word list recovers 12 of those 32 (§5.2). | No vocabulary whose words also have a non-clausal reading. | missed breaks |
+| Rule 12 is not implemented: a sentence longer than any column stays on one line (§1). | Line positions are a function of the text alone, so an edit moves no line but its own. | long lines |
+| The plugin implements the rule behind 12% of the breaks a sembr author places by hand (§5.2). | A promise that fits in one sentence (§1). | a minority of hand-written breaks |
+
 ## The hook point and the recorder (§2.2, §3.1, §3.6)
 
 | cost | what it buys | kind |
