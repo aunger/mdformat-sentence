@@ -77,7 +77,6 @@ The third is stable.
 The cause was not investigated.
 
 mdformat's `tests/test_commonmark_spec.py` asserts that a second pass changes nothing (`md_new == md_2nd_pass`), but it parametrizes `wrap` over `["keep", "no", 60]` only (*read* at the same commit), so no test reaches a width this narrow.
-An earlier check made while reviewing the sibling plugin, `mdformat-semantic-line-breaks`, and not repeated here, reported that adding 5 and 8 to that list fails CommonMark spec example 55 and nothing else.
 
 This plugin's output does not depend on width (§2.5), so it never asks mdformat to wrap at 5.
 A newline it inserts at a sentence end could still put a `*` at the start of a line, and whether any sentence-only output can reach this case is untested.
