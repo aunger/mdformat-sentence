@@ -14,7 +14,7 @@ can re-run them rather than take them on trust.
 | `FUTURE-WORK.md` | What the design deferred to keep the first version small, each as the observation behind it and an intention, which is not a commitment. |
 | `TRADE-OFFS.md` | Costs the design accepts on purpose, what each buys, and where `DESIGN.md` states it. |
 | `MATH-AND-OPENERS.md` | Why only four kinds of inline node may open a sentence, what that costs math-heavy prose, and how named openers could be added as a rules-file key. |
-| `quirks-*.md` | One file per third-party project: behavior the design works around, and findings that may deserve an upstream issue. None has been filed. |
+| `quirks-*.md` | One file per third-party project: behavior the design works around, findings that may deserve an upstream issue, or, for `quirks-emacs-fill.md`, prior art. None has been filed. |
 | `DESIGN-REVIEW-HOOK-POINT-2026-10-06.md` | The four-agent review that kept the `inline` renderer as the hook point and replaced the re-render walk with a recorder. Kept for its evidence register; `DESIGN.md` decides where they differ. |
 | `CLAUDE.md` | How to link to these notes: a commit SHA and a heading, not a line number. |
 | `corpus/` | The one corpus that gives honest answers about layout heuristics, and why. |

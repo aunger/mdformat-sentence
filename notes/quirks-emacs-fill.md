@@ -22,7 +22,11 @@ A sentence longer than the column therefore wraps at whitespace on width alone, 
 **Prior art.** *Read.*
 The docstring says: "If `sentence-end-double-space` is non-nil, period followed by one space is not the end of a sentence."
 `sentence-end-double-space` defaults to `t` (`paragraphs.el`, "Non-nil means a single space does not end a sentence").
-On ordinary single-spaced Markdown the command breaks nothing until the user sets it to `nil`.
+On ordinary single-spaced Markdown, then, a sentence end followed by one space on the same line does not break until the user sets it to `nil`.
+A sentence end at the end of a source line does break.
+`fill-region-as-paragraph-default` calls `fill-delete-newlines`, which adds a space after any sentence end that falls at the end of a line ("Make sure sentences ending at end of line get an extra space") before it joins the lines.
+`Foo bar.\nBaz qux.` is therefore joined to `Foo bar.  Baz qux.`, `forward-sentence` finds an end after `bar.`, and the refill breaks there.
+A paragraph on one line is unaffected.
 
 ## Two projects are called semlf
 

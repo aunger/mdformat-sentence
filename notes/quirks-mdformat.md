@@ -74,12 +74,21 @@ for _ in range(3):
 
 The second format changes what the first produced, so `mdformat --check --wrap 5` exits 1 on a file that mdformat itself wrote.
 The third is stable.
+The `*` that changes is the one ending the first line: pass 1 already escapes the one that starts the second line, and pass 2 turns `A *` into `A \*`.
+No narrow width is needed to show it, only a bare `*` at the end of a line:
+
+```python
+print(repr(mdformat.text("A *\nb\n", options={"wrap": "keep"}, extensions=set())))
+# 'A \\*\nb\n'
+```
+
 The cause was not investigated.
 
 mdformat's `tests/test_commonmark_spec.py` asserts that a second pass changes nothing (`md_new == md_2nd_pass`), but it parametrizes `wrap` over `["keep", "no", 60]` only (*read* at the same commit), so no test reaches a width this narrow.
 
 This plugin's output does not depend on width (§2.5), so it never asks mdformat to wrap at 5.
-A newline it inserts at a sentence end could still put a `*` at the start of a line, and whether any sentence-only output can reach this case is untested.
+The trigger is a bare `*` ending a line, and §3.5 guards only a `*` that would start one.
+No sentence-only output was found that reaches it: a `*` attached to a terminator is escaped on pass 1, `Done.* Next` giving `Done.\* Next` (*verified*).
 If §6.2's "idempotency vs baseline" row ever fails, check this entry before the plugin.
 
 ## The CLI and TOML disagree on `wrap = 1`
@@ -118,13 +127,76 @@ A plugin that walks up from the filename to find `.mdformat.toml` finds the file
 
 ## Plugin option flags have three edges that §2.4 does not cover
 
-**Compatibility risk.** *Verified* 2026-10-07 by calling `make_arg_parser` from `mdformat/_cli.py` with stand-in plugins, no plugin installed.
+**Compatibility risk.** *Verified* 2026-10-07, and again 2026-10-12, by calling `make_arg_parser` from `mdformat/_cli.py` with the stand-in plugins below, no plugin installed.
 §2.4 covers the `dest` rewrite and the rule that a default must be `None` or `argparse.SUPPRESS`.
 Three edges sit around them:
 
-- **`store_true` trips the default rule by itself.** Its default is `False`, so the warning fires with the plugin's own flag and no other mistake: ``DeprecationWarning: The `default` (False) for ['--demo-flag'] from the 'demo' plugin, will always override any value configured in TOML.`` It is a `DeprecationWarning`, not a `UserWarning`, so `-W error::UserWarning` does not catch it. Write `default=None` beside `store_true`, or use `store_const` with `const=True, default=None`.
+- **`store_true` trips the default rule by itself.** Its default is `False`, so the plugin's own flag, with no other mistake, triggers a warning that begins `` DeprecationWarning: The `default` (False) for ['--demo-flag'] from the 'demo' plugin, will always override any value configured in TOML. `` Under the default warning filters it is not shown: `warn_explicit` attributes it to the plugin's source file, and those filters show a `DeprecationWarning` only when it is attributed to `__main__`. It prints under `-W default` and raises under `-W error::DeprecationWarning`; `-W error::UserWarning` does not catch it. The practical hazard is what the message says, without the message being seen: with `demo_flag = true` under `[plugin.demo]` in `.mdformat.toml`, the stand-in plugin received `False` from the CLI's `run`, which returned 0 and showed no warning (the second snippet below). Write `default=None` beside `store_true`, or use `store_const` with `const=True, default=None`.
 - **The default metavar comes from the rewritten `dest`.** An option added as `--demo-count` with `type=int` and no `metavar` shows in `--help` as `--demo-count PLUGIN.DEMO.DEMO_COUNT`. Pass `metavar=`.
 - **Flag strings are not namespaced, so two plugins that register the same one collide.** `make_arg_parser` raises `ArgumentError: argument --only: conflicting option string: --only`. `run` calls it before reading any argument, with every installed plugin (`PARSER_EXTENSIONS`), enabled or not, so a user who has both installed loses the whole CLI. The Python API never references `_cli.py` and is unaffected.
+
+The stand-ins, run as a script; the comments are its output under each filter:
+
+```python
+import argparse
+from mdformat._cli import make_arg_parser
+
+
+class Demo:
+    def add_cli_argument_group(group):
+        group.add_argument("--demo-flag", action="store_true")
+        group.add_argument("--demo-count", type=int)
+        group.add_argument("--only", action="store_const", const=True)
+
+
+class Other:
+    def add_cli_argument_group(group):
+        group.add_argument("--only", action="store_const", const=True)
+
+
+help_text = make_arg_parser({}, {}, {"demo": Demo}).format_help()
+print("--demo-count PLUGIN.DEMO.DEMO_COUNT" in help_text)
+try:
+    make_arg_parser({}, {}, {"demo": Demo, "other": Other})
+except argparse.ArgumentError as e:
+    print(e)
+# python demo.py, and python -W error::UserWarning demo.py, exit 0:
+#   True
+#   argument --only: conflicting option string: --only
+# python -W default demo.py prints the same two lines, and the
+#   DeprecationWarning to stderr, attributed to demo.py at `class Demo:`
+# python -W error::DeprecationWarning demo.py ends in a traceback, exit 1
+```
+
+The TOML override, run in a directory holding `a.md` with `Text.` and a `.mdformat.toml` with `demo_flag = true` under `[plugin.demo]`:
+
+```python
+import mdformat.plugins
+from mdformat._cli import run
+
+
+class Demo:
+    CHANGES_AST = False
+    RENDERERS = {}
+
+    def update_mdit(mdit):
+        pass
+
+    def add_cli_argument_group(group):
+        group.add_argument("--demo-flag", action="store_true")
+
+    def _seen(text, node, context):
+        print(context.options["mdformat"]["plugin"]["demo"])
+        return text
+
+    POSTPROCESSORS = {"paragraph": _seen}
+
+
+mdformat.plugins.PARSER_EXTENSIONS["demo"] = Demo
+print(run(["a.md"]))
+# {'demo_flag': False}
+# 0
+```
 
 ## Plugin errors are not caught
 

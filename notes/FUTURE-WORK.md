@@ -71,7 +71,7 @@ An mdformat-gfm bare URL as an opener was measured at 24 gaps in about 150,000 p
 
 **Intention.** If clause breaks are ever added they are a separate decision, and a parse is the mechanism to evaluate first.
 It would add a model dependency that this design's footprint, mdformat and `tomli` below Python 3.11, does not have.
-It would also need an answer to §6.1: a decision made from the whole sentence is still a function of the text, but only if the model is deterministic and analyzes one sentence at a time, so that an edit in one sentence cannot move a break in another.
+It would also need an answer to §1's promise and §6.2's locality row: a decision made from the whole sentence is still a function of the text, but only if the model is deterministic and analyzes one sentence at a time, so that an edit in one sentence cannot move a break in another.
 
 ## Packaging and versions
 

@@ -35,7 +35,7 @@ The plugin's only hook is `POSTPROCESSORS["paragraph"]` (*read*, `_postprocess_p
 
 ## `--wrap` is not honored
 
-**Filing candidate.** *Verified* 2026-10-07.
+**By design.** *Verified* 2026-10-07; cause *read*.
 
 ```python
 import mdformat
@@ -51,4 +51,40 @@ for ext in (set(), {"sembr"}):
 
 The paragraph is 145 characters.
 Plain mdformat wraps it at 60, and with the plugin it comes back as one 145-character line.
-The cause was not investigated beyond the hook: `paragraph` again, so the plugin works on text mdformat has already wrapped.
+The plugin's hook is `paragraph` again, so it works on text mdformat has already wrapped, and `insert_breaks` (`_sembr.py`) begins by undoing that wrapping: `_collapse_whitespace` returns `re.sub(r"\s+", " ", text).strip()`.
+Its docstring says this is deliberate: "Collapse-then-rebreak is what makes the transform deterministic and idempotent regardless of any existing soft breaks in the input."
+`DESIGN.md` also ignores `--wrap`: its output does not depend on it (§1), and a mode that honors it is declined (§4.1).
+
+## A no-break space becomes a plain space
+
+**Filing candidate.** *Verified* 2026-10-12; cause *read*.
+
+```python
+import mdformat
+from mdformat._util import is_md_equal
+
+src = "Aaa bbb.\u00a0Ccc ddd eee.\n"
+for ext in (set(), {"sembr"}):
+    print(repr(mdformat.text(src, extensions=ext)))
+# 'Aaa bbb.\xa0Ccc ddd eee.\n'
+# 'Aaa bbb. Ccc ddd eee.\n'
+print(is_md_equal(src, mdformat.text(src, extensions={"sembr"}), extensions={"sembr"}))
+# True
+
+long = "This is a fairly long first sentence here.\u00a0And this is another one.\n"
+print(repr(mdformat.text(long, extensions={"sembr"})))
+# 'This is a fairly long first sentence here.\nAnd this is another one.\n'
+```
+
+```
+$ printf 'Aaa bbb.\302\240Ccc ddd eee.\n' > nb.md
+$ mdformat nb.md; echo $?
+0
+$ mdformat --check nb.md; echo $?
+0
+```
+
+Plain mdformat keeps the U+00A0, and with the plugin it becomes U+0020.
+The plugin can then break there, as the longer first sentence shows.
+`is_md_equal` returns `True` on `src` and its output, so the CLI writes the change with exit 0, and `--check` then passes on the written file; `--check` on the original reports only that the file is not formatted.
+The cause is the collapse in the entry above: `\s` in a `str` pattern matches U+00A0, so `_collapse_whitespace` replaces it like any other whitespace, before any break is decided.
