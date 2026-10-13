@@ -1309,8 +1309,8 @@ The reason is that rule 5 cannot be implemented from punctuation alone without o
 Read unconditionally, it breaks at every comma at paren depth zero with no test for whether an independent clause follows, which shatters serial lists (`LaTeX,` / `Markdown,` / `and plain text,`), coordinate prepositional phrases and introductory adverbials.
 The usual remedy is a length-based merge pass that folds short lines back — a geometric patch for a grammatical problem, and one this plugin has no width to compute.
 
-Implementing rule 5 correctly needs a test for whether both sides of a comma could stand alone as sentences, which is the parsing problem this project has ruled out by charter.
-Declining the rule is the honest position for a tool that will not parse.
+Implementing rule 5 correctly needs a test for whether both sides of a comma could stand alone as sentences, which is a parsing problem, and this version does not parse.
+Declining the rule is the honest position for a tool that does not parse, and `notes/FUTURE-WORK.md` records what would change that.
 
 Rule 12 is declined for the reason in §1 and needs no further defense: it is a RECOMMENDED, and honoring it is incompatible with the property this plugin sells.
 
