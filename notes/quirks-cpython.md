@@ -33,7 +33,7 @@ A character list copied from `UNICODE_WHITESPACE` would therefore miss eight of 
 
 `str.splitlines()` splits on 10 codepoints: U+000A, U+000B, U+000C, U+000D, U+001C through U+001E, U+0085, U+2028 and U+2029.
 Code that splits Markdown source into lines should read it in text mode, which already turns `\r\n` and a lone `\r` into `\n`, and then use `split("\n")`.
-That advice is for code that reads Markdown or a rules file itself, such as this plugin's own reads of its rules files (§4), not for mdformat's own reads, which use `read_bytes().decode()` and translate no newline (*read* in `_cli.py` and `_api.py`).
+That advice is for code that reads Markdown source itself, not for mdformat's own reads, which use `read_bytes().decode()` and translate no newline (*read* in `_cli.py` and `_api.py`).
 `splitlines()` would also end the line at U+000B, U+000C, U+001C through U+001E, U+0085, U+2028 and U+2029, none of which Markdown treats as a line ending.
 
 The sweep, re-run 2026-10-12 on Python 3.11.17 and 3.13.16 with mdformat 1.0.0, same output on both:

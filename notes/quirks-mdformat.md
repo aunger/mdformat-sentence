@@ -164,7 +164,8 @@ except argparse.ArgumentError as e:
 #   True
 #   argument --only: conflicting option string: --only
 # python -W default demo.py prints the same two lines, and the
-#   DeprecationWarning to stderr, attributed to demo.py at `class Demo:`
+#   DeprecationWarning to stderr (twice, once per make_arg_parser call),
+#   attributed to demo.py at `class Demo:`
 # python -W error::DeprecationWarning demo.py ends in a traceback, exit 1
 ```
 

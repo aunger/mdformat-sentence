@@ -53,7 +53,7 @@ The paragraph is 145 characters.
 Plain mdformat wraps it at 60, and with the plugin it comes back as one 145-character line.
 The plugin's hook is `paragraph` again, so it works on text mdformat has already wrapped, and `insert_breaks` (`_sembr.py`) begins by undoing that wrapping: `_collapse_whitespace` returns `re.sub(r"\s+", " ", text).strip()`.
 Its docstring says this is deliberate: "Collapse-then-rebreak is what makes the transform deterministic and idempotent regardless of any existing soft breaks in the input."
-`DESIGN.md` also ignores `--wrap`: its output does not depend on it (§1), and a mode that honors it is declined (§4.1).
+This plugin does not honor an integer width either (§2.5), and a mode that honors it is declined (§4.1).
 
 ## A no-break space becomes a plain space
 
