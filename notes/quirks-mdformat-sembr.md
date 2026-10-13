@@ -1,7 +1,7 @@
 # Quirks: mdformat-sembr
 
 A note, not a specification.
-Behavior of `mdformat-sembr` 0.2.0, the other mdformat plugin that puts a newline after sentences, which `DESIGN.md` §2.2 positions this design against.
+Behavior of `mdformat-sembr` 0.2.0, the other mdformat plugin that puts a newline after sentences.
 
 *Verified* means run on mdformat 1.0.0 in a separate virtual environment.
 The plugin registers the entry point `sembr`, and the CLI enables every installed plugin when `--extensions` is absent, so installing it beside a baseline changes the baseline.
