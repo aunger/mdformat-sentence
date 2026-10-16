@@ -125,13 +125,14 @@ A plugin that walks up from the filename to find `.mdformat.toml` finds the file
 **Compatibility risk.** *Read* (`_api.py`).
 `options={"plugin": {"sentence": {...}}}` reaches `context.options` through `mdformat.text()`, which is not a supported interface; the test harnesses use it (§4).
 
-## Plugin option flags have three edges that §2.4 does not cover
+## Plugin option flags have four edges that §2.4 does not cover
 
-**Compatibility risk.** *Verified* 2026-10-07, and again 2026-10-12, by calling `make_arg_parser` from `mdformat/_cli.py` with the stand-in plugins below, no plugin installed.
+**Compatibility risk.** *Verified* 2026-10-07, and again 2026-10-12 (the unhashable default 2026-10-16), by calling `make_arg_parser` from `mdformat/_cli.py` with the stand-in plugins below, no plugin installed.
 §2.4 covers the `dest` rewrite and the rule that a default must be `None` or `argparse.SUPPRESS`.
-Three edges sit around them:
+Four edges sit around them:
 
 - **`store_true` trips the default rule by itself.** Its default is `False`, so the plugin's own flag, with no other mistake, triggers a warning that begins `` DeprecationWarning: The `default` (False) for ['--demo-flag'] from the 'demo' plugin, will always override any value configured in TOML. `` Under the default warning filters it is not shown: `warn_explicit` attributes it to the plugin's source file, and those filters show a `DeprecationWarning` only when it is attributed to `__main__`. It prints under `-W default` and raises under `-W error::DeprecationWarning`; `-W error::UserWarning` does not catch it. The practical hazard is what the message says, without the message being seen: with `demo_flag = true` under `[plugin.demo]` in `.mdformat.toml`, the stand-in plugin received `False` from the CLI's `run`, which returned 0 and showed no warning (the second snippet below). Write `default=None` beside `store_true`, or use `store_const` with `const=True, default=None`.
+- **An unhashable default crashes the CLI.** With `default=[]`, `make_arg_parser` raises `TypeError: unhashable type: 'list'` from the very test that decides whether to warn, `action.default not in {None, argparse.SUPPRESS}`, and since `run` builds the parser with every installed plugin, one such plugin takes down the whole CLI for anyone who has it installed.
 - **The default metavar comes from the rewritten `dest`.** An option added as `--demo-count` with `type=int` and no `metavar` shows in `--help` as `--demo-count PLUGIN.DEMO.DEMO_COUNT`. Pass `metavar=`.
 - **Flag strings are not namespaced, so two plugins that register the same one collide.** `make_arg_parser` raises `ArgumentError: argument --only: conflicting option string: --only`. `run` calls it before reading any argument, with every installed plugin (`PARSER_EXTENSIONS`), enabled or not, so a user who has both installed loses the whole CLI. The Python API never references `_cli.py` and is unaffected.
 
@@ -203,3 +204,10 @@ print(run(["a.md"]))
 
 **Compatibility risk.** *Read.*
 Nothing in `_api.py` or `_cli.py` wraps plugin code in `try`/`except`, so a malformed rules file surfaces as a traceback, and `sys.exit()` from a plugin would end an API caller's process (§4).
+
+## `mdformat.renderer.LOGGER` reaches stderr without a handler
+
+**Compatibility risk.** *Verified* by `experiments/wraparg.py`.
+`_cli.py` attaches a handler to the logger that prefixes `Warning: ` and writes to stderr, and that handler is CLI-only.
+A library caller is not silent anyway: with no handler configured, `logging.lastResort` writes a warning to stderr unprefixed.
+`DESIGN.md` §2.5's own warning cannot reach an API caller for another reason, its guard, so this matters only to other messages the plugin might log.

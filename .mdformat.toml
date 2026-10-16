@@ -1,0 +1,6 @@
+# This repository's own configuration for mdformat-sentence, which DESIGN.md
+# is written to (DESIGN.md §6.2, the dogfood row). Its prose opens sentences
+# with these names and with the section sign.
+[plugin.sentence]
+schema = 1
+lowercase_names = '(?:mdformat|rumdl|§)\S*'

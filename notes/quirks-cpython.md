@@ -13,6 +13,14 @@ ______________________________________________________________________
 `'ა'.islower()` is `True`, so a capital test written with them would never break ordinary Georgian prose.
 `DESIGN.md` §3.3 reads vendored Sentence_Break tables instead.
 
+## `re`, `str.casefold` and `str.lower` fold case three different ways
+
+**Compatibility risk.** *Verified* 2026-10-16 on Python 3.13.
+`re`'s `(?i:…)` is simple case folding, so `Straße` does not match a `strasse` pattern and `ﬁ` does not match `fi`, where `str.casefold` would join both.
+In the other direction `re` equates Turkish `I` with `ı` and `İ` with `i`, which `casefold` keeps apart and which no language-blind choice gets right.
+`str.lower` is the only one of the three that separates Greek `ς` from `σ`.
+`DESIGN.md` §3.3 matches case-insensitively only through `re`'s scoped flag and never calls the other two.
+
 ## `unicodedata` has no Sentence_Break
 
 **Compatibility risk.** *Read.*
