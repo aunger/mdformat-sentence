@@ -1287,8 +1287,8 @@ The sembr specification has thirteen normative rules.
 | 4 | MUST occur after a sentence | §3.3, wherever a sentence end is recognized | **partial** |
 | 5 | SHOULD occur after an independent clause | — | **declined, §5.1** |
 | 6 | MAY occur after a dependent clause | — | not implemented |
-| 7 | RECOMMENDED before an enumerated or itemized list | — | not implemented |
-| 8 | MAY be used after items in a list | — | not implemented |
+| 7 | RECOMMENDED before an enumerated or itemized list | the spec does not say what "list" means; mdformat already starts a Markdown list on its own line, and nothing here breaks before a list inside a sentence | unneeded for Markdown lists, not implemented inside sentences |
+| 8 | MAY be used after items in a list | as rule 7; this plugin never groups items | not implemented |
 | 9 | MUST NOT occur within a hyphenated word | no wrap point inside a token | **yes** |
 | 10 | MAY occur before and after a hyperlink | wrap points surround links, but no break is taken there | not implemented |
 | 11 | MAY occur before inline markup | as rule 10 | not implemented |
