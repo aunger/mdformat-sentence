@@ -44,7 +44,7 @@ opener_types = ['math_inline']
 ```
 
 The name is a placeholder of this note, not a decision.
-It would compose like `lowercase_names`: every file in a composition contributes, a file can add types and none can take one away, and the default names none.
+It would compose like `lowercase_names`: every file in a composition contributes, a file can add types and none can take one away; unlike `lowercase_names`, its default would name none.
 The recorder of §3.1 already knows each atom's node type, so the check costs a set lookup.
 
 A text pattern instead of a node type, say `openers = '\$.*'`, would be more general and riskier: it reads atom text through a pattern, which is what the closed list was made to stop.

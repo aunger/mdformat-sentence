@@ -40,13 +40,14 @@ to it.
 | `addonly.py` | yes | The author's line breaks survive to the hook point as `softbreak` children on pass 1 and are gone on pass 2. |
 | `proto.py` | yes | A working add-only postprocessor. Idempotent, width-independent, and not a pure function of the text. |
 | `proto2.py` | yes | The same harness with a pluggable decision function. The shape every later experiment varies. |
-| `breaks.py` | no | **45% of real sembr line breaks carry no punctuation at all.** A break-word list recovers 12 of the 32 that are not at markup either; 23% of all breaks stay undetectable. The reason rule 5 cannot be recovered from layout. |
+| `breaks.py` | markdown-it-py only | **Half of real sembr line breaks carry no punctuation at all.** A break-word list recovers 12 of the 43 that are not at markup either; 30% of all breaks stay undetectable. The reason rule 5 cannot be recovered from layout. |
 | `triage2.py` | no | Sentence coverage separates hand sembr from geometric wrapping almost perfectly on this corpus: all 9 real paragraphs score 1.00 and 24 of the 27 hard-wrapped ones score 0.00, the exceptions being two at 0.50 and one at 1.00. It prints the full distribution, because min/median/max hides exactly the middle that decides this. |
 | `cov.py` | no | What "coverage" means, on worked cases, including a width-wrapped paragraph that scores 1.00 by coincidence. |
 | `thresh.py` | no | Any coverage *threshold* reintroduces paragraph-sized diffs: one edit, 18 changed lines. |
 | `k0.py` | no | At a threshold of exactly zero, appending a sentence is safe (1 diff line) but removing a sentence break is not (8 lines, all clause breaks lost). |
 | `edit.py` | no | Rewrapping a paragraph versus adding only the missing break: 9 diff lines against 1, 0 clause breaks surviving against 4. |
-| `rules.py` | no | Every author break in the corpus by which sembr rule put it there: 12% rule 4, 42% rule 5, 9% rules 10 and 11, 36% rule 6. The table in `DESIGN.md` §5.2. |
+| `rules.py` | markdown-it-py only | Every author break in the corpus by which sembr rule put it there: 9.7% rule 4, 40.8% rule 5, 7.8% rules 10 and 11, 41.7% none of them. The table in `DESIGN.md` §5.2. Also what a naive rule 5 would do: 21 of its 63 breaks fall where the author did not break, §5.1's over-firing figure. |
+| `_corpus.py` | markdown-it-py only | Not an experiment: the markdown-it paragraph extraction `rules.py` and `breaks.py` share, which fixes their scope. |
 | `wrapkeep.py` | yes | Whether a plugin can defeat `--wrap keep`. It can, in two lines, through a supported hook, and the script lists the three consequences that are why `DESIGN.md` does not. Also: what the plugin can and cannot see about `wrap`, which is what §2.5's warning keys off. |
 | `secondpass.py` | yes | A `POSTPROCESSORS["root"]` hook can re-render, restoring mdformat's second pass when it would otherwise be skipped. Output matches the honest `--wrap no` exactly, over a bare paragraph and over lists, blockquotes and fenced code, once the already-finalized trailing newline is handled. |
 | `wrapsplit.py` | yes | Simulates splitting `do_wrap` into "produce wrap points" and "width-wrap". Under `--wrap keep` the plugin works, mdformat adds no geometric wrapping, and links survive as atoms. The feasibility check behind §5.6 of the wrap note. |
