@@ -25,7 +25,7 @@ A word that ends in a terminator can split its line.
 An unpaired bracket can be paired by a closer in a later sentence and hold back every gap between (§3.2), so one stray `(` in `One ( fine day. A b. C d. E 1) f.` holds back three breaks.
 A word added at either end of a sentence is beside a gap and can change whether that gap breaks: a lowercase word opening a sentence fails the capital test and joins two lines.
 And a word added between `et` and `al.` stops `academic.toml`'s rule from matching (§4).
-§6.2's locality row inserts accordingly.
+Section 6.2's locality row inserts accordingly.
 A minor release may also move breaks in text nobody edited (§4).
 That is the diff-stability property Semantic Line Breaks exists for, and no width-driven implementation can offer it — as soon as a break position is chosen by "the rightmost candidate that still fits in 80 columns", an edit upstream can change which candidate wins and cascade down the paragraph.
 
@@ -84,7 +84,7 @@ mdformat 1.0.0 reads `plugin.RENDERERS` in `renderer/__init__.py` and calls `plu
 The plugin defines one postprocessor, `POSTPROCESSORS = {"root": …}`, the canary of §2.2.
 
 **Package data.**
-The distribution carries the shipped rules files and `mdformat-sentence-rules`, the console script that prints them (§4); the vendored `SentenceBreakProperty.txt` from UCD 18.0.0 with the module generated from it (§3.3); and the Unicode License v3 beside that file, because it is © Unicode, Inc. and its terms require the notice to travel with the data.
+The distribution carries the shipped rules files and `mdformat-sentence-rules`, the console script that prints them (§4); the vendored Unicode data and the module generated from it (§3.3); and the Unicode License v3 beside the data, because it is © Unicode, Inc. and its terms require the notice to travel with it.
 
 Every fact in §2.1 to §2.4 was verified by execution against mdformat 1.0.0.
 
@@ -169,7 +169,7 @@ Why this hook point and no other:
 - Hooking `paragraph` instead, as `mdformat-sembr` does, puts the plugin downstream of wrapping and line-start escaping, so it has to re-derive what this hook point gives it for free.
 
 **No `WRAP_POINT` survives this plugin.**
-§3.4 resolves every gap to a newline or a literal space, so mdformat's own word wrap is left with nothing to act on, and no part of this design may assume that it will act.
+Section 3.4 resolves every gap to a newline or a literal space, so mdformat's own word wrap is left with nothing to act on, and no part of this design may assume that it will act.
 
 ### 2.3 Four facts about the hook point
 
@@ -217,14 +217,14 @@ A plugin that sets any other default silently defeats its own TOML config, so `-
 | `no` | `True` | Sentence per line. The intended mode. |
 | any integer | `True` | **Identical output to `no`.** The width is deliberately not honored. |
 
-The third row is the surprising one and it is deliberate.
+The third row is deliberate.
 A user who passes `--wrap 80` alongside this plugin is asking for two incompatible things, and this plugin resolves the conflict in favor of its own promise rather than silently producing something that is neither.
-§3.4 explains the mechanism, §6.1 makes it a test, and the README must say it in the first paragraph.
+Section 3.4 explains the mechanism, §6.1 makes it a test, and the README must say it in the first paragraph.
 
 `do_wrap` is `isinstance(wrap_mode, int) or wrap_mode == "no"`, which is what makes the first row inert and the third row indistinguishable from the second.
 
 **The default is the inert row, and the intended row is destructive.**
-This is the most surprising thing about installing the plugin and it belongs in the README as well as here.
+That belongs in the README as well as here.
 
 `keep` is mdformat's default, and mdformat's own documentation gives hand-written Semantic Line Breaks as the reason it is the default.
 So the out-of-the-box experience of installing this plugin is that nothing happens, and a user has to set `wrap = "no"` before it does anything at all.
@@ -257,7 +257,7 @@ Measured in `notes/experiments/wrapkeep.py`.
 One thing the implementation must handle, and one that looks like a second and is not.
 It fires per paragraph, not per file, so it needs a once-per-render latch rather than one warning per inline node.
 The latch is a key the plugin sets in `context.env`, which markdown-it creates afresh for every render, so it resets for each file with no state kept in the module.
-§2.3's double render does *not* double it: the guard above is `not context.do_wrap`, true only under `keep`, and `_api.py` re-renders only when `wrap != "keep"`, so the pass that would repeat a warning is never the pass that raises this one.
+Section 2.3's double render does *not* double it: the guard above is `not context.do_wrap`, true only under `keep`, and `_api.py` re-renders only when `wrap != "keep"`, so the pass that would repeat a warning is never the pass that raises this one.
 Measured in `notes/experiments/wraparg.py` §4: three paragraphs give three calls at the hook point under `--wrap keep` and six under `--wrap no`, and it is only the three that can warn.
 
 **What the plugin cannot see is whether `keep` was chosen or merely defaulted.**
@@ -440,13 +440,13 @@ So `held.[1] Then` and `held.<sup>1</sup> Then` both stay on one line.
 | STerm | no | yes |
 
 Only ATerm consults the table, because an abbreviation is a word cut short by a period and none ends in `!`, `?` or `。`.
-Opening the table to STerm would do harm rather than merely nothing: `at` has lost its terminator, so a rule cannot tell `B.` from `B!`, and the shipped initial rule would join `Plan B! Then we go.`.
+Opening the table to STerm would do harm rather than merely nothing: `at` has lost its terminator, so a rule written on `at` cannot tell `B.` from `B!`, and the shipped initial rule would join `Plan B! Then we go.`.
 Folding the CJK terminators into STerm costs nothing: a CJK opening is alphabetic and not lowercase, so it passes the capital test anyway, and their wrap point exists only where the author separated the sentences with a space.
 **A `!` or `?` is not unambiguous, so STerm takes the capital test too.**
 Brand names end in them, `Panic! at the Disco` and `Yahoo! bought it`, and a question can belong to a quoted phrase rather than to the sentence carrying it, `A "Is this a test?" guide to the whole subject…`.
 Every one of those continues with a lowercase word, so the capital test joins them all, and it does so wherever the closer stands: French spaces it off, `« Vraiment ? » dit-il en partant.`, and the lowercase `dit-il` holds the line together just the same.
 The cost is the one ATerm already pays, that a sentence opening with a lowercase word after `!` or `?` is not broken, unless that word is one of the two kinds the capital test lets through (below).
-What remains out of reach is a capitalized follower, `Yahoo! Finance reported it.`, which breaks, and no rule can say otherwise while the table is closed to STerm; `at_full`, held free in §3.3's naming, is the route if it ever matters.
+What remains out of reach is a capitalized follower, `Yahoo! Finance reported it.`, which breaks, and no rule can say otherwise while the table is closed to STerm; `at_full` can tell `B.` from `B!`, so it is the route to opening the table if that ever matters.
 
 **Rules are an ordered decision table, and the last match wins.**
 A rules file contributes an ordered list of `[[rule]]` tables, and the lists of every file it includes are spliced in ahead of its own (§4).
@@ -455,24 +455,24 @@ Ordering is what makes a rule overridable without knowing how it was written: a 
 Last rather than first, because a macro's later definition already overrides its earlier one, and a file cannot be half assignment and half matcher without being a trap.
 The snippets in this section show one `[[rule]]` each; as a file, each sits under `schema = 1`, on top of the base rules, and carries the example §4 requires, and `$letter` is the default file's macro rather than a built-in class.
 
-Each rule carries at least one and at most five patterns, each `fullmatch`ed against a single word, and a rule matches only where all of its patterns do.
+Each rule carries at least one and at most six patterns, each `fullmatch`ed against a single word, and a rule matches only where all of its patterns do.
 **A rule with no pattern is a load error, and so is any key the format does not define**, in a rule, in an example or at the top of a file.
 A rule with no pattern would match every candidate gap, and a misspelled key, `after_ful`, would drop a condition without a word and leave the rule wider than its author wrote it.
 
 | key | matches |
 | --- | --- |
-| `at` | the word carrying the terminator, less that one terminator and the closers after it, stripped as below |
+| `at` | the word carrying the terminator, stripped |
 | `before` | the word before that one, stripped |
 | `after` | the word after the gap, stripped |
+| `at_full` | the word carrying the terminator, raw |
 | `before_full` | the word before, raw |
 | `after_full` | the word after the gap, raw |
 
 **The bare keys are stripped and the `_full` keys are raw.**
-`before` and `after` lose any leading run of the opener set and any trailing run of closers, terminators, footnote references and clause punctuation, `,` `;` `:`.
+`at`, `before` and `after` all lose any leading run of the opener set and any trailing run of closers, terminators, footnote references and clause punctuation, `,` `;` `:`.
 Stripped is what an index needs: `after = '$mixed'` holds for `3`, `3,`, `3.` and `(3)` alike, where a raw pattern would have to spell out every punctuation that can follow a number.
 Raw is what makes *unpunctuated* expressible: `before_full = '$upper$letter*'` says a capitalized word carrying no punctuation, which `Paris,` and `at` and `1890` each fail for a different reason.
 No separate condition is needed for it, and none is offered.
-A raw `at_full` is the one name the convention still leaves free for when something needs it.
 
 **`before` and `before_full` are the empty string when the candidate opens the section**, and that is what makes *nothing precedes* sayable without a keyword for it.
 `before_full = ''` matches there and nowhere else, while any pattern requiring a character fails there.
@@ -485,11 +485,11 @@ For the `st` discriminator below that is the safe direction: `St. Louis is a cit
 A rule whose verdict is `no` and whose condition is on `before` or `before_full` has the opposite exposure, and its author should carry an example for the section-start case.
 
 **Positions are counted from the words on either side of a gap, not from the gap's own neighbors.**
-Where spaced-off marks stand as segments of their own, as French writes `« Ceci est important. »`, the whole run of them between two words is one gap (below): `at`, `before` and `before_full` read leftward from the word carrying the terminator, and `after` and `after_full` read the word after the run, so `at` is `important` and not `»`.
+Where spaced-off marks stand as segments of their own, as French writes `« Ceci est important. »`, the whole run of them between two words is one gap (below): `at`, `at_full`, `before` and `before_full` read leftward from the word carrying the terminator, and `after` and `after_full` read the word after the run, so `at` is `important` and not `»`.
 The consequence worth stating is that a lone mark is invisible to every pattern, and no rule can ask whether one was there.
 
 **What `at` sees is the stripped candidate**, and every shipped rule depends on it.
-Before matching, the candidate loses its trailing terminator and the closers behind it, its footnote references by the grammar above, and any leading run of the opener set, so `(Fig.` and `hand.[^1]` both arrive as the bare word.
+Before matching, the candidate loses its whole trailing run of terminators, closers and footnote references, by the grammar above, and any leading run of the opener set, so `(Fig.`, `hand.[^1]` and `Fig...` all arrive as the bare word.
 That is why the shipped rules are written `mr|mrs|ms|dr` with no dots: a pattern reaching for punctuation has nothing to match against.
 Nothing else is transformed: a hyphenated word is matched whole, so a rule that wants `Wrangell-St.` writes the hyphen into its own pattern, as the shipped `st` rule does with `(?:.*-)?`.
 
@@ -571,8 +571,10 @@ A literal dollar is `\$`, as in `re`, and the expander never reads `\$` as a sig
   Its cost: `He got an A. Then he left.` loses that break, because a lone capital before a period has the same shape whether it is an initial or a word.
   The pronoun is the commonest case of it, `So did I. Then we left.`, and it is kept because breaking after it would also split `I. M. Pei` after its first initial.
 
-- **The ellipsis**, a shipped rule too: `at = '(?:.*[^.])?\.\.'`.
-  `at` has already lost one terminator, so the rule asks for exactly two periods left, and `A moment... Nobody moved.` stays on one line while two periods or four break (above).
+- **The ellipsis**, a shipped rule too: `at_full = '(?:.*[^.])?\.\.\.[^.]*'`.
+  It reads the raw word, because `at` has lost every trailing period.
+  It asks for exactly three periods, followed by nothing with a period in it; only closers and footnote references can stand there, since the gap is a candidate.
+  So `A moment... Nobody moved.` and `A moment...” Nobody moved.` stay on one line, while two periods or four break (above).
 
 - **The capital test**: the next sentence must open with a character whose UAX #29 Sentence_Break value is `Upper`, `OLetter` or `Numeric`, which is to say a digit or an alphabetic character that is not lowercase.
   The alphabetic conjunct is load-bearing: a bare *not lowercase* is a wider set that admits `#`, `>` and `-`, and the paragraph below turns on the difference.
@@ -591,7 +593,7 @@ A literal dollar is `\$`, as in `re`, and the expander never reads `\$` as a sig
   A camelCase word, opening lowercase with a capital later, `iOS`, `macOS`, `gRPC`, `iPhone`, is a name, so `The phone shipped in 2007. iOS came later.` breaks.
   Measured over 13.0 million words of English documentation, from MDN, GitHub Docs, VS Code, Flutter, React Native, Xamarin and .NET, that adds 106 correct breaks and no wrong one; `notes/experiments/camelcase.py` reproduces the count, and `camelcase.tsv` beside it holds each position with the verdict it was given on reading.
   And a word matching a rules file's `lowercase_names` pattern (§4) passes, for the names camelCase cannot see: `npm`, `pnpm`, `dotnet-trace`.
-  The same documentation has about thirty sentences opening with such a name, and no pattern could list them for every project, so the default names none.
+  The same documentation has about thirty sentences opening with such a name, and no pattern could list them for every project, so the default names only `mdformat`, which a document formatted by an mdformat plugin is likely to mention: `lowercase_names = 'mdformat\S*'`, where `\S*` takes `mdformat's` and `mdformat-gfm` too.
   There is no switch to turn the test off: a document that opens sentences with ordinary lowercase words gets no break there, which is the same trade every other check in this section takes, a long line rather than a wrong break.
 
 - **An opaque inline atom opens a sentence**, whatever it contains, and the list of them is closed.
@@ -628,7 +630,7 @@ Everything else is code, and is not.
 
 The safety row is the one that is deliberate rather than merely difficult.
 A block-construct rule that a file could countermand would let a user's rules file break the render of that user's documents, so no verdict reaches it.
-§6.2's gate would never see that, because it runs the shipped sets over the fixtures and the corpus, never a user's file over their documents.
+Section 6.2's gate would never see that, because it runs the shipped sets over the fixtures and the corpus, never a user's file over their documents.
 mdformat's own `--validate` would catch the broken render at run time on the command line, but not under `--check` and not through the API (§2.2), and the source damage of §3.5 it cannot catch anywhere.
 
 **What an abbreviation rule is actually for, partly measured.**
@@ -717,7 +719,7 @@ The figures above are from the period-less forms, which measure *index use versu
 `fig` is the clearest case the method does reach: capitalized `Fig` is 97% numerals while lowercase `fig` is 46% `tree`, so the label and the fruit separate cleanly on case, which the shipped rule's `(?i:…)` deliberately declines to exploit.
 
 **None of this departs from rumdl's reasoning, only from its implementation.**
-rumdl admits a token only if it is "almost always followed by something, not sentence-final", and files this class under "Reference abbreviations — followed by what they refer to".
+In rumdl a token is admitted only if it is "almost always followed by something, not sentence-final", and this class is filed under "Reference abbreviations — followed by what they refer to".
 The conditions above make that criterion operational instead of assuming it holds for the bare token.
 
 **Quotation marks are language-specific.**
@@ -728,7 +730,7 @@ Two structural rules follow, neither of them about any one language:
   The terminator test and the rules table read the word on the left, the capital test reads the word on the right, and the marks in between are skipped by all three.
   The marks decide only where in the run the newline goes: before the first mark read as opening, or after the last mark when none is.
   A closing mark after an opening one therefore follows it onto the next line, as in `Il a dit. « » Puis il part.`, which breaks before `«`.
-  **§3.5's two safety rules are tested where that newline lands**, between the segments on either side of it, which within a run are marks rather than the words that decided the run.
+  **Section 3.5's two safety rules are tested where that newline lands**, between the segments on either side of it, which within a run are marks rather than the words that decided the run.
   When that position is unsafe the whole run is pinned, so `It ended. " ~~~ Then more.`, whose newline would open a line with `~~~`, and `Il a dit.` then a no-break space standing alone between two ordinary spaces and then `Puis il part.`, whose newline would end a line in a character `paragraph()` strips, both stay on one line.
   French spaces its marks off, `« Ceci est important. »` with ordinary spaces, which puts each mark in a segment of its own, and `Il a dit. « Ceci est important. » Puis il part.` breaks after `dit.` and after `»`, with each mark on the side it belongs to.
   That happens only when the space typed is an ordinary one; with the no-break space French typography prescribes, the mark stays in its word's segment and the no-break-space rule above handles it.
@@ -940,7 +942,7 @@ What a set cannot do is lay another down a second time to undo what came between
 
 **`lowercase_names` lets a lowercase name open a sentence.**
 It is a pattern like every other key, fullmatched against the stripped word after the gap, and a word it matches passes the capital test (§3.3): `lowercase_names = 'npm|pnpm|gzip|dotnet-.*'`.
-The patterns of every file in a composition apply together, so a file can add names and none can take one away; the default names none.
+The patterns of every file in a composition apply together, so a file can add names and none can take one away; the default names only `mdformat` (§3.3), and `base_rules = false` drops that name with the rest of the base.
 It is a key of the file rather than a rule because it answers a different question, whether a word may open a sentence rather than whether a period ends one, and because it applies after `!` and `?`, where the table is closed.
 It needs no example: it can only let a break through before a word its author named.
 
@@ -984,6 +986,7 @@ The file carries `[macros]` and `[[rule]]` tables, each rule carrying one or mor
 ```toml
 # The shipped English set, and the base.
 schema  = 1
+lowercase_names = 'mdformat\S*'
 
 [macros]
 letter = '(?:$upper|$lower|$oletter)$extend*'
@@ -1120,11 +1123,12 @@ Written by J. K. Rowling.
 The sequel followed.
 '''
 
-# Exactly three periods is an ellipsis. `at` has already lost one
-# terminator, so this asks for exactly two left, and nothing else.
+# Exactly three periods is an ellipsis. `at` has lost every trailing
+# period, so this reads the raw word; only closers and footnote
+# references can follow the periods of a candidate.
 [[rule]]
-at    = '(?:.*[^.])?\.\.'
-break = 'no'
+at_full = '(?:.*[^.])?\.\.\.[^.]*'
+break   = 'no'
 
   [[rule.example]]
   input = '''
@@ -1315,7 +1319,7 @@ Rule 12 is declined for the reason in §1 and needs no further defense: it is a 
 
 ### 5.2 What punctuation cannot see, measured
 
-§5.1 argues that a punctuation rule over-fires.
+Section 5.1 argues that a punctuation rule over-fires.
 It also under-fires, and that is the sharper objection, because no amount of tuning reaches a position where there is no signal.
 
 Every line break in the Semantic Line Breaks specification's own prose, which is hand-written clause-level sembr by the specification's author, classified by what sits at the break.
@@ -1336,7 +1340,7 @@ Four things follow.
 That is the size of the promise.
 
 **Declining rule 5 forgoes 40.8%.**
-§5.1 gives the reason and the reason stands; this is its price.
+Section 5.1 gives the reason and the reason stands; this is its price.
 
 **The remaining 41.7% has no punctuation and no markup at it.**
 Rule 6, which breaks after a *dependent* clause, is one part of that row, and neither it nor the rest has punctuation or a reliable vocabulary to find it by.
@@ -1395,7 +1399,7 @@ Run it over the fixtures, over `notes/corpus/`, and over a fuzz corpus that the 
 | overlapping guards | the `[^x]:` fixture runs with §3.3's closed openers off, §3.5's definition veto off, and both off, and fails only with both off |
 | locality (§1's promise) | one inserted word changes exactly one line |
 | minimality | every shipped rule is the last match for something |
-| dogfood | `DESIGN.md`, formatted at `--wrap no` with this repository's `[plugin.sentence]`, comes back unchanged |
+| dogfood | `DESIGN.md`, formatted at `--wrap no` with the shipped default, comes back unchanged |
 
 **The requirement in each row is zero; the sample it is measured over is not yet fixed.**
 No generator for adversarial paragraphs and no fuzz corpus exists yet, so the harness sets those sizes when it is built, and until then a green row means only that the fixtures and `notes/corpus/` passed.
@@ -1445,25 +1449,25 @@ The quality harness is a report, not a row: it gates nothing, and §6.4 builds i
 
 ### 6.3 rumdl is a working implementation to learn from, not an oracle
 
-rumdl's MD013 has four reflow modes, one of them `sentence-per-line`.
+MD013, rumdl's line-length rule, has four reflow modes, one of them `sentence-per-line`.
 Verified by execution against `rumdl==0.2.60`: in that mode, with `line-length = 80`, a 136-character sentence is left intact on one line, and the reflow trigger contains no length test at all.
 So a shipped tool already makes the width-independent sentence-per-line promise, which is evidence that §1 describes a coherent product rather than one person's idiosyncrasy.
 
 It is worth more than that, though.
-rumdl has solved in production several of the problems §3 will have to solve, and its solutions are worth reading before writing ours: `sentence_utils.rs` for the terminator and abbreviation handling, and `text_reflow.rs` for segmentation and for the atomicity of links and code spans.
+In production, rumdl has solved several of the problems §3 will have to solve, and its solutions are worth reading before writing ours: `sentence_utils.rs` for the terminator and abbreviation handling, and `text_reflow.rs` for segmentation and for the atomicity of links and code spans.
 The closer-set exclusion in §3.3 is a case where reading a working implementation is what surfaced the right rule.
 Read it as a source of solved problems and of test cases we would not have thought of.
 
 What it is not is an oracle.
 It is deliberately absent from §6.2's gate: agreement is not a target and divergence is not a defect.
-rumdl has its own blind spots, this design intends to do better in places, and where the two disagree the specification decides, not the other implementation's output.
+The tool has its own blind spots, this design intends to do better in places, and where the two disagree the specification decides, not the other implementation's output.
 
 ### 6.4 What to build first
 
 1. The positive control, before anything else.
    Width independence, render equality, idempotency, whitespace deletions, source equality, text preservation, back-offs, container fallbacks and locality all pass with the plugin disabled, since an identity function deletes nothing, changes no render, and is trivially width-independent; so until one test fails when the plugin is absent, a green suite does not distinguish a working plugin from an inert one.
 
-1. §6.1, which is three lines and catches most of what can go wrong.
+1. Section 6.1, which is three lines and catches most of what can go wrong.
 
 1. The sentence-detection fixtures, which are where the remaining complexity actually lives.
 
