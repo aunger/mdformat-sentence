@@ -21,7 +21,7 @@ The CLI refuses the file; the API returns the changed text.
 
 **Filing candidate.** *Verified* 2026-10-06, mkdocs alone.
 `Sentence one here. *[HTML]: Hyper Text Markup Language is the term.` at `--wrap 18` or `20` comes back with `*[HTML]:` at a line start, unescaped, split into separate paragraphs, and not render-equal; at `--wrap 10` and `15` mdformat escapes it to `\*\[HTML\]:`.
-§3.5 refuses a break that would put `*[label]:` at a line start.
+Section 3.5 refuses a break that would put `*[label]:` at a line start.
 
 ## Filler words in re-wrapped list items
 
@@ -34,7 +34,7 @@ An `inline` postprocessor loaded after it sees a different segmentation at each 
 
 **Compatibility risk.** *Read*, with the hook-point review's measurement.
 `{ … }` parses as `python_markdown_attr_list`, rendered by `_render_meta_content` without rendering its children.
-§3.1 makes such a node an atom.
+Section 3.1 makes such a node an atom.
 
 ## `DESIGN.md` cannot keep its format under mkdocs
 
@@ -47,5 +47,5 @@ With gfm alone, or gfm and mdformat-footnote 0.1.3, the file comes back unchange
 ## `%20` is rewritten after the inline render
 
 **Compatibility risk.** The hook-point review's measurement.
-mkdocs's `inline` postprocessor rewrites `%20` in link destinations back into `<… …>`, so text compared after the full paragraph pipeline differs from the text the plugin decided.
+The `inline` postprocessor of mdformat-mkdocs rewrites `%20` in link destinations back into `<… …>`, so text compared after the full paragraph pipeline differs from the text the plugin decided.
 It matters to a dry-run check (`FUTURE-WORK.md`), not to the plugin as specified.
