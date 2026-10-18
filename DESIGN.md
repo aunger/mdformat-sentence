@@ -212,7 +212,7 @@ A plugin that sets any other default silently defeats its own TOML config, so `-
 ### 2.5 The three wrap modes
 
 | `--wrap` | `do_wrap` | behavior |
-| --- | --- | --- |
+| -- | -- | -- |
 | `keep` (mdformat's default) | `False` | **Inert.** No wrap points exist, so there is nothing to act on. |
 | `no` | `True` | Sentence per line. The intended mode. |
 | any integer | `True` | **Identical output to `no`.** The width is deliberately not honored. |
@@ -435,7 +435,7 @@ So `held.[1] Then` and `held.<sup>1</sup> Then` both stay on one line.
 **Which checks apply, by terminator.**
 
 | terminator | the rules table | the capital test |
-| --- | --- | --- |
+| -- | -- | -- |
 | ATerm | yes | yes |
 | STerm | no | yes |
 
@@ -460,7 +460,7 @@ Each rule carries at least one and at most six patterns, each `fullmatch`ed agai
 A rule with no pattern would match every candidate gap, and a misspelled key, `after_ful`, would drop a condition without a word and leave the rule wider than its author wrote it.
 
 | key | matches |
-| --- | --- |
+| -- | -- |
 | `at` | the word carrying the terminator, stripped |
 | `before` | the word before that one, stripped |
 | `after` | the word after the gap, stripped |
@@ -506,7 +506,7 @@ Nothing calls `str.lower` or `str.casefold` for matching; `notes/quirks-cpython.
 **`break` is the verdict**, and it has two values.
 
 | value | meaning |
-| --- | --- |
+| -- | -- |
 | `no` | this gap is not a sentence boundary |
 | `allow` | the veto is lifted, and the checks below decide |
 
@@ -620,7 +620,7 @@ Everything that decides an ATerm gap from the candidate, the word before it and 
 Everything else is code, and is not.
 
 | check | in the table | why |
-| --- | --- | --- |
+| -- | -- | -- |
 | abbreviations, dotted initialisms, single initials, the ellipsis | **yes** | three positions and nothing else |
 | the capital test and its two exemptions | no, though `lowercase_names` lives in rules files | it applies after every terminator, and the table only after ATerm |
 | an opaque atom opens a sentence | no | tests the node's type, which no text pattern sees |
@@ -640,7 +640,7 @@ A rule only ever does work when the next token is capitalized or a digit, becaus
 That reframes the question for every one of them, from *is it also a word* to *what does it suppress that the capital rule does not already*, and it sorts them into three jobs.
 
 | tokens | job | also a word, or sentence-final | form |
-| --- | --- | --- | --- |
+| -- | -- | -- | -- |
 | `Mr Mrs Ms Dr Prof Sr Jr`, `st` | `Mr Mrs Ms Dr Prof` and `st` precede a name, and `Sr Jr` follow one | `st` only, as *Street* | unconditional |
 | `vs` | introduces the term that follows | no | unconditional |
 | `fig no vol ch sec` | precede an index | `fig`, `no`, `sec` | **conditional** |
@@ -648,7 +648,7 @@ That reframes the question for every one of them, from *is it also a word* to *w
 Measured, as the share of the frequency mass of each token's ten commonest continuations that is digits or an uppercase roman string of up to four letters:
 
 | token | numeral share of the top ten | commonest continuations |
-| --- | ---: | --- |
+| -- | -: | -- |
 | `et al` | **100%** | 1990, 1991, 1992, 1989, 1993 |
 | `Vol` | 100% | 1, 2, 3, II, I |
 | `Fig` | 97% | 1, 2, 3, 4, 5 |
@@ -1284,7 +1284,7 @@ ______________________________________________________________________
 The sembr specification has thirteen normative rules.
 
 | # | Rule | Mechanism | Status |
-| --- | --- | --- | --- |
+| -- | -- | -- | -- |
 | 1 | Text MAY use semantic line breaks | the premise | n/a |
 | 2 | MUST NOT alter rendered output | breaks only at wrap points; `--validate` on by default | **yes** |
 | 3 | SHOULD NOT alter intended meaning | sentence boundaries only | **yes** |
@@ -1326,11 +1326,11 @@ Every line break in the Semantic Line Breaks specification's own prose, which is
 Its prose is every paragraph a Markdown parser finds in it, the rule list and the blockquote included, and nothing in a code block, an HTML block, a table or a heading:
 
 | break falls at | rule | count | share |
-| --- | --- | ---: | ---: |
+| -- | -- | -: | -: |
 | a sentence end | 4 | 10 | 9.7% |
 | clause punctuation `,` `;` `:` — | 5 | 42 | 40.8% |
 | a hyperlink or inline-markup boundary | 10, 11 | 8 | 7.8% |
-| none of the above | | 43 | **41.7%** |
+| none of the above | n/a | 43 | **41.7%** |
 
 Breaks are classified by the first row that matches, so the rows are disjoint by construction rather than by luck; two of the breaks classified 4 or 5 also sit at a markup boundary and would have been claimed by the third row had it been tested first.
 
@@ -1385,7 +1385,7 @@ Run it over the fixtures, over `notes/corpus/`, and over a fuzz corpus that the 
 ### 6.2 The rest of the gate
 
 | Check | Required |
-| --- | --- |
+| -- | -- |
 | width independence (§6.1) | exact, at every width |
 | render equality vs baseline | 0 regressions |
 | idempotency vs baseline | 0 regressions |
@@ -1399,7 +1399,7 @@ Run it over the fixtures, over `notes/corpus/`, and over a fuzz corpus that the 
 | overlapping guards | the `[^x]:` fixture runs with §3.3's closed openers off, §3.5's definition veto off, and both off, and fails only with both off |
 | locality (§1's promise) | one inserted word changes exactly one line |
 | minimality | every shipped rule is the last match for something |
-| dogfood | `DESIGN.md`, formatted at `--wrap no` with the shipped default, comes back unchanged |
+| dogfood | `DESIGN.md`, formatted at `--wrap no --compact-tables` with the shipped default and mdformat-gfm, comes back unchanged; the one row with no run without co-plugins, since without gfm its tables are paragraphs |
 
 **The requirement in each row is zero; the sample it is measured over is not yet fixed.**
 No generator for adversarial paragraphs and no fuzz corpus exists yet, so the harness sets those sizes when it is built, and until then a green row means only that the fixtures and `notes/corpus/` passed.
@@ -1465,7 +1465,8 @@ The tool has its own blind spots, this design intends to do better in places, an
 ### 6.4 What to build first
 
 1. The positive control, before anything else.
-   Width independence, render equality, idempotency, whitespace deletions, source equality, text preservation, back-offs, container fallbacks and locality all pass with the plugin disabled, since an identity function deletes nothing, changes no render, and is trivially width-independent; so until one test fails when the plugin is absent, a green suite does not distinguish a working plugin from an inert one.
+   Render equality, idempotency, whitespace deletions, source equality, text preservation, back-offs, container fallbacks and locality all pass with the plugin disabled, since an identity function deletes nothing and changes no render; so until one test fails when the plugin is absent, a green suite does not distinguish a working plugin from an inert one.
+   Width independence is no substitute: plain mdformat fails it, since it wraps at an integer width, but a plugin that pins every gap and breaks none passes it.
 
 1. Section 6.1, which is three lines and catches most of what can go wrong.
 
@@ -1479,7 +1480,7 @@ The tool has its own blind spots, this design intends to do better in places, an
    Beside them, the hook point's own cases, each checked for width independence at `no`, `20`, `40` and `80` in both load orders, render equality and source equality against the co-plugins alone, and no back-off:
 
    | fixture | co-plugin | checks |
-   | --- | --- | --- |
+   | -- | -- | -- |
    | `Read https://en.wikipedia.org/wiki/Foo_(bar) first. Then go.`, and the same with `__` and with `*` in the URL | gfm | no back-off, and it breaks |
    | a `{…}` attribute list in a paragraph with sentence ends | mkdocs | no back-off |
    | `- [ ] Mr. Smith left early. Then he came back.` at `--wrap 40` | gfm | width independence |
@@ -1501,7 +1502,7 @@ Three more from the same suite turn on keeping an authored soft break, which thi
 Panache is MIT and is a working implementation of this same approach, so its expectations are worth borrowing even under §6.3's caution about oracles.
 
 | case | input | required |
-| --- | --- | --- |
+| -- | -- | -- |
 | inline list markers | `Hear from us in 60 days. 1. Tell us your name. 2. Describe the error.` | `1.` and `2.` end lines, never start them |
 | one long sentence | eighty-eight columns with no interior terminator | unchanged, at every width |
 | a trailing newline | `Only one sentence.` | no empty line is emitted |
