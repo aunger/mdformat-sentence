@@ -55,6 +55,18 @@ It cannot see parse-level traps such as `[^x]:` and `*[HTML]:`, which `paragraph
 
 **Intention.** Use it as the oracle for §6.2's source-equality row first, and consider it at run time only after it has been run against plugins that own `paragraph`.
 
+### A line-breaking step in mdformat's `paragraph()`
+
+**Observed.** Where a sentence ends is a fact about inline content, but line layout belongs to `paragraph()`, which splits its text on `\n` and fills each section with `_wrap` (`mdformat/renderer/_context.py` in 1.0.0, *read*).
+A plugin can replace a whole renderer or post-process its output, and mdformat 1.0.0 offers nothing between, so no plugin can supply that one step.
+So this plugin makes the layout decision in the `inline` slot and passes it down the wrap channel, as `\n` and pinned spaces, which leaves `_wrap` nothing to do (§3.4).
+That rests on a convention mdformat does not promise, that breakable whitespace reaches the `inline` renderer as `WRAP_POINT`, and mdformat-space-control breaks it: its `softbreak` renderer returns a literal space, and with it loaded the plugin adds no break of its own (`quirks-mdformat-space-control.md`).
+A `paragraph` renderer could own the step, but it collides with mdformat-hatena and mdformat-sentencebreak, as the contingency above says.
+
+**Intention.** Propose upstream a line-breaking step that `paragraph()` calls in place of `_wrap`, so that a plugin chooses the breaks while `paragraph()` keeps its line-start escaping and the containers keep their indentation.
+If the step were also given the inline node, it could treat an authored `softbreak` as a gap whatever a co-plugin rendered it as, since the tree still marks one (§3.1); that is untried.
+Nothing has been filed, and the design does not wait on it.
+
 ## Detection
 
 ### More sentence openers
