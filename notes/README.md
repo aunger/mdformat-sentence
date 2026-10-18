@@ -15,10 +15,12 @@ can re-run them rather than take them on trust.
 | `TRADE-OFFS.md` | Costs the design accepts on purpose, what each buys, and where `DESIGN.md` states it. |
 | `MATH-AND-OPENERS.md` | Why only four kinds of inline node may open a sentence, what that costs math-heavy prose, and how named openers could be added as a rules-file key. |
 | `quirks-*.md` | One file per third-party project: behavior the design works around, findings that may deserve an upstream issue, or, for `quirks-emacs-fill.md`, prior art. None has been filed. |
-| `DESIGN-REVIEW-HOOK-POINT-2026-10-06.md` | The four-agent review that kept the `inline` renderer as the hook point and replaced the re-render walk with a recorder. Kept for its evidence register; `DESIGN.md` decides where they differ. |
 | `CLAUDE.md` | How to link to these notes: a commit SHA and a heading, not a line number. |
 | `corpus/` | The one corpus that gives honest answers about layout heuristics, and why. |
 | `experiments/` | Twenty-five short programs. Fourteen need mdformat or its parser, and eleven are stdlib only; three need the network, and one needs seven documentation repositories cloned. |
+
+The 2026-10-06 hook-point review, which several notes cite, was removed once `DESIGN.md` §2.2 took its rejected alternatives and the limits of its evidence.
+It remains in history as `DESIGN-REVIEW-HOOK-POINT-2026-10-06.md` at `9264f70`.
 
 ## Running them
 

@@ -15,7 +15,7 @@ Its text is not read through the capital test either, so `$X$` opens nothing jus
 
 The list is closed because an open one deletes text.
 With mdformat-footnote loaded, a break before `[^x]: not a definition, just text.` puts a footnote definition at a line start, the second render pass reads it as one, and both notes' text is gone.
-All four members of the hook-point review reproduced that (`DESIGN-REVIEW-HOOK-POINT-2026-10-06.md`, R9).
+All four members of the hook-point review reproduced that (`DESIGN-REVIEW-HOOK-POINT-2026-10-06.md` at `9264f70`, R9); §6.4's `[^x]:` fixture is the check that keeps it.
 
 The cost is every sentence that opens with co-plugin syntax:
 
