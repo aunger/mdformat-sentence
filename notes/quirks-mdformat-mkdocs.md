@@ -16,6 +16,8 @@ At `--wrap no` and `40` mkdocs alone leaves it alone, because its regex needs a 
 With this plugin loaded, which pins gaps to literal spaces before mkdocs runs, the misfire happens at `--wrap no` and `40` too.
 The CLI refuses the file; the API returns the changed text.
 `TRADE-OFFS.md` records it as a known incompatibility.
+The fixer also reaches inside code spans: `` `\[x\](y z)` `` becomes `` `[x](<y z>)` ``, and the CLI refuses it, while the same text in a fenced block is left alone (*verified* 2026-10-18).
+The cause is *read* from source: `_fix_links_with_spaced_urls` in `mdformat_mkdocs/plugin.py`, called from the `inline` postprocessor, runs a regex over the whole rendered inline text, where a code span is already plain backtick text, and never consults the tokens.
 
 ## An abbreviation definition wrapped to a line start changes the document
 
@@ -39,8 +41,11 @@ Section 3.1 makes such a node an atom.
 ## `DESIGN.md` cannot keep its format under mkdocs
 
 **Compatibility risk.** *Verified* 2026-10-18, with mdformat-gfm 1.0.0 and `--compact-tables`, at mdformat's default `--wrap keep` and without this plugin.
-With mkdocs loaded, alone or with gfm, mdformat refuses to format `DESIGN.md` because the rendered HTML would change; which construct trips the validation was not tracked down.
-With `--no-validate` it reindents list continuation lines from the marker's width to four spaces, 115 changed lines, and plain mdformat writes them back at the marker's width, so no list style satisfies both.
+With mkdocs loaded, alone or with gfm, mdformat refuses to format `DESIGN.md` because the rendered HTML would change.
+The one line that changes it is the §6.4 fixture row quoting `` `The term \[x\](see the y note) is escaped. Then more.` ``, which the spaced-URL fixer above rewrites inside its code span.
+Separately, mkdocs reindents list continuation lines from the marker's width to four spaces, 115 changed lines, which renders the same and which its README lists as intended ("Indents are converted to four-spaces instead of two").
+Plain mdformat writes them back at the marker's width, so no list style satisfies both; with `--align-semantic-breaks-in-lists`, 33 lines still change, since nested items stay at multiples of four.
+The reindent is `_format_new_indent` in `mdformat_mkdocs/_normalize_list.py`, with `MKDOCS_INDENT_COUNT = 4` in `_helpers.py` (*read*).
 With gfm alone, or gfm and mdformat-footnote 0.1.3, the file comes back unchanged.
 `DESIGN.md` §6.2 runs the dogfood row with gfm alone for this reason.
 
