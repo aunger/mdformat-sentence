@@ -36,6 +36,14 @@ An `inline` postprocessor loaded after it sees a different segmentation at each 
 `{ … }` parses as `python_markdown_attr_list`, rendered by `_render_meta_content` without rendering its children.
 §3.1 makes such a node an atom.
 
+## `DESIGN.md` cannot keep its format under mkdocs
+
+**Compatibility risk.** *Verified* 2026-10-18, with mdformat-gfm 1.0.0 and `--compact-tables`, at mdformat's default `--wrap keep` and without this plugin.
+With mkdocs loaded, alone or with gfm, mdformat refuses to format `DESIGN.md` because the rendered HTML would change; which construct trips the validation was not tracked down.
+With `--no-validate` it reindents list continuation lines from the marker's width to four spaces, 115 changed lines, and plain mdformat writes them back at the marker's width, so no list style satisfies both.
+With gfm alone, or gfm and mdformat-footnote 0.1.3, the file comes back unchanged.
+`DESIGN.md` §6.2 runs the dogfood row with gfm alone for this reason.
+
 ## `%20` is rewritten after the inline render
 
 **Compatibility risk.** The hook-point review's measurement.

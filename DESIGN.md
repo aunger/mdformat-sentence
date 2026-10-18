@@ -1399,13 +1399,13 @@ Run it over the fixtures, over `notes/corpus/`, and over a fuzz corpus that the 
 | overlapping guards | the `[^x]:` fixture runs with §3.3's closed openers off, §3.5's definition veto off, and both off, and fails only with both off |
 | locality (§1's promise) | one inserted word changes exactly one line |
 | minimality | every shipped rule is the last match for something |
-| dogfood | `DESIGN.md`, formatted at `--wrap no --compact-tables` with the shipped default and mdformat-gfm, comes back unchanged; the one row with no run without co-plugins, since without gfm its tables are paragraphs |
+| dogfood | `DESIGN.md`, formatted at `--wrap no --compact-tables` with the shipped default and mdformat-gfm, comes back unchanged; it runs with mdformat-gfm alone, in both orders, since without gfm its tables are paragraphs and mdformat-mkdocs reindents its lists |
 
 **The requirement in each row is zero; the sample it is measured over is not yet fixed.**
 No generator for adversarial paragraphs and no fuzz corpus exists yet, so the harness sets those sizes when it is built, and until then a green row means only that the fixtures and `notes/corpus/` passed.
 
 **Every row runs again with co-plugins loaded, each before the plugin and after it.**
-Three run under every row in both orders: mdformat-gfm, the co-plugin most installations carry; mdformat-mkdocs, with a list item longer than the width among the inputs; and mdformat-footnote.
+Three run under every row but the dogfood row, in both orders: mdformat-gfm, the co-plugin most installations carry; mdformat-mkdocs, with a list item longer than the width among the inputs; and mdformat-footnote.
 Three more, mdformat-myst, mdformat-wikilink and mdformat-dollarmath, load only for the fixtures that need them.
 These six are the co-plugins the gate loads.
 Each is shown to interact with this hook point (§2.2, §3.3, §3.5), and each row's baseline loads the same co-plugins alone.
