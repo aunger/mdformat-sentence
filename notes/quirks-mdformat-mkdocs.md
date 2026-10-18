@@ -34,7 +34,7 @@ An `inline` postprocessor loaded after it sees a different segmentation at each 
 
 ## An attribute list is a container that does not render its children
 
-**Compatibility risk.** *Read*, with the hook-point review's measurement.
+**Compatibility risk.** *Read*, with the hook-point review's measurement of the old walk backing off on 36 of 150,286 paragraphs (`DESIGN-REVIEW-HOOK-POINT-2026-10-06.md` at `9264f70`, section *3. Evidence register*, R6).
 `{ … }` parses as `python_markdown_attr_list`, rendered by `_render_meta_content` without rendering its children.
 Section 3.1 makes such a node an atom.
 
@@ -51,6 +51,6 @@ With gfm alone, or gfm and mdformat-footnote 0.1.3, the file comes back unchange
 
 ## `%20` is rewritten after the inline render
 
-**Compatibility risk.** The hook-point review's measurement.
+**Compatibility risk.** The hook-point review's measurement (`DESIGN-REVIEW-HOOK-POINT-2026-10-06.md` at `9264f70`, section *3. Evidence register*, R22).
 The `inline` postprocessor of mdformat-mkdocs rewrites `%20` in link destinations back into `<… …>`, so text compared after the full paragraph pipeline differs from the text the plugin decided.
 It matters to a dry-run check (`FUTURE-WORK.md`), not to the plugin as specified.

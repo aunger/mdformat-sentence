@@ -49,7 +49,7 @@ It composes with an `inline` owner but not with a `paragraph` owner; mdformat-ha
 ### Verify by dry run instead of a hand-kept list
 
 **Observed.** Section 3.5's line-start rules are lists kept by hand, the co-plugin definitions among them.
-The hook-point review prototyped a dry run of the real paragraph pipeline from the `inline` slot: it catches render-level hazards (the task box, enumerators, the `<div>` indent) and reproduced the hand-kept list exactly under mdformat-gfm and mdformat-mkdocs, but only when compared against a dry run of the all-pinned text.
+The hook-point review (`DESIGN-REVIEW-HOOK-POINT-2026-10-06.md` at `9264f70`, section *8. Future work*, F1) prototyped a dry run of the real paragraph pipeline from the `inline` slot: it catches render-level hazards (the task box, enumerators, the `<div>` indent) and reproduced the hand-kept list exactly under mdformat-gfm and mdformat-mkdocs, but only when compared against a dry run of the all-pinned text.
 Compared against the decided text it misfires under mkdocs, whose `inline` postprocessor rewrites `%20`.
 It cannot see parse-level traps such as `[^x]:` and `*[HTML]:`, which `paragraph()` does not rewrite.
 
