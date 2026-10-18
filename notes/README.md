@@ -17,7 +17,7 @@ can re-run them rather than take them on trust.
 | `quirks-*.md` | One file per third-party project: behavior the design works around, findings that may deserve an upstream issue, or, for `quirks-emacs-fill.md`, prior art. None has been filed. |
 | `CLAUDE.md` | How to link to these notes: a commit SHA and a heading, not a line number. |
 | `corpus/` | The one corpus that gives honest answers about layout heuristics, and why. |
-| `experiments/` | Twenty-five short programs. Fourteen need mdformat or its parser, and eleven are stdlib only; three need the network, and one needs seven documentation repositories cloned. |
+| `experiments/` | Short programs, each reproducing a measurement quoted in `DESIGN.md` or these notes; the table below says which need mdformat, the network or cloned repositories. |
 
 The 2026-10-06 hook-point review, which several notes cite, was removed once `DESIGN.md` §2.2 took its rejected alternatives and the limits of its evidence.
 It remains in history as `DESIGN-REVIEW-HOOK-POINT-2026-10-06.md` at `9264f70`.
@@ -29,7 +29,7 @@ python3 -m venv v && ./v/bin/pip install 'mdformat==1.0.0'
 ./v/bin/python notes/experiments/probe.py
 ```
 
-`seam.py` and `recorder.py` also need `mdformat-gfm==1.0.0`, and `seam_mkdocs.py` needs `mdformat-mkdocs==5.3.0`; each installs alongside mdformat 1.0.0.
+`seam.py` and `recorder.py` also need `mdformat-gfm==1.0.0`, `seam_mkdocs.py` needs `mdformat-mkdocs==5.3.0`, `mkdocs_dogfood.py` needs both, and `spacecontrol.py` needs `mdformat-space-control==0.5.0`; each installs alongside mdformat 1.0.0.
 
 Pin mdformat to 1.0.0. Every hook-point fact in `DESIGN.md` §2 was measured against
 that version, and the wrap-point mechanics these programs depend on are internal
@@ -58,6 +58,9 @@ to it.
 | `seam.py` | yes, and mdformat-gfm | Why the plugin is an `inline` renderer and not an `inline` postprocessor. Postprocessors run in load order, which under the API varies with `PYTHONHASHSEED`. With gfm first, a postprocessor that maps the tree backs off on a task-list item at `--wrap 40` and not at `--wrap no`, and one that reads only the text misses a rule on the item's first word, `xxxxMr.`; the renderer is width-independent in every order. Re-rendering against the live state gives 49 characters where the real render gave 47. gfm escapes a task box at the start of a line a break created, in either order. |
 | `seam_mkdocs.py` | yes, and mdformat-mkdocs | The same failure without gfm: mdformat-mkdocs inserts U+E000 filler words into list items it re-wraps at an integer width, so a text-only postprocessor loaded after it is width-dependent; the renderer is not, in either order. |
 | `recorder.py` | yes, and mdformat-gfm | `DESIGN.md` §3.1's recorder: the records add up to the text and give the pieces, the render count drops from 32 to 18 on a small document, and a gfm bare URL that a second render cannot place becomes an atom. |
+| `spacecontrol.py` | yes, and mdformat-space-control | With mdformat-space-control loaded, an authored line break reaches an `inline` renderer as a literal space, and the second render pass joins every break the first made, so a stand-in for the plugin adds no break in either load order. |
+| `mkdocs_dogfood.py` | yes, mdformat-gfm and mdformat-mkdocs | Why §6.2's dogfood row runs without mkdocs: its spaced-URL fixer rewrites `` `\[x\](y z)` `` inside a code span and so changes the HTML of `DESIGN.md`'s §6.4 fixture row, and its list reindent, on 117 lines with that row among them, renders the same. |
+| `dogfood.py` | markdown-it-py only | A rough stand-in for §6.2's dogfood row until the plugin exists: which authored line breaks in the files it is given the shipped default would join. It approximates the capital test, closers, code-span masking and `lowercase_names`, and reports joins only, not mid-line splits. |
 | `ngram.py` | no (network) | For each abbreviation, the share of its top Google Books continuations that are numerals. `et al` 100%, `Vol` 100%, `Fig` 97%, `No`/`no` 0%. The evidence behind §3.3's abbreviation classes. Needs outbound HTTPS. |
 | `lonemark.py` | no | §3.3's lone-mark rules, simulated. Nineteen fixtures hold, two of them runs that §3.5 pins because the newline would land where a line cannot safely start or end, and a mark's role moves only the mark, alone or side by side: 120 readings of twenty-two texts. |
 | `camelcase.py` | parser | Sentence openers in 13.0 million words of English documentation: 113 camelCase words such as `iOS`, all but two real sentence starts and those two already held by brackets, and about thirty lowercase names such as `npm`. `camelcase.tsv` holds each camelCase position with its verdict. Needs the corpora its docstring names. |
