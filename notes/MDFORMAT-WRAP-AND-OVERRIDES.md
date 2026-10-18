@@ -12,9 +12,9 @@ Some citations moved from the ones in earlier notes, so re-read rather than trus
 
 | program | what it establishes |
 | --- | --- |
-| `experiments/wrapkeep.py` | What a plugin can and cannot see about `wrap`, and the three routes to overriding it. §2 and §3. |
-| `experiments/secondpass.py` | That a `POSTPROCESSORS["root"]` re-render restores mdformat's second pass, over a bare paragraph and over a document with a list, a blockquote and a fenced block. §4. |
-| `experiments/wraparg.py` | `wrap` as an *argument*: the two validators, `--wrap sentence` today, and where a renderer warning actually goes. §5 and §7. |
+| `experiments/wrapkeep.py` | What a plugin can and cannot see about `wrap`, and the three routes to overriding it. Sections 2 and 3. |
+| `experiments/secondpass.py` | That a `POSTPROCESSORS["root"]` re-render restores mdformat's second pass, over a bare paragraph and over a document with a list, a blockquote and a fenced block. Section 4. |
+| `experiments/wraparg.py` | `wrap` as an *argument*: the two validators, `--wrap sentence` today, and where a renderer warning actually goes. Sections 5 and 7. |
 
 All three need mdformat 1.0.0.
 `experiments/probe.py` is the prior measurement of what reaches the hook point under each mode, and §1 does not repeat it.
@@ -52,7 +52,7 @@ An `int` is reduced by `context.env["indent_width"]` and floored at 1, then the 
 `_wrap` at `renderer/_context.py:348-362` has an explicit `if width == "no"` branch that returns after `_prepare_wrap`, and otherwise hands the value to `cached_textwrapper` (`renderer/_context.py:337-345`) as a `textwrap.TextWrapper` width.
 
 So `do_wrap` decides *whether*, and the same option decides *what*, and they are read independently.
-§3.2 is what that costs.
+Section 3.2 is what that costs.
 
 The observable behavior of the three modes is `DESIGN.md` §2.5's table and is not repeated here.
 
@@ -374,7 +374,7 @@ Two details that change how a warning behaves, both measured in `wraparg.py` §3
 
 The consequence for `DESIGN.md` §2.5: an `mdformat.text()` caller **does** see the warning on stderr, as an unprefixed line, without configuring logging.
 What the CLI adds is the `Warning: ` prefix and only on the first pass.
-§9 records this as the one place this note and `DESIGN.md` disagree.
+Section 9 records this as the one place this note and `DESIGN.md` disagree.
 
 **Volume.** The warning §2.5 specifies is raised from the inline postprocessor, so it fires once per paragraph, not once per document: three paragraphs give three lines on stderr.
 Whoever implements §2.5 needs a once-per-render latch; the option mapping is shared and mutable, so there is somewhere to put one.
@@ -407,16 +407,16 @@ The first half was right and the second was not: with no handler configured, `lo
 `DESIGN.md` §2.5 has since been corrected.
 It briefly gained a second point, that the warning fires twice under any wrapping mode because the render runs twice; that was withdrawn, because §7 shows the double render and the warning's guard are complementary and never coincide.
 
-**Resolved.** §2 claimed `extensions` was a usable signal "on both paths", and `wrapkeep.py` printed the same conclusion without ever measuring the API row it was about.
+**Resolved.** Section 2 claimed `extensions` was a usable signal "on both paths", and `wrapkeep.py` printed the same conclusion without ever measuring the API row it was about.
 It is absent from `options["mdformat"]` on the API path, so the warning is reachable from the CLI and from TOML only; both §2 and the script now say so, and `DESIGN.md` §2.5 records the consequence.
 
-**Resolved.** §4 listed two caveats on the root-postprocessor re-render and there are three: `secondpass.py` hardcodes the options and the extension set of the pass it restores, which a real implementation cannot do.
+**Resolved.** Section 4 listed two caveats on the root-postprocessor re-render and there are three: `secondpass.py` hardcodes the options and the extension set of the pass it restores, which a real implementation cannot do.
 
 **Not checked:**
 
 - How far the prior art in §5.7 goes.
   It has been established that mdformat upstream *has* been asked for a sentence wrap mode, three times, and that #4 is open; none of those threads was read past its opening comment.
-- How two break-inserting postprocessors compose. §5.3 declines the claim for this reason.
+- How two break-inserting postprocessors compose. Section 5.3 declines the claim for this reason.
 - Any mdformat version other than 1.0.0.
   The 2.x line, if it exists, was not looked at.
 - Whether route B behaves the same when the plugin is enabled implicitly (no `--extensions`) rather than explicitly.

@@ -302,9 +302,9 @@ ______________________________________________________________________
 
 ## 14. Wrong turns, kept
 
-**§3 was proposed as "the variant that fixes most of it"** on the strength of two hand-made examples. Against real sembr it deletes half of the author's breaks. The corpus was the error, and §5 records the same trap in its general form.
+**Section 3 was proposed as "the variant that fixes most of it"** on the strength of two hand-made examples. Against real sembr it deletes half of the author's breaks. The corpus was the error, and §5 records the same trap in its general form.
 
-**§7 was proposed as the fix for §6's remedy problem.** It reintroduces the paragraph-sized blast radius that §6 had just been credited with avoiding, measured at 18 diff lines from one edit.
+**Section 7 was proposed as the fix for §6's remedy problem.** It reintroduces the paragraph-sized blast radius that §6 had just been credited with avoiding, measured at 18 diff lines from one edit.
 
 **A third claim was overcorrected:** that no deleting rule can ever be stable, because a paragraph-scale branch always has paragraph-scale blast radius.
 The true statement is narrower. What matters is how far an input must travel to flip the branch, and §8 measures that distance as one edit for roughly half of real paragraphs. The conclusion holds; the reasoning given for it was too broad.

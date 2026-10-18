@@ -48,7 +48,7 @@ It composes with an `inline` owner but not with a `paragraph` owner; mdformat-ha
 
 ### Verify by dry run instead of a hand-kept list
 
-**Observed.** §3.5's line-start rules are lists kept by hand, the co-plugin definitions among them.
+**Observed.** Section 3.5's line-start rules are lists kept by hand, the co-plugin definitions among them.
 The hook-point review prototyped a dry run of the real paragraph pipeline from the `inline` slot: it catches render-level hazards (the task box, enumerators, the `<div>` indent) and reproduced the hand-kept list exactly under mdformat-gfm and mdformat-mkdocs, but only when compared against a dry run of the all-pinned text.
 Compared against the decided text it misfires under mkdocs, whose `inline` postprocessor rewrites `%20`.
 It cannot see parse-level traps such as `[^x]:` and `*[HTML]:`, which `paragraph()` does not rewrite.
@@ -67,7 +67,7 @@ An mdformat-gfm bare URL as an opener was measured at 24 gaps in about 150,000 p
 
 ### Clause breaks, rules 5 and 6
 
-**Observed.** §5.1 declines rule 5 because punctuation alone over-fires, and §5.2 shows that rule 6 is invisible to punctuation and mostly to vocabulary.
+**Observed.** Section 5.1 declines rule 5 because punctuation alone over-fires, and §5.2 shows that rule 6 is invisible to punctuation and mostly to vocabulary.
 
 **Intention.** If clause breaks are ever added they are a separate decision, and a parse is the mechanism to evaluate first.
 It would add a model dependency that this design's footprint, mdformat and `tomli` below Python 3.11, does not have.

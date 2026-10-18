@@ -168,7 +168,7 @@ What the decision rests on:
   Later postprocessors receive text with no `WRAP_POINT`, the shape they see under `--wrap keep`.
   A co-plugin that is wrong at `--wrap keep` is wrong here, as mdformat-mkdocs 5.3.0's spaced-URL fixer is.
   Who sees what:
-  - mkdocs alone: the CLI refuses the file at `--wrap keep` and formats it at `no` and `40`;
+  - with mdformat-mkdocs alone: the CLI refuses the file at `--wrap keep` and formats it at `no` and `40`;
   - with this plugin loaded, in either order: the CLI refuses it at `no` and `40`;
   - the API returns the changed text without complaint.
 
@@ -180,12 +180,12 @@ What the decision rests on:
 
 ## 6. What the spec must say
 
-- **S1. §2, module surface and version bound.**
+- **S1. Section 2, module surface and version bound.**
   - The module defines `RENDERERS = {"inline": …}` and, under S4, `POSTPROCESSORS = {"root": …}`.
   - "this plugin defines no postprocessor" becomes "it defines one, the `root` canary"; mdformat reads `POSTPROCESSORS` through `getattr`.
   - The list of unpromised facts behind the `<1.1` bound gains K2's two facts.
   - It also gains the canary's three reads: a flag in `context.env`, `context.do_wrap`, and `context.options["parser_extension"]` for the owner's name. Each read degrades to silence or a nameless message rather than raising.
-- **S2. §2.2.**
+- **S2. Section 2.2.**
   - Keep the seam and "Why a renderer".
   - **Rewrite** lines 119 to 120. They explain the `- [ ] Do the first thing…` example by "§3.1's walk does not add up, and §3.6 backs off", which is false once there is no walk.
     The replacement explains the failure by `xxxx` glued to the first word (`- [ ] Mr. Smith left early. Then he came back.`, R2) and puts mkdocs's fillers beside it (R1), both failing §1 by load order alone, with or without a walk.
@@ -193,33 +193,33 @@ What the decision rests on:
   - Replace "The renderer is also what makes §3.1's walk pure, because it runs before the children render and can copy the state they change" with: the renderer hands mdformat a context that records each node's rendering, so nothing is rendered twice.
   - Qualify "composes with them without depending on that order" with K4 and K5.
   - The cost paragraph gains R14, R3's conflict winner, the canary (S4) and D2 as the contingency.
-- **S3. §2.2 line 114 and §3.1.**
+- **S3. Section 2.2 line 114 and §3.1.**
   - Line 114: "returned unchanged before any segmentation or walk of the node" becomes "…before any segmentation or location of records", plus C2's last bullet (no recorder under `--wrap keep`).
   - "The node is read once, for type and nothing else" and "The walk renders against a copy of the state…" become one paragraph stating C2 and C3: the recorder, the top-level invariant, locating a container's children exactly once, and otherwise an atom.
   - Delete the env copy, the per-container throwaway copy and the co-plugin env-state caveat. Its claim that §6.2's back-off row would show such a failure is wrong (R7).
   - The pseudocode `atoms = walk(node)` (line 247) and "the walk's offsets" (line 260) are renamed to the records.
   - `It cites \[foo\] early. Then [a link][foo] later.` stops being called "a valid paragraph": plain mdformat corrupts it (R8). It stays a harness fixture under the relative oracle.
-- **S4. §2.2 or §2.5, recommended: the canary.**
+- **S4. Section 2.2 or §2.5, recommended: the canary.**
   - A `root` postprocessor logs once per pass (twice per `mdformat.text()`) when paragraphs rendered but this plugin's renderer never ran, naming the plugin that owns `inline`.
   - It stays silent when `context.do_wrap` is false, because the plugin is inert under `--wrap keep` by design.
   - A flag the renderer sets in `context.env` makes the normal case cost nothing (R16).
-- **S5. §3.2 and the line-396 passage.**
+- **S5. Section 3.2 and the line-396 passage.**
   - Lines 295 and 297: "the walk" becomes the records, and line 297's containers gain "unless C3 makes it an atom".
   - The atom definition gains C3's kind: a node whose children were not rendered, or cannot be located exactly once in its rendering.
   - "A terminator inside an atom never ends a sentence" is tested at the terminator's position, after the footnote strip and the closer skip (C5).
   - Line 396's "a segment ending inside an atom ends no sentence" keeps its verdict for `held.<sup>1</sup>` but changes its reason: the closer scan stops at `>`, which is not a closer.
-- **S6. §3.3.**
+- **S6. Section 3.3.**
   - The opaque-atom bullet opens with: "Only a code span, an image, an autolink or raw inline HTML opens a sentence. A leaf of a type this plugin does not know, or a node whose children were not rendered or cannot be located, is an atom for §3.2 but opens nothing."
   - That sentence includes "not read through the capital test" (C4, strict).
   - "any sentence opening with an image or a URL" becomes "an image or an autolink".
   - The footnote strip is stated to precede the atom test.
-- **S7. §3.5.**
+- **S7. Section 3.5.**
   - Add C6 with the tested pattern `\\?\*?\\?\[[^\]\n]*?\\?\]:|\\?\([^\s)]+\)=`, read against the line the newline would open: the rest of the section, with gaps as spaces, in mdformat's escaped text.
   - Name the co-plugin each entry is for: footnote and mkdocs definitions, the myst target.
   - The `(label)=` entry matches a line that *begins* with it, so `Sentence one. (Label)= Then more.` is vetoed although myst would not read a target there. That is deliberate: it costs a missed break, never a wrong one, and 0 real documents changed (R13).
   - Say that the list is closed over the co-plugins the gate loads, and that the source-equality row is the only detector for the rest, because `(Label)=`'s escape is render-equal.
-- **S8. §3.6.** C7.
-- **S9. §6.2.**
+- **S8. Section 3.6.** C7.
+- **S9. Section 6.2.**
   - Every row runs with gfm, and with mkdocs (including a list item longer than the width), each loaded before and after the plugin, plus mdformat-footnote.
   - The back-off row stays at 0, and its justification reads "container fallbacks and the tripwire".
   - New rows:
@@ -231,7 +231,7 @@ What the decision rests on:
     | overlapping guards | the `[^x]:` fixture runs with C4 off, C6 off, and both off; it fails only with both off (K7) |
 
   - The source-equality oracle may be implemented as the dry run of R18, compared against the all-pinned text (§8, F1).
-- **S10. §6.4 fixtures, executable.**
+- **S10. Section 6.4 fixtures, executable.**
   The property codes are:
   - **W**: width-independent at no, 20, 40 and 80, in both load orders;
   - **R**: render-equal to the co-plugins alone;

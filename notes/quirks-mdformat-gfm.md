@@ -19,14 +19,14 @@ mdformat-openmmlab carries a copy of the same postprocessor (*read*).
 
 **Compatibility risk.** *Verified* (`experiments/seam.py` §4).
 gfm's `paragraph` postprocessor turns a line-opening `[ ]`, `[x]` or `[X]` into `\[X\]`, whichever order the plugins load in, so a break before one changes the source.
-§3.5 refuses that break, with or without gfm.
+Section 3.5 refuses that break, with or without gfm.
 
 ## A bare URL renders its source, not its child
 
 **Compatibility risk.** *Verified* (`experiments/recorder.py` §4).
 `gfm_autolink` has a `text` child, but its renderer returns the source text and never renders the child.
 A tree walk that expects a container's rendering to contain its children's cannot place it; the hook-point review measured the old walk backing off on bare URLs containing `_(`, `__` or `*`.
-§3.1 makes such a node an atom.
+Section 3.1 makes such a node an atom.
 
 ## `~~` is escaped in text
 

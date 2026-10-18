@@ -30,7 +30,7 @@ The same state makes rendering impure: a second render of the children sees a gr
 
 **Filing candidate.** *Verified* 2026-10-06, no plugins loaded.
 `Some text here and ~~~ more text after it.` at `--wrap 10` comes back as a fenced code block, because `paragraph()` escapes other block syntax at a line start but not a run of three or more tildes.
-§3.5 refuses a break before such a run.
+Section 3.5 refuses a break before such a run.
 
 ## Unicode whitespace is deleted at a wrapped line edge
 
@@ -50,7 +50,7 @@ The U+00A0 is gone, and `is_md_equal` returns `True`; the CLI, which validates b
 U+1680 and U+2000 are deleted the same way, and at `--wrap 30` all three survive, because the character is then in the middle of a line.
 `paragraph()` strips each line after wrapping (`lines[i] = lines[i].strip()`, *read* in `renderer/_context.py`), and `str.strip()` removes far more than the three characters mdformat turns into wrap points (`quirks-cpython.md`).
 `is_md_equal` compares HTML after collapsing every run of `\s+` to one space (*read* in `_util.py`), so validation passes and the loss is silent.
-§3.5's edge-safety rule exists because of this.
+Section 3.5's edge-safety rule exists because of this.
 
 mdformat's changelog lists an earlier fix nearby, under 0.7.15: "`--wrap` converts Unicode whitespace to regular spaces and line feeds."
 `tests/data/wrap_width_50.md` also has a case titled "Only use space, tab and line feed as wrap points".
@@ -101,7 +101,7 @@ This plugin's output is the same at every integer width (§2.5), so nothing depe
 
 **Compatibility risk.** *Read* in `renderer/__init__.py`.
 When two plugins define a renderer for the same syntax, mdformat logs "Plugin conflict" and keeps the first; which is first follows load order, and through the API the iteration order of the set passed in, which varies with `PYTHONHASHSEED`.
-§2.2's canary reports when this plugin loses the `inline` slot.
+Section 2.2's canary reports when this plugin loses the `inline` slot.
 
 ## Postprocessors run in load order the plugin cannot choose
 
@@ -113,7 +113,7 @@ This is why the plugin is a renderer (§2.2).
 
 **Compatibility risk.** *Read.*
 `--check` compares strings and returns before the validation branch; `changes_ast` is OR-ed across every enabled plugin, so one plugin declaring `True` disables validation for all; and the Python API never validates.
-§2.2 lists these.
+Section 2.2 lists these.
 
 ## `mdformat.file()` passes a filename but reads no config
 
@@ -128,7 +128,7 @@ A plugin that walks up from the filename to find `.mdformat.toml` finds the file
 ## Plugin option flags have four edges that §2.4 does not cover
 
 **Compatibility risk.** *Verified* 2026-10-07, and again 2026-10-12 (the unhashable default 2026-10-16), by calling `make_arg_parser` from `mdformat/_cli.py` with the stand-in plugins below, no plugin installed.
-§2.4 covers the `dest` rewrite and the rule that a default must be `None` or `argparse.SUPPRESS`.
+Section 2.4 covers the `dest` rewrite and the rule that a default must be `None` or `argparse.SUPPRESS`.
 Four edges sit around them:
 
 - **`store_true` trips the default rule by itself.** Its default is `False`, so the plugin's own flag, with no other mistake, triggers a warning that begins `` DeprecationWarning: The `default` (False) for ['--demo-flag'] from the 'demo' plugin, will always override any value configured in TOML. `` Under the default warning filters it is not shown: `warn_explicit` attributes it to the plugin's source file, and those filters show a `DeprecationWarning` only when it is attributed to `__main__`. It prints under `-W default` and raises under `-W error::DeprecationWarning`; `-W error::UserWarning` does not catch it. The practical hazard is what the message says, without the message being seen: with `demo_flag = true` under `[plugin.demo]` in `.mdformat.toml`, the stand-in plugin received `False` from the CLI's `run`, which returned 0 and showed no warning (the second snippet below). Write `default=None` beside `store_true`, or use `store_const` with `const=True, default=None`.

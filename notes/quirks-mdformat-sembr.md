@@ -31,7 +31,7 @@ The same input with `extensions=set()` comes back unchanged and renders the same
 
 The plugin's only hook is `POSTPROCESSORS["paragraph"]` (*read*, `_postprocess_paragraph`), which its docstring describes as inserting breaks "into an already-rendered paragraph string".
 `paragraph()` has by then escaped line starts, so a newline the plugin inserts can create a line start that nothing escaped, which is what the output above shows.
-§2.2 gives this as a reason for the `inline` hook point.
+Section 2.2 gives this as a reason for the `inline` hook point.
 
 ## `--wrap` is not honored
 

@@ -13,4 +13,4 @@ ______________________________________________________________________
 **Compatibility risk.** *Verified* 2026-10-06, myst alone.
 `Sentence one here. (Label)= then more words.` at `--wrap 10` comes back with `\(Label)=` at a line start: render-equal, but the source gains a backslash.
 At `--wrap 18` and `20` the target lands at a line start unescaped, also render-equal.
-§3.5 refuses a break that would put `(label)=` at a line start, and the source-equality row of §6.2 is what would see the backslash.
+Section 3.5 refuses a break that would put `(label)=` at a line start, and the source-equality row of §6.2 is what would see the backslash.
