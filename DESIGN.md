@@ -168,6 +168,24 @@ Why this hook point and no other:
   It is a strong default rather than a guarantee, and it is blind to the whitespace class regardless (§3.5).
 - Hooking `paragraph` instead, as `mdformat-sembr` does, puts the plugin downstream of wrapping and line-start escaping, so it has to re-derive what this hook point gives it for free.
 
+**Four more placements were tried and set aside**, beyond the `inline` postprocessor above and rendering again, which §3.1 argues against, all against mdformat 1.0.0 in a review on 2026-10-06 whose scripts were not kept, and with mdformat-gfm and mdformat-mkdocs unless a bullet names another co-plugin.
+
+- **A renderer that finds atoms in the text rather than the tree.**
+  It matches the tree on core syntax but is wrong on shortcut references, `[fig.]`, and on co-plugin atoms, where `[[Page.]]` gains a wrong break under mdformat-wikilink.
+- **A postprocessor moved to the front of the plugin list by `update_mdit`.**
+  It ran in the right order in every job tried, but it mutates a list mdformat is still building, cannot record (§3.1) and needs text atoms, and it is unnecessary while the `inline` slot is free.
+- **A `paragraph` renderer chaining over the `inline` owner.**
+  It is held back as the contingency of the canary paragraph above, and what that paragraph says it composes with rests on one run, against mdformat-hatena and mdformat-sentencebreak.
+- **Forcing `wrap = "no"` inside a paragraph's subtree.**
+  It desynchronizes mdformat-gfm's `xxxx` prefix from its removal and corrupts task items.
+
+**What the evidence for this hook point does not cover.**
+It was run on mdformat 1.0.0 only, with the newest release of each co-plugin as of 2026-10-06, and not on Windows or macOS; mdformat 0.7.17 and 0.7.22 were read, not run.
+Its load-order, width and footnote results were checked on Python 3.10, 3.11, 3.12 and 3.13 and on no later version, where §2 promises 3.10 or later.
+All 48 plugin sources above were read statically, and of them only mdformat-gfm, mdformat-mkdocs and the co-plugins named in the list above and in this paragraph were run.
+The prototypes had none of §3.3's rules, quote roles or camelCase exemption, the prose was mostly English technical writing, and the adversarial inputs were of the review's own design.
+Co-plugin coverage was uneven: mdformat-footnote, mdformat-wikilink and mdformat-dollarmath were loaded together in one corpus run only, mdformat-myst and mdformat-obsidian only for comparing atoms, and the dry run that `notes/FUTURE-WORK.md` records was never tried against a `paragraph` owner.
+
 **No `WRAP_POINT` survives this plugin.**
 Section 3.4 resolves every gap to a newline or a literal space, so mdformat's own word wrap is left with nothing to act on, and no part of this design may assume that it will act.
 
@@ -602,7 +620,7 @@ A literal dollar is `\$`, as in `re`, and the expander never reads `\$` as a sig
   A leaf of a type this plugin does not know, or a node §3.1 made an atom because its children were not rendered or could not be located, is an atom for §3.2 but opens nothing, and its text is not read through the capital test either.
   A bare URL that mdformat-gfm links is such a node, and `notes/FUTURE-WORK.md` records the cost.
   An open list was tried and deletes text: with mdformat-footnote loaded, a break before `[^x]: not a definition` lets the second pass read a footnote definition there, and both notes' text is gone.
-  The closed list costs breaks before co-plugin syntax, a sentence opening with a wikilink or with inline math, `…holds. $x$ is positive.`, among them; it changed no line in the corpora of the hook-point review (`notes/DESIGN-REVIEW-HOOK-POINT-2026-10-06.md`), which were technical documentation rather than math-heavy prose, and `notes/MATH-AND-OPENERS.md` records the cost and how named openers could be added.
+  The closed list costs breaks before co-plugin syntax, a sentence opening with a wikilink or with inline math, `…holds. $x$ is positive.`, among them; on technical documentation it changed no line in two sets of real documents, of 35 and 31, and cost 24 gaps in about 150,000 paragraphs, each before a bare URL that mdformat-gfm links, while math-heavy prose was not measured; `notes/MATH-AND-OPENERS.md` records that measurement and where it comes from, the cost, and how named openers could be added.
   Without this check, `` Install the package. `pip install foo` does the rest. `` never breaks, and neither does any sentence opening with an image or an autolink.
   Formatted text is **not** included: link text and emphasis are words, so `[the docs](u) explain it.` keeps the ordinary treatment of skipping the markup and testing the word, and declines to break for the same reason a bare lowercase word would.
   The cost is that a conditional abbreviation followed by an opaque atom breaks: `` See fig. `x` for details. `` goes wrong, where a backtick alone would have failed the capital test.

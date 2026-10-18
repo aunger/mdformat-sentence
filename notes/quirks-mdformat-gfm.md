@@ -25,7 +25,7 @@ Section 3.5 refuses that break, with or without gfm.
 
 **Compatibility risk.** *Verified* (`experiments/recorder.py` §4).
 `gfm_autolink` has a `text` child, but its renderer returns the source text and never renders the child.
-A tree walk that expects a container's rendering to contain its children's cannot place it; the hook-point review measured the old walk backing off on bare URLs containing `_(`, `__` or `*`.
+A tree walk that expects a container's rendering to contain its children's cannot place it; the hook-point review measured the old walk backing off on bare URLs containing `_(`, `__` or `*` (`DESIGN-REVIEW-HOOK-POINT-2026-10-06.md` at `9264f70`, section *3. Evidence register*, R6).
 Section 3.1 makes such a node an atom.
 
 ## `~~` is escaped in text
