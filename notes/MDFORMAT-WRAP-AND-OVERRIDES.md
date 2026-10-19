@@ -316,6 +316,28 @@ Three further open issues are adjacent and are listed only by title, without cha
 The first two correspond to the two upstream defects `DESIGN.md` §3.5 already works around, the tilde fence and the whitespace deletion.
 Who filed them was not checked.
 
+### 5.8 A larger ask: a line-breaking step in `paragraph()`
+
+**Reasoned**, except where marked.
+
+Section 5.6's split gives a plugin wrap points without width wrapping, but the plugin still decides line layout before `paragraph()` runs, and hands it down as `\n` and pinned spaces.
+`paragraph()` splits its text on `\n` and fills each section with `_wrap` (`renderer/_context.py:390-406`), and none of §6's five members can supply that one step.
+A plugin can replace the whole `paragraph` renderer, which `DESIGN.md` §2.2 rejects because mdformat-hatena and mdformat-sentencebreak already own it, or post-process its output, after line-start escaping has run.
+
+**The convention it would retire.**
+Deciding layout in the `inline` slot rests on breakable whitespace reaching it as `WRAP_POINT`, which mdformat does not promise.
+mdformat-space-control breaks it: its `softbreak` renderer returns a literal space, and with it loaded the plugin adds no break of its own.
+Measured, `experiments/spacecontrol.py`; `quirks-mdformat-space-control.md` has the detail.
+
+**The ask.** A step that `paragraph()` calls in place of `_wrap` for each section, supplied by a plugin, so that the plugin decides the breaks while `paragraph()` keeps its line-start escaping and the containers keep their indentation.
+Given the inline node as well as the text, the step could treat an authored `softbreak` as a gap whatever a co-plugin rendered it as, since the tree still marks one (`DESIGN.md` §3.1); that is untried.
+
+**How it relates to the other asks.**
+It builds on §5.6 rather than replacing it, since the step needs wrap points to choose among, and a plugin named as the line-breaker, as §5.5's variants would name it, is the one whose step runs.
+It is the largest of the asks and changes the renderer rather than the option space, so §5.6 stays the better first ask.
+Under §5.7 it belongs in a comment on #4, after that thread has been read past its opening comment.
+Nothing has been filed.
+
 ______________________________________________________________________
 
 ## 6. The plugin interface
