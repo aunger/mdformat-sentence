@@ -17,10 +17,9 @@ if TYPE_CHECKING:
 
 PLUGIN_ID = "sentence"
 
-# Keys this plugin sets in `context.env`, which markdown-it creates afresh
-# for every render, so each resets per file with no state kept here.
+# Set in `context.env`, which markdown-it creates afresh for every render,
+# so it resets per file with no state kept here.
 _RAN = "mdformat_sentence.ran"
-_KEEP_CHECKED = "mdformat_sentence.keep_checked"
 
 KEEP_WARNING = "mdformat-sentence does nothing under --wrap keep; use --wrap no"
 
@@ -40,9 +39,6 @@ def _render_inline(node: RenderTreeNode, context: RenderContext) -> str:
     if node.parent is None or node.parent.type != "paragraph":
         return DEFAULT_RENDERERS["inline"](node, context)
     context.env[_RAN] = True
-    if not context.do_wrap:
-        _warn_if_named(context)
-        return DEFAULT_RENDERERS["inline"](node, context)
     text = DEFAULT_RENDERERS["inline"](node, context)
     if WRAP_POINT not in text:
         return text
@@ -51,27 +47,21 @@ def _render_inline(node: RenderTreeNode, context: RenderContext) -> str:
     return text
 
 
-def _warn_if_named(context: RenderContext) -> None:
-    """Warn once per render when `--extensions` names the plugin (§2.5).
-
-    The latch is set on the first check, so later paragraphs skip it.
-    """
-    if context.env.get(_KEEP_CHECKED):
-        return
-    context.env[_KEEP_CHECKED] = True
-    ext = context.options.get("mdformat", {}).get("extensions")
-    if ext is not None and PLUGIN_ID in ext:
-        LOGGER.warning(KEEP_WARNING)
-
-
 def _canary(text: str, node: RenderTreeNode, context: RenderContext) -> str:
-    """Report a lost `inline` slot once per render pass (§2.2).
+    """Once per render pass, report a lost `inline` slot (§2.2), or warn
+    that `--extensions` named the plugin under `--wrap keep` (§2.5).
 
     Every read degrades to silence or a nameless message rather than
     raising.
     """
     try:
-        if context.env.get(_RAN) or not context.do_wrap:
+        ran = context.env.get(_RAN)
+        if not context.do_wrap:
+            ext = context.options["mdformat"].get("extensions")
+            if ran and ext is not None and PLUGIN_ID in ext:
+                LOGGER.warning(KEEP_WARNING)
+            return text
+        if ran:
             return text
         if not any(n.type == "paragraph" for n in node.walk()):
             return text
