@@ -80,8 +80,9 @@ def _canary(text: str, node: RenderTreeNode, context: RenderContext) -> str:
 def _inline_owner(context: RenderContext) -> str | None:
     """Name the plugin mdformat kept as the `inline` renderer, if it can.
 
-    The owner is the plugin whose renderer `context.renderers` holds,
-    rather than one found by re-deriving mdformat's conflict policy.
+    The owner is the first loaded plugin whose renderer is the one
+    `context.renderers` holds, so two plugins sharing one function
+    cannot name the one that lost the conflict.
     """
     try:
         import mdformat.plugins
@@ -89,9 +90,13 @@ def _inline_owner(context: RenderContext) -> str | None:
         renderer = context.renderers["inline"]
         if renderer is _render_inline:
             return None
-        loaded = context.options["parser_extension"]
+        owner = next(
+            plugin
+            for plugin in context.options["parser_extension"]
+            if plugin.RENDERERS.get("inline") is renderer
+        )
         for plugin_id, plugin in mdformat.plugins.PARSER_EXTENSIONS.items():
-            if plugin in loaded and plugin.RENDERERS.get("inline") is renderer:
+            if plugin is owner:
                 return str(plugin_id)
     except Exception:
         pass

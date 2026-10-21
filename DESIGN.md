@@ -150,7 +150,7 @@ That is loud where the postprocessor's failure was silent, and it is so far hypo
 
 **A canary reports a lost slot.**
 A `root` postprocessor logs once per render pass when paragraphs were rendered but this plugin's renderer never ran, naming the plugin that owns `inline` from `context.options["parser_extension"]`.
-A flag the renderer sets in `context.env` makes the normal case cost nothing, and the canary stays silent when `context.do_wrap` is false, since the plugin is inert under `--wrap keep` by design (§2.5).
+A flag the renderer sets in `context.env` makes the normal case cost nothing, and this report stays silent when `context.do_wrap` is false, since the plugin is inert under `--wrap keep` by design, and the same postprocessor raises §2.5's warning there instead.
 Each read it makes degrades to silence or a nameless message rather than raising.
 If a plugin ever does claim `inline` first, the contingency is a `paragraph` renderer that injects this plugin's inline renderer through a modified context; it composes with an `inline` owner but not with a `paragraph` owner, and `notes/FUTURE-WORK.md` records it.
 
