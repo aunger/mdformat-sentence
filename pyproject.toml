@@ -1,0 +1,31 @@
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "mdformat-sentence"
+description = "An mdformat plugin that puts one sentence on each line"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+dependencies = [
+    "mdformat >=1.0.0,<1.1",
+    "tomli >=1.1.0; python_version < '3.11'",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+test = ["pytest", "mdformat-gfm ==1.0.0"]
+
+[project.urls]
+Homepage = "https://github.com/aunger/mdformat-sentence"
+
+[project.entry-points."mdformat.parser_extension"]
+sentence = "mdformat_sentence"
+
+[tool.flit.sdist]
+include = ["tests/"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+xfail_strict = true

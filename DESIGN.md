@@ -81,7 +81,7 @@ CI runs that gate on Linux, macOS and Windows and on every Python version mdform
 **The module surface is what mdformat reads, and two of its reads are unguarded.**
 The module defines `RENDERERS = {"inline": …}` (§2.2), an `update_mdit` that does nothing, `CHANGES_AST = False`, and `add_cli_argument_group` (§2.4).
 mdformat 1.0.0 reads `plugin.RENDERERS` in `renderer/__init__.py` and calls `plugin.update_mdit` in `_util.py` without a guard, so both must exist; it reads `POSTPROCESSORS` and `CHANGES_AST` through `getattr` and `add_cli_argument_group` behind `hasattr`.
-The plugin defines one postprocessor, `POSTPROCESSORS = {"root": …}`, the canary of §2.2.
+The plugin defines one postprocessor, `POSTPROCESSORS = {"root": …}`, the canary of §2.2, which also raises the warning of §2.5.
 
 **Package data.**
 The distribution carries the shipped rules files and `mdformat-sentence-rules`, the console script that prints them (§4); the vendored Unicode data and the module generated from it (§3.3); and the Unicode License v3 beside the data, because it is © Unicode, Inc. and its terms require the notice to travel with it.
@@ -128,7 +128,7 @@ An inline node's parent is the block that owns it, so the test is exact rather t
 No inline node with a null parent is reachable in mdformat 1.0.0, so the first conjunct is defensive, and it is how `mdformat-gfm` writes the same guard.
 **Headings and table cells are left as mdformat renders them.**
 They hold inline nodes too, and the guard is what passes them over: only a paragraph's text is broken, including a paragraph inside a list item or a blockquote.
-A second early return follows §2.5's warning check: a text with no `WRAP_POINT` has no gap to decide, which is every paragraph under `--wrap keep`, so it too is returned unchanged before any segmentation or location of records (§3.1), and under `--wrap keep` the renderer calls mdformat's without installing the recorder at all.
+A second early return follows the guard: a text with no `WRAP_POINT` has no gap to decide, which is every paragraph under `--wrap keep`, so it too is returned unchanged before any segmentation or location of records (§3.1), and under `--wrap keep` the renderer calls mdformat's without installing the recorder at all.
 
 **Why a renderer and not an `inline` postprocessor.**
 A node type's postprocessors run in the order their plugins were loaded, which follows `--extensions` on the command line and, through the API, the iteration order of the set the caller passed, which varies with `PYTHONHASHSEED`.
@@ -150,7 +150,7 @@ That is loud where the postprocessor's failure was silent, and it is so far hypo
 
 **A canary reports a lost slot.**
 A `root` postprocessor logs once per render pass when paragraphs were rendered but this plugin's renderer never ran, naming the plugin that owns `inline` from `context.options["parser_extension"]`.
-A flag the renderer sets in `context.env` makes the normal case cost nothing, and the canary stays silent when `context.do_wrap` is false, since the plugin is inert under `--wrap keep` by design (§2.5).
+A flag the renderer sets in `context.env` makes the normal case cost nothing, and this report stays silent when `context.do_wrap` is false, since the plugin is inert under `--wrap keep` by design, and the same postprocessor raises §2.5's warning there instead.
 Each read it makes degrades to silence or a nameless message rather than raising.
 If a plugin ever does claim `inline` first, the contingency is a `paragraph` renderer that injects this plugin's inline renderer through a modified context; it composes with an `inline` owner but not with a `paragraph` owner, and `notes/FUTURE-WORK.md` records it.
 
@@ -273,10 +273,10 @@ Measured in `notes/experiments/wrapkeep.py`.
 `mdformat.renderer.LOGGER` is the channel, and `_cli.py` attaches a handler that prefixes `Warning: ` and writes to stderr; `notes/quirks-mdformat.md` records where the logger's messages land without that handler.
 
 One thing the implementation must handle, and one that looks like a second and is not.
-It fires per paragraph, not per file, so it needs a once-per-render latch rather than one warning per inline node.
-The latch is a key the plugin sets in `context.env`, which markdown-it creates afresh for every render, so it resets for each file with no state kept in the module.
+Checked in the renderer, the warning would fire once per paragraph rather than once per file, so the canary's `root` postprocessor of §2.2 checks it instead, once per render pass.
+It warns only if the renderer has set its flag in `context.env`, so a paragraph must have reached the plugin, and since markdown-it creates `env` afresh for every render, the flag resets for each file with no state kept in the module.
 Section 2.3's double render does *not* double it: the guard above is `not context.do_wrap`, true only under `keep`, and `_api.py` re-renders only when `wrap != "keep"`, so the pass that would repeat a warning is never the pass that raises this one.
-Measured in `notes/experiments/wraparg.py` §4: three paragraphs give three calls at the hook point under `--wrap keep` and six under `--wrap no`, and it is only the three that can warn.
+Measured in `notes/experiments/wraparg.py` §4: three paragraphs give three calls at the hook point under `--wrap keep` and six under `--wrap no`, and only the `keep` pass, which renders once, can warn.
 
 **What the plugin cannot see is whether `keep` was chosen or merely defaulted.**
 `_cli.py` builds `{**DEFAULT_OPTS, **toml_opts, **cli_core_opts}` and argparse drops unset values, so an omitted `--wrap`, an explicit `--wrap keep`, and `wrap = "keep"` in TOML all arrive identical.
