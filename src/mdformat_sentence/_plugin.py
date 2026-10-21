@@ -78,16 +78,12 @@ def _canary(text: str, node: RenderTreeNode, context: RenderContext) -> str:
     except Exception:
         return text
     owner = _inline_owner(context)
-    if owner is None:
-        LOGGER.warning(
-            "mdformat-sentence did not run: paragraphs were rendered "
-            "without its inline renderer"
-        )
-    else:
-        LOGGER.warning(
-            f"mdformat-sentence did not run: plugin {owner!r} owns the "
-            "inline renderer"
-        )
+    detail = (
+        "paragraphs were rendered without its inline renderer"
+        if owner is None
+        else f"plugin {owner!r} owns the inline renderer"
+    )
+    LOGGER.warning(f"mdformat-sentence did not run: {detail}")
     return text
 
 
@@ -98,26 +94,18 @@ def _inline_owner(context: RenderContext) -> str | None:
     rather than one found by re-deriving mdformat's conflict policy.
     """
     try:
+        import mdformat.plugins
+
         renderer = context.renderers["inline"]
         if renderer is _render_inline:
             return None
-        for plugin in context.options["parser_extension"]:
-            if plugin.RENDERERS.get("inline") is renderer:
-                break
-        else:
-            return None
-    except Exception:
-        return None
-    try:
-        import mdformat.plugins
-
-        for plugin_id, loaded in mdformat.plugins.PARSER_EXTENSIONS.items():
-            if loaded is plugin:
+        loaded = context.options["parser_extension"]
+        for plugin_id, plugin in mdformat.plugins.PARSER_EXTENSIONS.items():
+            if plugin in loaded and plugin.RENDERERS.get("inline") is renderer:
                 return str(plugin_id)
     except Exception:
         pass
-    name = getattr(plugin, "__name__", None)
-    return name if isinstance(name, str) else None
+    return None
 
 
 RENDERERS = {"inline": _render_inline}

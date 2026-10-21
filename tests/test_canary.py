@@ -5,7 +5,7 @@ import types
 
 import mdformat
 import mdformat.plugins
-from mdformat.renderer import DEFAULT_RENDERERS
+from mdformat.renderer import DEFAULT_RENDERERS, RenderContext
 import pytest
 
 import mdformat_sentence
@@ -17,7 +17,6 @@ PARAGRAPHS = "It ended. Then it began.\n\nOne more.\n\nAnd another.\n"
 def owner(monkeypatch):
     """Register a plugin `owner` that also renders `inline` nodes."""
     plugin = types.SimpleNamespace(
-        CHANGES_AST=False,
         RENDERERS={"inline": DEFAULT_RENDERERS["inline"]},
         update_mdit=lambda mdit: None,
     )
@@ -73,12 +72,9 @@ def tree(md):
     return RenderTreeNode(MarkdownIt().parse(md))
 
 
-def context(env=None, inline=DEFAULT_RENDERERS["inline"], **options):
-    return types.SimpleNamespace(
-        env={} if env is None else env,
-        renderers={"inline": inline},
-        options={"mdformat": {"wrap": "no"}, **options},
-        do_wrap=True,
+def context(inline=DEFAULT_RENDERERS["inline"], **options):
+    return RenderContext(
+        {"inline": inline}, {}, {"mdformat": {"wrap": "no"}, **options}, {}
     )
 
 
@@ -87,14 +83,16 @@ canary = mdformat_sentence.POSTPROCESSORS["root"]
 
 def test_an_unreadable_owner_gives_a_nameless_message(caplog):
     nameless = "mdformat-sentence did not run: paragraphs were rendered"
-    unnamed = types.SimpleNamespace(RENDERERS={"inline": DEFAULT_RENDERERS["inline"]})
+    unregistered = types.SimpleNamespace(
+        RENDERERS={"inline": DEFAULT_RENDERERS["inline"]}
+    )
     for ctx in (
         types.SimpleNamespace(env={}, options={}, do_wrap=True),
         context(),
         context(parser_extension=None),
         context(parser_extension=[object()]),
         context(parser_extension=[types.SimpleNamespace(RENDERERS={"inline": 0})]),
-        context(parser_extension=[unnamed]),
+        context(parser_extension=[unregistered]),
         context(
             inline=mdformat_sentence.RENDERERS["inline"],
             parser_extension=[mdformat_sentence],

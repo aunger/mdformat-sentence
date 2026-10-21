@@ -11,12 +11,14 @@ from mdformat_sentence._plugin import KEEP_WARNING
 PARAGRAPHS = "It ended. Then it began.\n\nOne more.\n\nAnd another.\n"
 
 
+@pytest.fixture(autouse=True)
+def isolated_config(tmp_path):
+    """An empty config stops mdformat's upward search, so no `.mdformat.toml`
+    above the temporary directory can reach a test."""
+    (tmp_path / ".mdformat.toml").write_text("")
+
+
 def cli(tmp_path, capsys, *args, files=1, md=PARAGRAPHS):
-    # An empty config stops mdformat's upward search, so no
-    # `.mdformat.toml` above the temporary directory can reach the test.
-    toml = tmp_path / ".mdformat.toml"
-    if not toml.exists():
-        toml.write_text("")
     paths = []
     for i in range(files):
         path = tmp_path / f"doc{i}.md"
