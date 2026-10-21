@@ -11,13 +11,18 @@ from mdformat_sentence._plugin import KEEP_WARNING
 PARAGRAPHS = "It ended. Then it began.\n\nOne more.\n\nAnd another.\n"
 
 
-def cli(tmp_path, capsys, *args, files=1):
+def cli(tmp_path, capsys, *args, files=1, md=PARAGRAPHS):
+    # An empty config stops mdformat's upward search, so no
+    # `.mdformat.toml` above the temporary directory can reach the test.
+    toml = tmp_path / ".mdformat.toml"
+    if not toml.exists():
+        toml.write_text("")
     paths = []
     for i in range(files):
         path = tmp_path / f"doc{i}.md"
-        path.write_text(PARAGRAPHS)
+        path.write_text(md)
         paths.append(str(path))
-    run([*args, *paths])
+    assert run([*args, *paths]) == 0
     return capsys.readouterr().err.count(KEEP_WARNING)
 
 
@@ -35,6 +40,14 @@ def test_warns_when_named_in_toml(tmp_path, capsys):
 @pytest.mark.parametrize("wrap", ["no", "40"])
 def test_silent_when_the_plugin_can_act(tmp_path, capsys, wrap):
     assert cli(tmp_path, capsys, "--extensions", "sentence", "--wrap", wrap) == 0
+
+
+def test_silent_when_no_paragraph_was_rendered(tmp_path, capsys):
+    # Headings and table cells hold inline nodes too; the paragraph-parent
+    # guard (§2.2) is what keeps them from reaching the warning.
+    md = "# It ended. Then it began.\n\n| It ended. Then it began. |\n| -- |\n| a |\n"
+    named = ["--extensions", "sentence", "--extensions", "gfm"]
+    assert cli(tmp_path, capsys, *named, md=md) == 0
 
 
 def test_silent_on_the_default_configuration(tmp_path, capsys):

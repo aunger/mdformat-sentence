@@ -33,13 +33,13 @@ def canary_messages(caplog):
     ]
 
 
-def format(md, wrap, extensions):
+def render(md, wrap, extensions):
     return mdformat.text(md, options={"wrap": wrap}, extensions=extensions)
 
 
 def test_reports_a_lost_slot_once_per_render_pass(owner, caplog):
     with caplog.at_level(logging.WARNING, logger="mdformat"):
-        format(PARAGRAPHS, "no", ["owner", "sentence"])
+        render(PARAGRAPHS, "no", ["owner", "sentence"])
     # `mdformat.text` renders twice when wrapping (§2.3).
     assert canary_messages(caplog) == [
         "mdformat-sentence did not run: plugin 'owner' owns the inline renderer"
@@ -49,20 +49,20 @@ def test_reports_a_lost_slot_once_per_render_pass(owner, caplog):
 @pytest.mark.parametrize("wrap", ["no", 40])
 def test_silent_when_the_plugin_owns_the_slot(owner, caplog, wrap):
     with caplog.at_level(logging.WARNING, logger="mdformat"):
-        format(PARAGRAPHS, wrap, ["sentence"])
-        format(PARAGRAPHS, wrap, ["sentence", "owner"])
+        render(PARAGRAPHS, wrap, ["sentence"])
+        render(PARAGRAPHS, wrap, ["sentence", "owner"])
     assert canary_messages(caplog) == []
 
 
 def test_silent_under_keep(owner, caplog):
     with caplog.at_level(logging.WARNING, logger="mdformat"):
-        format(PARAGRAPHS, "keep", ["owner", "sentence"])
+        render(PARAGRAPHS, "keep", ["owner", "sentence"])
     assert canary_messages(caplog) == []
 
 
 def test_silent_when_no_paragraph_was_rendered(owner, caplog):
     with caplog.at_level(logging.WARNING, logger="mdformat"):
-        format("# A heading. Only.\n", "no", ["owner", "sentence"])
+        render("# A heading. Only.\n", "no", ["owner", "sentence"])
     assert canary_messages(caplog) == []
 
 
@@ -73,9 +73,10 @@ def tree(md):
     return RenderTreeNode(MarkdownIt().parse(md))
 
 
-def context(env=None, **options):
+def context(env=None, inline=DEFAULT_RENDERERS["inline"], **options):
     return types.SimpleNamespace(
         env={} if env is None else env,
+        renderers={"inline": inline},
         options={"mdformat": {"wrap": "no"}, **options},
         do_wrap=True,
     )
@@ -86,12 +87,18 @@ canary = mdformat_sentence.POSTPROCESSORS["root"]
 
 def test_an_unreadable_owner_gives_a_nameless_message(caplog):
     nameless = "mdformat-sentence did not run: paragraphs were rendered"
+    unnamed = types.SimpleNamespace(RENDERERS={"inline": DEFAULT_RENDERERS["inline"]})
     for ctx in (
+        types.SimpleNamespace(env={}, options={}, do_wrap=True),
         context(),
         context(parser_extension=None),
         context(parser_extension=[object()]),
         context(parser_extension=[types.SimpleNamespace(RENDERERS={"inline": 0})]),
-        context(parser_extension=[mdformat_sentence]),
+        context(parser_extension=[unnamed]),
+        context(
+            inline=mdformat_sentence.RENDERERS["inline"],
+            parser_extension=[mdformat_sentence],
+        ),
     ):
         caplog.clear()
         with caplog.at_level(logging.WARNING, logger="mdformat"):

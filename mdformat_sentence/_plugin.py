@@ -5,7 +5,6 @@ Section numbers refer to `DESIGN.md`.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 from typing import TYPE_CHECKING
 
 from mdformat.renderer import DEFAULT_RENDERERS, LOGGER, WRAP_POINT
@@ -21,7 +20,7 @@ PLUGIN_ID = "sentence"
 # Keys this plugin sets in `context.env`, which markdown-it creates afresh
 # for every render, so each resets per file with no state kept here.
 _RAN = "mdformat_sentence.ran"
-_WARNED = "mdformat_sentence.warned_keep"
+_KEEP_CHECKED = "mdformat_sentence.keep_checked"
 
 KEEP_WARNING = "mdformat-sentence does nothing under --wrap keep; use --wrap no"
 
@@ -53,12 +52,15 @@ def _render_inline(node: RenderTreeNode, context: RenderContext) -> str:
 
 
 def _warn_if_named(context: RenderContext) -> None:
-    """Warn once per render when `--extensions` names the plugin (§2.5)."""
-    if context.env.get(_WARNED):
+    """Warn once per render when `--extensions` names the plugin (§2.5).
+
+    The latch is set on the first check, so later paragraphs skip it.
+    """
+    if context.env.get(_KEEP_CHECKED):
         return
+    context.env[_KEEP_CHECKED] = True
     ext = context.options.get("mdformat", {}).get("extensions")
     if ext is not None and PLUGIN_ID in ext:
-        context.env[_WARNED] = True
         LOGGER.warning(KEEP_WARNING)
 
 
@@ -75,7 +77,7 @@ def _canary(text: str, node: RenderTreeNode, context: RenderContext) -> str:
             return text
     except Exception:
         return text
-    owner = _inline_owner(context.options)
+    owner = _inline_owner(context)
     if owner is None:
         LOGGER.warning(
             "mdformat-sentence did not run: paragraphs were rendered "
@@ -89,15 +91,20 @@ def _canary(text: str, node: RenderTreeNode, context: RenderContext) -> str:
     return text
 
 
-def _inline_owner(options: Mapping) -> str | None:
-    """Name the plugin mdformat kept as the `inline` renderer, if it can."""
+def _inline_owner(context: RenderContext) -> str | None:
+    """Name the plugin mdformat kept as the `inline` renderer, if it can.
+
+    The owner is the plugin whose renderer `context.renderers` holds,
+    rather than one found by re-deriving mdformat's conflict policy.
+    """
     try:
-        for plugin in options["parser_extension"]:
-            if "inline" in plugin.RENDERERS:
+        renderer = context.renderers["inline"]
+        if renderer is _render_inline:
+            return None
+        for plugin in context.options["parser_extension"]:
+            if plugin.RENDERERS.get("inline") is renderer:
                 break
         else:
-            return None
-        if plugin.RENDERERS["inline"] is _render_inline:
             return None
     except Exception:
         return None

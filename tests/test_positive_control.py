@@ -11,7 +11,9 @@ def test_plain_mdformat_fails_the_control():
     assert mdformat.text(SOURCE, options={"wrap": "no"}, extensions=set()) != EXPECTED
 
 
-@pytest.mark.xfail(strict=True, reason="no break exists until M3 (#10)")
+@pytest.mark.xfail(
+    strict=True, raises=AssertionError, reason="no break exists until M3 (#10)"
+)
 def test_positive_control():
     out = mdformat.text(SOURCE, options={"wrap": "no"}, extensions={"sentence"})
     assert out == EXPECTED
