@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from bisect import bisect_left, bisect_right
 from collections.abc import Callable, Iterator, Mapping
+from itertools import accumulate
 import re
 from typing import TYPE_CHECKING, NamedTuple
 
@@ -37,9 +38,13 @@ class Recording(Mapping):
     def __init__(self, inner: Mapping[str, tuple[Postprocess, ...]], record):
         self._inner = inner
         self._record = record
+        self._chains: dict[str, tuple[Postprocess, ...]] = {}
 
     def __getitem__(self, key: str) -> tuple[Postprocess, ...]:
-        return (*self._inner.get(key, ()), self._record)
+        chain = self._chains.get(key)
+        if chain is None:
+            chain = self._chains[key] = (*self._inner.get(key, ()), self._record)
+        return chain
 
     def __iter__(self) -> Iterator[str]:
         return iter(self._inner)
@@ -80,9 +85,7 @@ def locate(
 ) -> list[Piece] | None:
     """The pieces under `node`, or `None` when its top-level records do
     not concatenate to `text` (§3.6)."""
-    if any(id(c) not in records for c in node.children):
-        return None
-    if "".join(records[id(c)] for c in node.children) != text:
+    if _joined(node, records) != text:
         return None
     pieces: list[Piece] = []
     _locate(node, records, 0, pieces)
@@ -112,13 +115,20 @@ def _locate(node, records, start, pieces) -> None:
 def _find_children(node, records, rendered: str) -> int | None:
     """Where the children's joined records lie in `rendered`, if they
     were all rendered and lie there exactly once."""
-    if any(id(c) not in records for c in node.children):
+    joined = _joined(node, records)
+    if joined is None:
         return None
-    joined = "".join(records[id(c)] for c in node.children)
     at = rendered.find(joined)
     if at < 0 or rendered.find(joined, at + 1) >= 0:
         return None
     return at
+
+
+def _joined(node, records) -> str | None:
+    """The children's records joined, or `None` if one was not rendered."""
+    if any(id(c) not in records for c in node.children):
+        return None
+    return "".join(records[id(c)] for c in node.children)
 
 
 def sections(text: str, pieces: list[Piece]) -> Iterator[Section]:
@@ -130,11 +140,7 @@ def sections(text: str, pieces: list[Piece]) -> Iterator[Section]:
         if end < len(text) and inside(end):
             continue
         parts = _RUN.split(text[begin:end])
-        starts = []
-        at = begin
-        for part in parts:
-            starts.append(at)
-            at += len(part)
+        starts = list(accumulate(map(len, parts), initial=begin))
         yield Section(parts[0::2], starts[0::2])
         begin = end + 1
 

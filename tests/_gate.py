@@ -78,11 +78,11 @@ FIXTURES = [
     # Section 6.4's hook-point fixtures that pinning alone can decide.
     *(
         Fixture(
-            f"gfm url with {mark}",
-            f"Read https://en.wikipedia.org/wiki/Foo{mark}bar{mark} first. Then go.\n",
+            f"gfm url {url}",
+            f"Read https://en.wikipedia.org/wiki/{url} first. Then go.\n",
             ("gfm",),
         )
-        for mark in ("_(", "__", "*")
+        for url in ("Foo_(bar)", "Foo__bar__", "Foo*bar*")
     ),
     Fixture(
         "mkdocs attribute list",

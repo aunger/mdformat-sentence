@@ -28,11 +28,11 @@ def test_width_independence(md, plugins, extensions):
 @pytest.mark.parametrize("wrap", ["no", 40])
 @pytest.mark.parametrize("md, plugins, extensions", CASES)
 def test_idempotency_vs_baseline(md, plugins, extensions, wrap):
+    plain = baseline(md, plugins, wrap)
+    if baseline(plain, plugins, wrap) != plain:
+        pytest.skip("plain mdformat is not idempotent here either")
     once = run(md, extensions, wrap).out
-    if baseline(baseline(md, plugins, wrap), plugins, wrap) == baseline(
-        md, plugins, wrap
-    ):
-        assert run(once, extensions, wrap).out == once
+    assert run(once, extensions, wrap).out == once
 
 
 @pytest.mark.parametrize("wrap", ["keep", "no", 40])

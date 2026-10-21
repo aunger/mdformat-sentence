@@ -47,9 +47,9 @@ def _render_inline(node: RenderTreeNode, context: RenderContext) -> str:
     # The node is rendered once, and recorded as it renders (§3.1).
     records: dict[int, str] = {}
 
-    def record(text: str, node: RenderTreeNode, context: RenderContext) -> str:
-        records[id(node)] = text
-        return text
+    def record(rendered: str, child: RenderTreeNode, _: RenderContext) -> str:
+        records[id(child)] = rendered
+        return rendered
 
     recording = Recording(context.postprocessors, record)
     text = DEFAULT_RENDERERS["inline"](node, context._replace(postprocessors=recording))
