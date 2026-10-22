@@ -54,6 +54,7 @@ ______________________________________________________________________
 | cost | what it buys | kind |
 | --- | --- | --- |
 | `include` takes names only, so the projects of a monorepo cannot share one set by path. | One resolution rule, and sets that travel together. | duplication |
+| A token's fate is not readable in one place: it is whichever rule matched last, across every included file (§4). | A file overrides an inherited rule by writing a later one, without knowing or repeating how the earlier one was expressed (§3.3). | reading a composed rule set takes every file |
 | `--sentence-include` is hidden and unstable. | No published promise while its design settles. | no supported flag for ad hoc sets |
 | `base_rules` is boolean only, and `default` cannot be named in `include`. | One switch for the shipped rules, and room for later values. | none in practice |
 | The dependency is pinned to `mdformat>=1.0.0,<1.1`. | No silent output change from an mdformat release. | users wait for the bound to move |
