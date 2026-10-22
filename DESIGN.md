@@ -1435,7 +1435,6 @@ So a shipped tool already makes the width-independent sentence-per-line promise,
 It is worth more than that, though.
 In production, rumdl has solved several of the problems §3 will have to solve, and its solutions are worth reading before writing ours: `sentence_utils.rs` for the terminator and abbreviation handling, and `text_reflow.rs` for segmentation and for the atomicity of links and code spans.
 The closer-set exclusion in §3.3 is a case where reading a working implementation is what surfaced the right rule.
-Read it as a source of solved problems and of test cases we would not have thought of.
 
 What it is not is an oracle.
 It is deliberately absent from §6.2's gate: agreement is not a target and divergence is not a defect.
