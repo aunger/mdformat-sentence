@@ -805,7 +805,7 @@ That single decision is what makes the output width-independent, and it is why n
 The consequence is the property in §1.
 After the plugin's renderer returns, each line mdformat receives contains no interior wrap point, so `_wrap` has nothing to break on and returns the line unchanged whatever `fill_column` it was given.
 Verified by execution against mdformat 1.0.0 with a throwaway postprocessor of exactly this shape: a 140-character sentence survives intact at `--wrap 80`, and the same input at `--wrap no` produces byte-identical output.
-The same experiment *without* pinning produces 78- and 61-character lines at `--wrap 80`, which is the behavior this plugin exists to avoid.
+The same experiment *without* pinning produces 78- and 61-character lines at `--wrap 80`, which is the behavior this plugin exists to avoid; `notes/experiments/pin.py` reproduces both.
 
 Idempotency across mdformat's two-pass render follows from the same construction.
 On the second pass the inserted `\n` re-parses as a softbreak and the literal spaces re-collapse, so every gap is a `\x00` again and the identical content re-derives the identical breaks.
@@ -892,7 +892,7 @@ Its `default` is `None` (§2.4), and its help text states the real default in wo
 
 **`[plugin.sentence]` is itself a rules file whenever it holds a rules-file key.**
 Once it holds any of `schema`, `include`, `macros`, `lowercase_names` or `rule`, everything this section says about a rules file applies to it; `base_rules` alone does not make it one.
-mdformat checks only that a plugin's table is a table, so the nested arrays pass its validation and reach the plugin intact, verified against mdformat 1.0.0; at the root of `.mdformat.toml` they are rejected, since mdformat allows only its own eight keys there.
+mdformat checks only that a plugin's table is a table, so the nested arrays pass its validation and reach the plugin intact, verified against mdformat 1.0.0 in `notes/experiments/pluginopts.py`; at the root of `.mdformat.toml` they are rejected, since mdformat allows only its own eight keys there.
 A separate rules file is named the way any rules file names another, through `include`, so there is no option for it:
 
 ```toml
@@ -979,7 +979,7 @@ What a set is for belongs in a comment at the top of it and in its name, where a
 **`--sentence-include` exists, unpublished and unstable.**
 It names sets to lay down after the table's own rules, may be given more than once, and takes names exactly as `include` does, so nothing it names resolves against the working directory.
 It is hidden from `--help` with `help=argparse.SUPPRESS` and sits outside the versioning policy above: any release may change or remove it, and using it prints no warning.
-Its argparse `dest` is `cli_include` rather than `include`, because mdformat merges command-line plugin options over the config file's with a plain dict update, and a flag writing to `include` would replace the config's list outright instead of adding to it; under its own key both lists survive the merge, verified against mdformat 1.0.0.
+Its argparse `dest` is `cli_include` rather than `include`, because mdformat merges command-line plugin options over the config file's with a plain dict update, and a flag writing to `include` would replace the config's list outright instead of adding to it; under its own key both lists survive the merge, verified against mdformat 1.0.0 in `notes/experiments/pluginopts.py`.
 The plugin cannot tell a `cli_include` written into `[plugin.sentence]` from the flag, so that spelling is unsupported in the same way, and the unknown-key rule of §3.3 does not reject it.
 
 **What an included set contributes is rules and macros, never the notation.**
