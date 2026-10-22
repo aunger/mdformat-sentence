@@ -125,11 +125,11 @@ A plugin that walks up from the filename to find `.mdformat.toml` finds the file
 **Compatibility risk.** *Read* (`_api.py`).
 `options={"plugin": {"sentence": {...}}}` reaches `context.options` through `mdformat.text()`, which is not a supported interface; the test harnesses use it (§4).
 
-## Plugin option flags have four edges that §2.4 does not cover
+## Plugin option flags have cases that §2.4 does not cover
 
 **Compatibility risk.** *Verified* 2026-10-07, and again 2026-10-12 (the unhashable default 2026-10-16), by calling `make_arg_parser` from `mdformat/_cli.py` with the stand-in plugins below, no plugin installed.
 Section 2.4 covers the `dest` rewrite and the rule that a default must be `None` or `argparse.SUPPRESS`.
-Four edges sit around them:
+Further cases:
 
 - **`store_true` trips the default rule by itself.** Its default is `False`, so the plugin's own flag, with no other mistake, triggers a warning that begins `` DeprecationWarning: The `default` (False) for ['--demo-flag'] from the 'demo' plugin, will always override any value configured in TOML. `` Under the default warning filters it is not shown: `warn_explicit` attributes it to the plugin's source file, and those filters show a `DeprecationWarning` only when it is attributed to `__main__`. It prints under `-W default` and raises under `-W error::DeprecationWarning`; `-W error::UserWarning` does not catch it. The practical hazard is what the message says, without the message being seen: with `demo_flag = true` under `[plugin.demo]` in `.mdformat.toml`, the stand-in plugin received `False` from the CLI's `run`, which returned 0 and showed no warning (the second snippet below). Write `default=None` beside `store_true`, or use `store_const` with `const=True, default=None`.
 - **An unhashable default crashes the CLI.** With `default=[]`, `make_arg_parser` raises `TypeError: unhashable type: 'list'` from the very test that decides whether to warn, `action.default not in {None, argparse.SUPPRESS}`, and since `run` builds the parser with every installed plugin, one such plugin takes down the whole CLI for anyone who has it installed.

@@ -1,4 +1,4 @@
-"""Four facts about `wrap` as an *argument*, as opposed to `wrap` at the hook point.
+"""Facts about `wrap` as an *argument*, as opposed to `wrap` at the hook point.
 
 1. TOML validation is a separate gate from CLI validation, and they disagree.
 2. `--wrap sentence` is rejected by argparse today, which is the fail-loud

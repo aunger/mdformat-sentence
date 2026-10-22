@@ -49,7 +49,7 @@ Add-only. `keep = existing_breaks | sentence_ends`.
 Worse, the preserved set only ever grows. Every accidental break ever introduced, by an editor auto-fill, a paste from a hard-wrapped source, or a bad merge, is frozen and thereafter actively defended.
 Measured: a paragraph hard-wrapped at 62 columns keeps all of those breaks forever.
 
-**Status.** Survives, and remains the only survivor. Everything below is an attempt to fix its one real defect, the monotone accretion of junk.
+**Status.** Survives, and remains the only survivor. Everything below is an attempt to fix its one defect, the monotone accretion of junk.
 
 **What it would add, in three borrowed tests.**
 Panache's semantic-wrap suite (`crates/panache-formatter/tests/format/semantic_wrap.rs`, MIT) has three tests that pass under add-only and fail under the sentence-only design `DESIGN.md` specifies.
@@ -120,7 +120,7 @@ No program in `experiments/` reproduces these three numbers; they were produced 
 
 **Status.** Rejected, and it inherits §3's blindness rather than escaping it. Aggregating a signal that is absent does not produce a signal.
 
-**Trap worth recording.** Evaluated against `DESIGN.md` this idea looks flawless: all 62 of its paragraphs that have an internal sentence end score 1.000 with zero variance, because that document is already pure sentence-per-line.
+**A misleading result.** Evaluated against `DESIGN.md` this idea looks flawless: all 62 of its paragraphs that have an internal sentence end score 1.000 with zero variance, because that document is already pure sentence-per-line.
 The corpus, not the threshold, was doing the work. See `corpus/README.md`.
 
 ______________________________________________________________________
@@ -134,7 +134,7 @@ So infer nothing about clauses. Ask only a question §3.3 of `DESIGN.md` can alr
 > If every sentence end is already followed by a line break, the layout respects the promise; assume the extra breaks are deliberate and preserve them all.
 > If some sentence end is not, the paragraph is not sembr-shaped; rewrap it sentence-per-line.
 
-**Buys.** Measured, `triage2.py`, and it is a categorically better detector than anything above.
+**Buys.** Measured, `triage2.py`, and it is a better detector than anything above.
 
 | | score |
 | --- | --- |
@@ -144,7 +144,7 @@ So infer nothing about clauses. Ask only a question §3.3 of `DESIGN.md` can alr
 Near-perfect separation against 31–69% misclassification for §5, but not perfect: three of the 27 hard-wrapped paragraphs score above zero, two at 0.50 (one at width 62, one at width 72) and one at 1.00 (at width 72).
 The other 24 score 0.00, so the middle is nearly empty rather than empty.
 The 1.00 is the case that matters, because it is indistinguishable from the hand-written class; §7 names the mechanism, a wrap that happens to land just after a sentence end, so it is a false *preserve*, in the safe direction.
-It is also the only idea here that addresses §2's real defect, because it is the only one that can recognize geometric wrapping as geometric.
+It is also the only idea here that addresses §2's defect, because it is the only one that can recognize geometric wrapping as geometric.
 
 **Costs.** The detector is sound; the *remedy* is not. See §8.
 
@@ -160,7 +160,7 @@ Rather than requiring *every* sentence end to be broken, define
 
 with a paragraph having no internal sentence end scoring 1.00 vacuously, and let a threshold *k* decide which remedy applies.
 
-The vacuous case is a definitional choice and it is load-bearing: single-sentence paragraphs broken at clause level are common in real sembr, and any other choice sends them to the destructive branch.
+The vacuous case is a definitional choice and it matters: single-sentence paragraphs broken at clause level are common in real sembr, and any other choice sends them to the destructive branch.
 
 **Costs.** Measured, `thresh.py`.
 A 12-line paragraph at coverage 0.33; one hand-added break moves it to 0.67; the remedy flips; the diff is **18 lines**. At every threshold tried.
@@ -169,7 +169,7 @@ A 12-line paragraph at coverage 0.33; one hand-added break moves it to 0.67; the
 A per-gap rule can perturb one gap. A per-paragraph rule can perturb the whole paragraph.
 For any threshold greater than zero and at most one there is an input one edit away from crossing it.
 
-**Status.** Rejected, and it is worse than §6 rather than better. Softening a binary rule into a graded one reintroduces exactly the instability the graded rule was meant to smooth.
+**Status.** Rejected, and it is worse than §6. Softening a binary rule into a graded one reintroduces exactly the instability the graded rule was meant to smooth.
 
 Also measured, `cov.py`: a width-wrapped paragraph scores 1.00 when the wrap happens to land just after a sentence end. That error is in the safe direction, preserving junk rather than destroying meaning.
 
@@ -258,7 +258,7 @@ ______________________________________________________________________
 
 ## 11. What this says about `DESIGN.md` §6.2
 
-Every variant on this ladder was run end to end, and **all of them pass idempotency and all of them pass §6.1's width-independence invariant** — including the one that silently deletes 45% of an author's line breaks.
+Every variant on this ladder was run end to end, and **all of them pass idempotency and all of them pass §6.1's width-independence invariant**, including the one that silently deletes 45% of an author's line breaks.
 
 Idempotency is necessary and nowhere near sufficient.
 Two invariants would catch what the current gate cannot:

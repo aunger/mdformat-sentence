@@ -51,7 +51,7 @@ ______________________________________________________________________
 `《` `》` `〈` `〉` `‟` `‛` are not a quotation delimiter in any locale.
 They appear only in punctuation exemplar sets, which list a locale's characters with no direction: `《` `》` `〈` `〉` for Chinese, Cantonese, Japanese, Korean and Yi, where they mark titles, `〈` `〉` also for Venetian, and `‟` for Slovenian; `‛` appears nowhere.
 
-CLDR understates how often a mark takes its minority role, for three reasons.
+CLDR understates how often a mark takes its minority role.
 It records one primary and one alternate pair per locale, so German books' `»…«` and Swiss `«…»` are not there.
 It records nothing historical, which is where `„` closes.
 And the JSON is resolved, so about 490 locales carry root's `“…”` and `‘…’` by inheritance, while only about 129 of the 766 set a value of their own.
@@ -75,7 +75,7 @@ Every minority role below was re-fetched from a current primary source and read 
 | `«` closing, `»` opening | Danish `»…«`; Finnish and Swedish `»…»` | Retskrivningsordbogen (2025) §58; Kielitoimisto |
 | `‹` closing, `›` opening | Danish `›…‹` | Retskrivningsordbogen §58 |
 
-Three minority roles in CLDR or Wikipedia did not survive checking, and none changes a verdict.
+Some minority roles in CLDR or Wikipedia did not survive checking, and none changes a verdict.
 CLDR's Uyghur `»…«` looks like display order typed as logical order: Uyghur text on three sites stores `«` first every time.
 English Wikipedia's Hebrew row, `”…„`, is display order too; the Hebrew Academy's rule is that `„` opens.
 Hebrew `‘` as a closer rests on one Wikipedia example.

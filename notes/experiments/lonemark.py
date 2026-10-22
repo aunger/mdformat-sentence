@@ -10,7 +10,7 @@ Terminators are cut down to the ones these texts use; the real set is
 UAX #29 STerm and ATerm. No rules table, bracket depth or capital-test
 exemption is consulted: none of these texts needs one.
 
-It establishes four things:
+It establishes:
   1. the fixtures of §6.4 for quotation marks break where §3.3 says, and
      §3.5's safety rules, tested where the newline actually lands in a run,
      pin a run whose newline would open a line with ~~~ or end one in a

@@ -55,7 +55,7 @@ mdformat-dollarmath, mdformat-myst, mdformat-obsidian and mdformat-mkdocs's arit
 
 ## 3. Is math safe to admit?
 
-The danger an opener brings is not the opening itself but what a line start does to it.
+The danger an opener brings is what a line start does to it.
 Admitting a type must not let a break put block syntax, or a co-plugin's definition syntax, at the start of a line; §3.5's line-start rules would still apply to it.
 
 *Measured,* with mdformat-dollarmath 0.0.5:

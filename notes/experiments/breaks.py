@@ -1,4 +1,4 @@
-"""The decisive measurement: what fraction of real sembr line breaks carry no
+"""Measures what fraction of real sembr line breaks carry no
 punctuation at all, and how many of those a break-word list could recover.
 
 Produces the unpunctuated share and the break-word figures in DESIGN.md 5.2.
