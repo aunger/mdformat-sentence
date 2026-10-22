@@ -78,7 +78,7 @@ BLOCK_START = re.compile(r"#|>|[-*+]|\d+[.)]|~~~|\[[ xX]\]")  # §3.5, cut down 
 
 
 def safe(segs, i):
-    """§3.5 at the newline's actual neighbours: segs[i - 1] ends the line, segs[i] opens the next."""
+    """§3.5 at the newline's actual neighbors: segs[i - 1] ends the line, segs[i] opens the next."""
     return (segs[i - 1][-1:].strip() != "" and segs[i][:1].strip() != ""
             and not BLOCK_START.match(segs[i]))
 

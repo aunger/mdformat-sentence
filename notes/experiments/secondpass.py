@@ -49,7 +49,7 @@ for label, rsp in (("route B alone (no second pass)", False),
 # The same three cases over a document that is not one bare paragraph, since
 # the point of the re-render is the escaping and indentation that only blocks
 # exercise. Also shows the trailing-newline caveat: the root postprocessor is
-# handed already-finalised output, so re-rendering it finalises twice.
+# handed already-finalized output, so re-rendering it finalizes twice.
 RICH = """Because the cascade picks by width, an edit upstream can change which candidate wins. The tool reports success.
 
 - A list item. It has two sentences.
