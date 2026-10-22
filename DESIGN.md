@@ -1129,9 +1129,7 @@ Written by J. K. Rowling.
 The sequel followed.
 '''
 
-# Exactly three periods is an ellipsis. `at` has lost every trailing
-# period, so this reads the raw word; only closers and footnote
-# references can follow the periods of a candidate.
+# Exactly three periods is an ellipsis, read raw because `at` has lost its periods.
 [[rule]]
 at_full = '(?:.*[^.])?\.\.\.[^.]*'
 break   = 'no'
