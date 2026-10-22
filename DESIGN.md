@@ -1318,13 +1318,10 @@ Its prose is every paragraph a Markdown parser finds in it, the rule list and th
 
 Breaks are classified by the first row that matches, so the rows are disjoint by construction rather than by luck; two of the breaks classified 4 or 5 also sit at a markup boundary and would have been claimed by the third row had it been tested first.
 
-Four things follow.
+Three things follow.
 
-**This plugin implements the rule that accounts for 9.7% of what a sembr author does by hand.**
-That is the size of the promise.
-
-**Declining rule 5 forgoes 40.8%.**
-Section 5.1 gives the reason and the reason stands; this is its price.
+**This plugin implements the rule behind 9.7% of what a sembr author does by hand, and declining rule 5 forgoes 40.8%.**
+The first figure is the size of the promise and the second is the price of §5.1, whose reason stands.
 
 **The remaining 41.7% has no punctuation and no markup at it.**
 Rule 6, which breaks after a *dependent* clause, is one part of that row, and neither it nor the rest has punctuation or a reliable vocabulary to find it by.
@@ -1341,8 +1338,6 @@ can make source text easier to work with,
 The following light markup languages
 are verified to support semantic line breaks:
 ```
-
-So even a perfect rule 5 would leave more than two fifths of the breaks out of reach of punctuation.
 
 **The rules 10 and 11 row is the cheapest 7.8% on the table.**
 They are in it so they are not forgotten, because they are the one part of the unimplemented remainder that is *not* a hard problem.
