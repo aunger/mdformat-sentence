@@ -1395,7 +1395,7 @@ The overlapping-guards row exists because either guard alone prevents the `[^x]:
 **The source-equality row is where §3.5's line-start rule is tested.**
 Format each input with and without the plugin, both at `--wrap no`, and undo every line break the plugin added: join the line to the one before it with a space, after removing the prefix mdformat writes on every later line of the paragraph's containers, `> ` for a blockquote and, for a list item, as many spaces as its marker is wide.
 The result must be byte-identical to the baseline.
-Nothing else is undone, because a four-space indent or a backslash escape at the start of a new line is source damage that renders identically, so the render-equality row passes it and this one must not.
+Nothing else is undone, not even a blanket strip of leading `>` and whitespace, because a four-space indent or a backslash escape at the start of a new line is source damage that renders identically, so the render-equality row passes it and this one must not.
 The text-preservation row cannot see either, because it compares the plugin's input with its output, and `paragraph()` adds both later.
 `notes/experiments/sourceeq.py` runs the row with a postprocessor that has no line-start rule: ten container cases pass, nested and numbered lists among them, while the HTML indent, at the top level and in a list item, and the escape before `-` fail, and render equality passes all three.
 
@@ -1417,11 +1417,10 @@ The checks living in code rather than in the table — the opaque-atom check, th
 Every oracle is **relative**: plain mdformat at the same width, with `extensions=set()` named explicitly.
 Absolute render equality is the wrong bar because mdformat itself already breaks the render on some inputs (§3.5's tilde fence), and holding ourselves to a standard mdformat does not meet means either failing forever or weakening the test until it says nothing.
 
-Four traps in the harness itself:
+Three traps in the harness itself:
 
-- `--extensions` is a whitelist, so every command-line baseline must name `extensions=set()`; an API baseline gets no plugins by default (§2.1), and naming it there too costs nothing.
+- `--extensions` is a whitelist (§2.1), so every baseline, API ones included, must name `extensions=set()`.
 - `--check` never validates.
-- The source-equality row must remove exactly the containers' prefix, because stripping every leading `>` and whitespace also strips the four-space indent it exists to catch.
 - The quality harness, which scores the plugin's breaks against hand-marked sentence ends by precision, recall and F1, their harmonic mean, must fail loudly rather than report a score for a plugin that never ran.
 
 The quality harness is a report, not a row: it gates nothing, and §6.4 builds it with the fuzz corpus.
