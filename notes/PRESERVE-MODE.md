@@ -75,7 +75,7 @@ Never add a clause break, only decline to destroy one, so there are zero false a
 **Costs.** Measured against real hand-written sembr, `breaks.py`, it deletes **half of the author's line breaks**, 51 of 103, because that share carry no punctuation at all.
 
 **Why.** Structural, not a tuning problem.
-For sembr#6, which breaks after a *dependent* clause, there is nothing there to match.
+Sembr#6 breaks after a *dependent* clause, and there is nothing there to match.
 Real breaks from the specification's own prose that no punctuation heuristic can see:
 
 ```
@@ -97,7 +97,7 @@ ______________________________________________________________________
 
 ## 4. Idea: add break words to the keep policy
 
-For sembr#6 there is no punctuation, but there is vocabulary. Keep a break whose following word is a subordinator or coordinator.
+Sembr#6 has no punctuation, but it has vocabulary. Keep a break whose following word is a subordinator or coordinator.
 
 **Buys.** Measured, `breaks.py`: a 36-word list recovers 12 of those 43 breaks, taking silent deletion from 50% down to **30%** once sembr#10 and sembr#11 take their 8.
 
@@ -309,4 +309,4 @@ ______________________________________________________________________
 **A third claim was overcorrected:** that no deleting policy can ever be stable, because a paragraph-scale branch always has paragraph-scale blast radius.
 The true statement is narrower. What matters is how far an input must travel to flip the branch, and §8 measures that distance as one edit for roughly half of real paragraphs. The conclusion holds; the reasoning given for it was too broad.
 
-**The pair sembr#10 and sembr#11 were described as having "nothing to match on",** lumped in with sembr#6. They are trivially matchable and §3 now says so.
+**Sembr#10 and sembr#11 were described as having "nothing to match on",** lumped in with sembr#6. They are trivially matchable and §3 now says so.

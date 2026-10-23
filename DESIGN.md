@@ -36,8 +36,8 @@ This is the canonical list, and every later section that declines something cite
   A 400-character sentence occupies a 400-character line.
 - **Word lists and clause machinery.**
   No conjunctions, no clause punctuation, no break words, no parenthetical strategy, no merge pass and no minimum line length.
-- **sembr#5 and sembr#12.**
-  The line-length recommendation, sembr#12, has no length to apply here; sembr#5 cannot be done without a parser, and §5.1 makes that case.
+- **Sembr#5 and sembr#12.**
+  Sembr#12 is a line-length recommendation and there is no length here; sembr#5 cannot be done without a parser, and §5.1 makes that case.
   This is a strict subset of correct Semantic Line Breaks, not a competing interpretation of them.
 
 **Who it is for, and what the shipped default is tuned for are different questions.**
@@ -1278,12 +1278,12 @@ The sembr specification numbers thirteen rules, cited here as sembr#1 through se
 | 12 | 80 characters RECOMMENDED | none | **declined, §1** |
 | 13 | MAY exceed the maximum where necessary | none | n/a without sembr#12 |
 
-The two this plugin implements are sembr#4 and sembr#9, and they are the only MUSTs that place breaks; sembr#2, the third MUST, holds by construction (§2.2, §3.5).
-The implementation of sembr#4 is partial by design: §3.3 holds a break back wherever it cannot tell that a sentence has ended, after an abbreviation, an initial or an initialism, before a lowercase word, inside brackets, and §3.5 refuses a break that would damage the source.
+Sembr#4 and sembr#9 are the two this plugin implements, and they are the only MUSTs that place breaks; sembr#2, the third MUST, holds by construction (§2.2, §3.5).
+Sembr#4 is partial by design: §3.3 holds a break back wherever it cannot tell that a sentence has ended, after an abbreviation, an initial or an initialism, before a lowercase word, inside brackets, and §3.5 refuses a break that would damage the source.
 
 ### 5.1 Declining sembr#5
 
-This plugin does not do sembr#5, which is a SHOULD.
+Sembr#5 is a SHOULD, and this plugin does not do it.
 That is a gap in conformance and is stated as one.
 
 The reason is that sembr#5 cannot be implemented from punctuation alone without over-firing.
@@ -1315,7 +1315,7 @@ Breaks are classified by the first row that matches, so the rows are disjoint by
 The first figure is the size of the promise and the second is the price of §5.1, whose reason stands.
 
 **The remaining 41.7% has no punctuation and no markup at it.**
-The break after a *dependent* clause, sembr#6, is one part of that row, and neither it nor the rest has punctuation or a reliable vocabulary to find it by.
+Sembr#6, which breaks after a *dependent* clause, is one part of that row, and neither it nor the rest has punctuation or a reliable vocabulary to find it by.
 A 36-word break-word list recovers 12 of those 43 and leaves 30% of all breaks undetectable; a conservative 14-word list recovers 2.
 Real breaks from that prose, none of which any punctuation or word heuristic can see:
 
