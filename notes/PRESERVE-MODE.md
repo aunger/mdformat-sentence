@@ -67,7 +67,7 @@ ______________________________________________________________________
 
 ## 3. Idea: preserve only breaks at clause punctuation
 
-Keep an author break when the text to its left ends in provision 5's own punctuation, `,` `;` `:` or em dash.
+Keep an author break when the text to its left ends in sembr#5's own punctuation, `,` `;` `:` or em dash.
 Never add a clause break, only decline to destroy one, so there are zero false additions by construction.
 
 **Buys.** On toy examples it looks excellent: it keeps hand-written clause breaks and correctly collapses hard wrapping.
@@ -75,7 +75,7 @@ Never add a clause break, only decline to destroy one, so there are zero false a
 **Costs.** Measured against real hand-written sembr, `breaks.py`, it deletes **half of the author's line breaks**, 51 of 103, because that share carry no punctuation at all.
 
 **Why.** Structural, not a tuning problem.
-Provision 6 breaks after a *dependent* clause, and there is nothing there to match.
+For sembr#6, which breaks after a *dependent* clause, there is nothing there to match.
 Real breaks from the specification's own prose that no punctuation heuristic can see:
 
 ```
@@ -88,7 +88,7 @@ can make source text easier to work with,
 
 **Status.** Rejected. A keep policy that silently deletes half an author's breaks is not a preserve mode.
 
-**Note on provisions 10 and 11.** They break before and after hyperlinks and before inline markup, and unlike provision 6 those positions *are* trivially matchable; at this hook point better than trivially, since mdformat already collapses a link into a single atom.
+**Note on sembr#10 and sembr#11.** They break before and after hyperlinks and before inline markup, and unlike sembr#6 those positions *are* trivially matchable; at this hook point better than trivially, since mdformat already collapses a link into a single atom.
 They account for 8 of the 103 breaks on this corpus, all of them before a line that opens with a reference link.
 An earlier reading of this note put them at zero; that was the paragraph extractor deleting every line that starts with `[`, which is exactly the evidence, and `breaks.py` records the correction.
 So they recover 8 of the 51 unpunctuated breaks and leave 43 with no punctuation and no markup, and this corpus still says little about prose that uses links heavily.
@@ -97,9 +97,9 @@ ______________________________________________________________________
 
 ## 4. Idea: add break words to the keep policy
 
-Provision 6 has no punctuation, but it has vocabulary. Keep a break whose following word is a subordinator or coordinator.
+For sembr#6 there is no punctuation, but there is vocabulary. Keep a break whose following word is a subordinator or coordinator.
 
-**Buys.** Measured, `breaks.py`: a 36-word list recovers 12 of those 43 breaks, taking silent deletion from 50% down to **30%** once provisions 10 and 11 take their 8.
+**Buys.** Measured, `breaks.py`: a 36-word list recovers 12 of those 43 breaks, taking silent deletion from 50% down to **30%** once sembr#10 and sembr#11 take their 8.
 
 **Costs.** Still deletes more than a quarter of an author's breaks.
 The residual has no lexical signal at all; the words following those breaks are `may`, `in`, `must`, `is`, `to`, `the`, `should`, `exhibit`, `without`, `makes`, `can`.
@@ -309,4 +309,4 @@ ______________________________________________________________________
 **A third claim was overcorrected:** that no deleting policy can ever be stable, because a paragraph-scale branch always has paragraph-scale blast radius.
 The true statement is narrower. What matters is how far an input must travel to flip the branch, and §8 measures that distance as one edit for roughly half of real paragraphs. The conclusion holds; the reasoning given for it was too broad.
 
-**Provisions 10 and 11 were described as having "nothing to match on",** lumped in with provision 6. They are trivially matchable and §3 now says so.
+**The pair sembr#10 and sembr#11 were described as having "nothing to match on",** lumped in with sembr#6. They are trivially matchable and §3 now says so.

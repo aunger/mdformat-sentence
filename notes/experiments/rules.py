@@ -1,19 +1,19 @@
-"""Classify every author line break in the corpus by which sembr provision put it
-there: sentence end (4), clause punctuation (5), hyperlink or inline-markup
-boundary (10, 11), or none of the above.
+"""Classify every author line break in the corpus by which sembr# put it
+there: sentence end (sembr#4), clause punctuation (sembr#5), hyperlink or
+inline-markup boundary (sembr#10, sembr#11), or none of the above.
 
 Produces the table in DESIGN.md 5.2. Breaks are classified by first match, so
 the rows are disjoint by construction; the count after the table says how many
 of them had a second claim on them. The last row is every break with no
-punctuation and no markup at it, of which provision 6's dependent clauses are only a
-part, so it carries no provision number.
+punctuation and no markup at it, of which sembr#6's dependent clauses are only a
+part, so it carries no sembr# number.
 
 The scope is every paragraph, as markdown-it parses them (_corpus.py); pass
 --top-level for the paragraphs outside lists and the blockquote only.
 
-It also counts what a naive provision 5 would do, for DESIGN.md 5.1: every clause
+It also counts what a naive sembr#5 would do, for DESIGN.md 5.1: every clause
 mark followed by whitespace, split by whether the author broke the line there.
-Marks at a line end are the breaks a provision 5 would find; marks mid-line are
+Marks at a line end are the breaks a sembr#5 would find; marks mid-line are
 positions it would break at where the author did not.
 """
 import re, sys
@@ -46,4 +46,4 @@ for p in paragraphs(TOP):
         mid += len(re.findall(r'[,;:—](?=\s)', s))
         end += bool(CLAUSE.search(s)) and i < len(p) - 1
 print(f"\nclause marks followed by whitespace: {end} at an author break, {mid} mid-line")
-print(f"  a naive rule 5 breaks at {end + mid}, of which {mid} ({100*mid/(end+mid):.0f}%) the author did not")
+print(f"  a naive sembr#5 breaks at {end + mid}, of which {mid} ({100*mid/(end+mid):.0f}%) the author did not")

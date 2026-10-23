@@ -65,9 +65,9 @@ An mdformat-gfm bare URL as an opening atom was measured at 24 gaps in about 150
 
 **Intention.** `MATH-AND-OPENERS.md` sets out how named opening atoms could be added, as a rules-file key rather than as rules, and what has to be measured first.
 
-### Clause breaks, provisions 5 and 6
+### Clause breaks, sembr#5 and sembr#6
 
-**Observed.** Section 5.1 declines provision 5 because punctuation alone over-fires, and §5.2 shows that provision 6 is invisible to punctuation and mostly to vocabulary.
+**Observed.** Section 5.1 declines sembr#5 because punctuation alone over-fires, and §5.2 shows that sembr#6 is invisible to punctuation and mostly to vocabulary.
 
 **Intention.** If clause breaks are ever added they are a separate decision, and a parse is the mechanism to evaluate first.
 It would add a model dependency that this design's footprint, mdformat and `tomli` below Python 3.11, does not have.

@@ -298,7 +298,7 @@ Read them before acting on this section.
   It asks for `--wrap sentence` as a new enum value, which is §5.4's ask verbatim.
   Who closed it, and whether anything was said while closing it, is unread.
 - **#222** `Support enforcing line breaks after 'end of sentence'`: closed. *Title and opening comment only.*
-  It asks for a flag implementing the first four provisions of the Semantic Line Breaks specification, which is this plugin's scope.
+  It asks for a flag implementing sembr#1 through sembr#4 of the Semantic Line Breaks specification, which is this plugin's scope.
   Why it was closed is unread, and a stated reason there would bear directly on this whole section.
 - **#422** `Word-wrap on sentence (punctuation) and width.`: closed. *Title only; not opened at all.*
 

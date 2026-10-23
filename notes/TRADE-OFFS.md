@@ -13,11 +13,11 @@ ______________________________________________________________________
 
 | cost | what it buys | kind |
 | --- | --- | --- |
-| Provision 5 is declined (§5.1). In the specification's own prose, 40.8% of the breaks are at clause punctuation (§5.2). | No comma heuristic that over-fires on serial lists, coordinate phrases and introductory adverbials, and no length floor to patch it. | missed breaks, the largest scope cost |
-| Provision 6 is not implemented. 41.7% of the same breaks fall at no sentence end, clause punctuation, link or markup boundary, and a 36-word break-word list recovers 12 of those 43 (§5.2). With the 7.8% at links and markup, half carry no punctuation at all. | No vocabulary whose words also have a non-clausal reading. | missed breaks |
-| Provisions 10 and 11 are not implemented: no break is taken beside a link or before inline markup (§5). 7.8% of the same breaks fall there, and they are the one unimplemented part that is not hard (§5.2). | Breaks at sentence ends and nowhere else, as §1 promises. | missed breaks |
-| Provision 12 is not implemented: a sentence longer than any column stays on one line (§1). | Line positions are a function of the text alone, so a word added inside a sentence, away from any gap or abbreviation rule (§6.2), changes only the line it is on. An edit beside a gap can still change whether that gap breaks: `One. Two.` edited to `One. two.` joins the two lines (§1). | long lines |
-| The plugin implements the provision behind 9.7% of the breaks a sembr author places by hand (§5.2). | A promise that fits in one sentence (§1). | a minority of hand-written breaks |
+| The plugin declines sembr#5 (§5.1). In the specification's own prose, 40.8% of the breaks are at clause punctuation (§5.2). | No comma heuristic that over-fires on serial lists, coordinate phrases and introductory adverbials, and no length floor to patch it. | missed breaks, the largest scope cost |
+| The plugin does not implement sembr#6. 41.7% of the same breaks fall at no sentence end, clause punctuation, link or markup boundary, and a 36-word break-word list recovers 12 of those 43 (§5.2). With the 7.8% at links and markup, half carry no punctuation at all. | No vocabulary whose words also have a non-clausal reading. | missed breaks |
+| The plugin does not implement sembr#10 or sembr#11: no break is taken beside a link or before inline markup (§5). 7.8% of the same breaks fall there, and they are the one unimplemented part that is not hard (§5.2). | Breaks at sentence ends and nowhere else, as §1 promises. | missed breaks |
+| The plugin does not implement sembr#12: a sentence longer than any column stays on one line (§1). | Line positions are a function of the text alone, so a word added inside a sentence, away from any gap or abbreviation rule (§6.2), changes only the line it is on. An edit beside a gap can still change whether that gap breaks: `One. Two.` edited to `One. two.` joins the two lines (§1). | long lines |
+| The plugin implements sembr#4, the source of 9.7% of the breaks a sembr author places by hand (§5.2). | A promise that fits in one sentence (§1). | a minority of hand-written breaks |
 
 ## The hook point and the recorder (§2.2, §3.1, §3.6)
 

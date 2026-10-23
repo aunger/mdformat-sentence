@@ -6,9 +6,9 @@ This document is written one sentence per line, which is the output this plugin 
 It doubles as a test fixture, the dogfood row of §6.2.
 Read it at any window width and the line breaks do not move.
 
-[Semantic Line Breaks](https://sembr.org) is a convention for breaking source lines at meaning boundaries, so that a diff shows what changed rather than where the text reflowed.
-Its specification gives thirteen provisions at RFC 2119 levels of obligation.
-This plugin takes the sentence provision and nothing below it, which §5 sets out against the full list.
+[Semantic Line Breaks](https://sembr.org), or sembr, is a convention for breaking source lines at meaning boundaries, so that a diff shows what changed rather than where the text reflowed.
+Its specification numbers thirteen rules at RFC 2119 levels of obligation, and this document cites them as sembr#1 (sembr.org's specification rule 1) through sembr#13.
+This plugin takes sembr#4, the break after a sentence, and nothing below it, which §5 sets out against the full list.
 
 ______________________________________________________________________
 
@@ -36,8 +36,8 @@ This is the canonical list, and every later section that declines something cite
   A 400-character sentence occupies a 400-character line.
 - **Word lists and clause machinery.**
   No conjunctions, no clause punctuation, no break words, no parenthetical strategy, no merge pass and no minimum line length.
-- **Spec provisions 5 and 12.**
-  Provision 12 is a line-length recommendation and there is no length here; provision 5 cannot be done without a parser, and §5.1 makes that case.
+- **sembr#5 and sembr#12.**
+  The line-length recommendation, sembr#12, has no length to apply here; sembr#5 cannot be done without a parser, and §5.1 makes that case.
   This is a strict subset of correct Semantic Line Breaks, not a competing interpretation of them.
 
 **Who it is for, and what the shipped default is tuned for are different questions.**
@@ -153,7 +153,7 @@ If a plugin ever does claim `inline` first, the contingency is a `paragraph` ren
 
 Why this hook point and no other:
 
-- A `WRAP_POINT` is mdformat's own assertion that the position may become a newline without changing the render, so breaking only there makes spec provision 2 structural rather than something this plugin has to police.
+- A `WRAP_POINT` is mdformat's own assertion that the position may become a newline without changing the render, so breaking only there makes sembr#2 structural rather than something this plugin has to police.
 - Breaks inserted here become lines of their own in step 6, so line-start escaping and blockquote and list indentation apply to them for free.
 - Every other plugin's `inline` and `paragraph` postprocessors run after it, in whatever order they were loaded, so it composes with them without depending on that order, and without fighting anyone over the `paragraph` renderer.
   Deciding first has limits, and §6.2 runs the gate with co-plugins loaded in both orders, because a gate that never loads one cannot see any of them.
@@ -243,7 +243,7 @@ So the out-of-the-box experience of installing this plugin is that nothing happe
 Setting it discards every line break the author made by hand.
 Under `--wrap no` mdformat collapses each paragraph to a single line before this plugin sees it, so a paragraph a writer had broken at three clause boundaries arrives as one line and leaves broken at sentences only.
 Verified by execution against mdformat 1.0.0, with no plugin installed: the collapse is mdformat's, not ours, but the mode is the one this plugin asks for.
-A writer who already hand-writes full Semantic Line Breaks therefore loses provisions 5 and 6 the moment they adopt this plugin, and the only mode that keeps their work is the one in which the plugin does nothing.
+A writer who already hand-writes full Semantic Line Breaks therefore loses sembr#5 and sembr#6 the moment they adopt this plugin, and the only mode that keeps their work is the one in which the plugin does nothing.
 The loss is not recoverable from the output, and it must be said before someone runs the formatter over a corpus they hand-broke.
 
 **The plugin warns when it was asked for by name and given a mode it cannot act in.**
@@ -421,7 +421,7 @@ A terminator followed by `,` `;` or `:` is not a sentence end, because the test 
 No rule is needed for them, and none is added.
 
 The behavior rests on an *absence*.
-Anyone who later adds clause punctuation to the closer set, as someone working on provision 5 might, silently turns every `e.g.,` into a sentence-end candidate.
+Anyone who later adds clause punctuation to the closer set, as someone working on sembr#5 might, silently turns every `e.g.,` into a sentence-end candidate.
 By the membership test above, a comma after a period means the abbreviation was not a sentence end at all.
 UAX #29 encodes the same idea as a `SContinue` set of 31 codepoints, and none is needed here: the scan crosses closers only, so everything else stops it, which covers those 31 and every other mark besides.
 
@@ -1260,9 +1260,9 @@ ______________________________________________________________________
 
 ## 5. Conformance to the specification
 
-The sembr specification has thirteen normative provisions.
+The sembr specification numbers thirteen rules, cited here as sembr#1 through sembr#13.
 
-| # | Provision | Mechanism | Status |
+| sembr# | Specification text | Mechanism | Status |
 | -- | -- | -- | -- |
 | 1 | Text MAY use semantic line breaks | the premise | n/a |
 | 2 | MUST NOT alter rendered output | breaks only at wrap points; `--validate` on by default | **yes** |
@@ -1271,27 +1271,27 @@ The sembr specification has thirteen normative provisions.
 | 5 | SHOULD occur after an independent clause | none | **declined, §5.1** |
 | 6 | MAY occur after a dependent clause | none | not implemented |
 | 7 | RECOMMENDED before an enumerated or itemized list | the spec does not say what "list" means; mdformat already starts a Markdown list on its own line, and nothing here breaks before a list inside a sentence | unneeded for Markdown lists, not implemented inside sentences |
-| 8 | MAY be used after items in a list | as provision 7; this plugin never groups items | not implemented |
+| 8 | MAY be used after items in a list | as sembr#7; this plugin never groups items | not implemented |
 | 9 | MUST NOT occur within a hyphenated word | no wrap point inside a segment | **yes** |
 | 10 | MAY occur before and after a hyperlink | wrap points surround links, but no break is taken there | not implemented |
-| 11 | MAY occur before inline markup | as provision 10 | not implemented |
+| 11 | MAY occur before inline markup | as sembr#10 | not implemented |
 | 12 | 80 characters RECOMMENDED | none | **declined, §1** |
-| 13 | MAY exceed the maximum where necessary | none | n/a without provision 12 |
+| 13 | MAY exceed the maximum where necessary | none | n/a without sembr#12 |
 
-Provisions 4 and 9 are the two this plugin implements, and they are the only MUSTs among the break provisions; provision 2, the third MUST, holds by construction (§2.2, §3.5).
-Provision 4 is partial by design: §3.3 holds a break back wherever it cannot tell that a sentence has ended, after an abbreviation, an initial or an initialism, before a lowercase word, inside brackets, and §3.5 refuses a break that would damage the source.
+The two this plugin implements are sembr#4 and sembr#9, and they are the only MUSTs that place breaks; sembr#2, the third MUST, holds by construction (§2.2, §3.5).
+The implementation of sembr#4 is partial by design: §3.3 holds a break back wherever it cannot tell that a sentence has ended, after an abbreviation, an initial or an initialism, before a lowercase word, inside brackets, and §3.5 refuses a break that would damage the source.
 
-### 5.1 Declining provision 5
+### 5.1 Declining sembr#5
 
-Provision 5 is a SHOULD, and this plugin does not do it.
+This plugin does not do sembr#5, which is a SHOULD.
 That is a gap in conformance and is stated as one.
 
-The reason is that provision 5 cannot be implemented from punctuation alone without over-firing.
+The reason is that sembr#5 cannot be implemented from punctuation alone without over-firing.
 Read unconditionally, it breaks at every comma at paren depth zero with no test for whether an independent clause follows, which shatters serial lists (`LaTeX,` / `Markdown,` / `and plain text,`), coordinate prepositional phrases and introductory adverbials.
-Measured on the specification's own prose (§5.2), 63 clause marks are followed by whitespace and its author broke the line at 42 of them, so a naive reading of provision 5 would also break at the other 21, one position in three, where the author did not; `notes/experiments/rules.py` reproduces the count.
+Measured on the specification's own prose (§5.2), 63 clause marks are followed by whitespace and its author broke the line at 42 of them, so a naive reading of sembr#5 would also break at the other 21, one position in three, where the author did not; `notes/experiments/rules.py` reproduces the count.
 The usual remedy is a length-based merge pass that folds short lines back, a geometric patch for a grammatical problem, and one this plugin has no width to compute.
 
-Implementing provision 5 correctly needs a test for whether both sides of a comma could stand alone as sentences, which is a parsing problem, and this version does not parse.
+Implementing sembr#5 correctly needs a test for whether both sides of a comma could stand alone as sentences, which is a parsing problem, and this version does not parse.
 `notes/FUTURE-WORK.md` records what would change that.
 
 ### 5.2 What punctuation cannot see, measured
@@ -1300,9 +1300,9 @@ Section 5.1 argues that a punctuation heuristic over-fires.
 It also under-fires, and that is the stronger objection, because no amount of tuning reaches a position where there is no signal.
 
 Every line break in the Semantic Line Breaks specification's own prose, which is hand-written clause-level sembr by the specification's author, classified by what sits at the break.
-Its prose is every paragraph a Markdown parser finds in it, the list of provisions and the blockquote included, and nothing in a code block, an HTML block, a table or a heading:
+Its prose is every paragraph a Markdown parser finds in it, the numbered list of rules and the blockquote included, and nothing in a code block, an HTML block, a table or a heading:
 
-| break falls at | provision | count | share |
+| break falls at | sembr# | count | share |
 | -- | -- | -: | -: |
 | a sentence end | 4 | 10 | 9.7% |
 | clause punctuation `,` `;` `:` `—` | 5 | 42 | 40.8% |
@@ -1311,11 +1311,11 @@ Its prose is every paragraph a Markdown parser finds in it, the list of provisio
 
 Breaks are classified by the first row that matches, so the rows are disjoint by construction; two of the breaks classified 4 or 5 also sit at a markup boundary and would have been claimed by the third row had it been tested first.
 
-**This plugin implements the provision behind 9.7% of what a sembr author does by hand, and declining provision 5 forgoes 40.8%.**
+**This plugin implements sembr#4, the source of 9.7% of what a sembr author does by hand, and declining sembr#5 forgoes 40.8%.**
 The first figure is the size of the promise and the second is the price of §5.1, whose reason stands.
 
 **The remaining 41.7% has no punctuation and no markup at it.**
-Provision 6, which breaks after a *dependent* clause, is one part of that row, and neither it nor the rest has punctuation or a reliable vocabulary to find it by.
+The break after a *dependent* clause, sembr#6, is one part of that row, and neither it nor the rest has punctuation or a reliable vocabulary to find it by.
 A 36-word break-word list recovers 12 of those 43 and leaves 30% of all breaks undetectable; a conservative 14-word list recovers 2.
 Real breaks from that prose, none of which any punctuation or word heuristic can see:
 
@@ -1330,11 +1330,11 @@ The following light markup languages
 are verified to support semantic line breaks:
 ```
 
-**The row for provisions 10 and 11 is the one part of the unimplemented remainder that is not hard.**
+**The row for sembr#10 and sembr#11 is the one part of the unimplemented remainder that is not hard.**
 They are in the table so they are not forgotten.
-Unlike provision 6 their positions are trivially matchable, the more so at this hook point, because mdformat has already collapsed a link or image into a single atom before the plugin runs (§3.1), so a gap adjacent to one is exactly identifiable.
+Unlike sembr#6 their positions are trivially matchable, the more so at this hook point, because mdformat has already collapsed a link or image into a single atom before the plugin runs (§3.1), so a gap adjacent to one is exactly identifiable.
 Ten of the 103 breaks put a reference link at the start of the next line, and the 8 in this row are those ten less two that a comma claims first.
-It is a corpus that uses links lightly, so read the share rather than the count, and if provisions 10 and 11 are ever revisited this row is the measurement to redo first against prose that leans on links.
+It is a corpus that uses links lightly, so read the share rather than the count, and if sembr#10 and sembr#11 are ever revisited this row is the measurement to redo first against prose that leans on links.
 
 Reproduce the table with `notes/experiments/rules.py`, and the break-word figures above it with `notes/experiments/breaks.py`; both parse the corpus with markdown-it, and `--top-level` gives the narrower count of paragraphs outside lists and the blockquote, 75 breaks.
 One document and 103 breaks is a small sample, and `notes/corpus/README.md` explains why it is nonetheless the right one: this document is pure sentence-per-line, so measuring layout heuristics against it returns a perfect score for anything.

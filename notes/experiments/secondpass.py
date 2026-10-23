@@ -31,7 +31,7 @@ def build(override, second, strip):
                     if override else (lambda m: None)), st
 
 P.PARSER_EXTENSIONS
-print("reference: honest --wrap no, mdformat's own double render")
+print("reference: ordinary --wrap no, mdformat's own double render")
 plug, st = build(False, False, True); P.PARSER_EXTENSIONS["probe"]=plug
 ref = mdformat.text(SRC, options={"wrap":"no"}, extensions={"probe"})
 print(f"   inline hook calls: {st['inline']}")
@@ -67,7 +67,7 @@ Trailing paragraph. Second sentence.
 print("lists, blockquotes and a fenced block\n")
 plug, st = build(False, False, False); P.PARSER_EXTENSIONS["probe"] = plug
 ref2 = mdformat.text(RICH, options={"wrap": "no"}, extensions={"probe"})
-print(f"   reference, honest --wrap no  : inline calls {st['inline']}")
+print(f"   reference, ordinary --wrap no: inline calls {st['inline']}")
 for label, ov, sec, strip in (
         ("route B alone               ", True, False, False),
         ("B + root re-render, no strip", True, True, False),
