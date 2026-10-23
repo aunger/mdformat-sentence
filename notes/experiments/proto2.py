@@ -1,6 +1,6 @@
 import re, types, mdformat, mdformat.plugins as P
 SENT = re.compile(r'[.!?]["\'’”]?$')
-CLAUSE = re.compile(r'[,;:—]$')          # rule 5's own punctuation
+CLAUSE = re.compile(r'[,;:—]$')          # provision 5's own punctuation
 
 def make(mode):
     def pp(text, node, context):

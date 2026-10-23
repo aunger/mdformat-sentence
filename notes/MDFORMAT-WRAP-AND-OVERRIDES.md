@@ -298,7 +298,7 @@ Read them before acting on this section.
   It asks for `--wrap sentence` as a new enum value, which is §5.4's ask verbatim.
   Who closed it, and whether anything was said while closing it, is unread.
 - **#222** `Support enforcing line breaks after 'end of sentence'`: closed. *Title and opening comment only.*
-  It asks for a flag implementing the first four rules of the Semantic Line Breaks specification, which is this plugin's scope.
+  It asks for a flag implementing the first four provisions of the Semantic Line Breaks specification, which is this plugin's scope.
   Why it was closed is unread, and a stated reason there would bear directly on this whole section.
 - **#422** `Word-wrap on sentence (punctuation) and width.`: closed. *Title only; not opened at all.*
 
@@ -321,7 +321,7 @@ Who filed them was not checked.
 **Reasoned**, except where marked.
 
 Section 5.6's split gives a plugin wrap points without width wrapping, but the plugin still decides line layout before `paragraph()` runs, and hands it down as `\n` and pinned spaces.
-`paragraph()` splits its text on `\n` and fills each section with `_wrap` (`renderer/_context.py:390-406`), and none of §6's five members can supply that one step.
+`paragraph()` splits its text on `\n` and fills each line with `_wrap` (`renderer/_context.py:390-406`), and none of §6's five members can supply that one step.
 A plugin can replace the whole `paragraph` renderer, which `DESIGN.md` §2.2 rejects because mdformat-hatena and mdformat-sentencebreak already own it, or post-process its output, after line-start escaping has run.
 
 **The convention it would retire.**
@@ -329,7 +329,7 @@ Deciding layout in the `inline` slot rests on breakable whitespace reaching it a
 mdformat-space-control breaks it: its `softbreak` renderer returns a literal space, and with it loaded the plugin adds no break of its own.
 Measured, `experiments/spacecontrol.py`; `quirks-mdformat-space-control.md` has the detail.
 
-**The ask.** A step that `paragraph()` calls in place of `_wrap` for each section, supplied by a plugin, so that the plugin decides the breaks while `paragraph()` keeps its line-start escaping and the containers keep their indentation.
+**The ask.** A step that `paragraph()` calls in place of `_wrap` for each line, supplied by a plugin, so that the plugin decides the breaks while `paragraph()` keeps its line-start escaping and the containers keep their indentation.
 Given the inline node as well as the text, the step could treat an authored `softbreak` as a gap whatever a co-plugin rendered it as, since the tree still marks one (`DESIGN.md` §3.1); that is untried.
 
 **How it relates to the other asks.**
@@ -417,7 +417,7 @@ python3 -m venv v && ./v/bin/pip install 'mdformat==1.0.0'
 ./v/bin/python notes/experiments/wraparg.py
 ```
 
-Pin 1.0.0.
+Use exactly 1.0.0.
 Every line number in this note is a 1.0.0 line number and none of these are public API.
 
 ______________________________________________________________________

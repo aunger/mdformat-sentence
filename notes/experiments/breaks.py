@@ -10,7 +10,7 @@ paragraph text. It skipped list-marker lines and the blockquote while keeping
 the continuation lines under them, and kept lines inside <pre> blocks, so its
 counts were of no well-defined scope. Before that, a still broader block-opener
 test dropped every line starting with `[`, which deleted the prose lines that
-open with a reference link, exactly the positions rules 10 and 11 describe.
+open with a reference link, exactly the positions provisions 10 and 11 describe.
 Parsing removes both kinds of error: the scope is whatever markdown-it calls a
 paragraph.
 """
@@ -23,8 +23,8 @@ CLAUSE = re.compile(r'[,;:—]$')
 CORE = "which who whom whose because although though unless since while whereas however therefore moreover furthermore nevertheless meanwhile when where whether until once".split()
 EXT  = "and or but nor yet so for that if as after before then than".split()
 ADMITTED = "because although though unless whereas whether if while who whom whose which when where".split()
-# rules 10 and 11 break around hyperlinks and inline markup; those positions ARE
-# matchable, unlike rule 6's dependent clauses. Measured separately below.
+# provisions 10 and 11 break around hyperlinks and inline markup; those positions ARE
+# matchable, unlike provision 6's dependent clauses. Measured separately below.
 MARKUP_END   = re.compile(r'(\]\([^)]*\)|\]\[[^\]]*\]|>|`|[*_]{1,2})$')
 MARKUP_START = re.compile(r'^(\[|<|`|[*_]{1,2}\w)')
 

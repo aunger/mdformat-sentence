@@ -1,4 +1,4 @@
-# Math, and the closed set of sentence openers
+# Math, and the closed list of opening atoms
 
 A note, not a specification.
 It starts the record for one question: should more kinds of inline node be allowed to open a sentence, math first among them, and if so, can a rules file add them?
@@ -24,15 +24,15 @@ The bound holds. $x$ is positive for every input.
 ```
 
 stays on one line.
-The review measured that cost on technical documentation at no changed line in two sets of real documents, of 35 and 31, and at 24 gaps in about 150,000 paragraphs, each before a bare URL that mdformat-gfm links (`DESIGN-REVIEW-HOOK-POINT-2026-10-06.md` at `9264f70`, section *3. Evidence register*, R10).
+The review measured that cost on technical documentation at no changed line in two collections of real documents, of 35 and 31, and at 24 gaps in about 150,000 paragraphs, each before a bare URL that mdformat-gfm links (`DESIGN-REVIEW-HOOK-POINT-2026-10-06.md` at `9264f70`, section *3. Evidence register*, R10).
 Math-heavy prose, the kind `academic.toml` exists for, was not measured, so the cost there is unknown.
 
-## 2. Can a rule add an opener?
+## 2. Can a rule add an opening atom?
 
 **Not as a `[[rule]]`.**
 A rule is consulted only at a gap after an ATerm terminator, matches the text of the words around the gap, and returns `no` or `allow`.
 It cannot force a break, it never sees a node's type, and it is not consulted after `!` or `?`.
-An opener is a property of the word after any terminator, so it is the wrong shape for the table.
+An opening atom is a property of the word after any terminator, so it is the wrong shape for the decision list.
 
 **As a key of a rules file, yes, the way `lowercase_names` already is.**
 `lowercase_names` lets a named lowercase word pass the capital test, and it is a file key rather than a rule for the same reasons (§4).
@@ -55,8 +55,8 @@ mdformat-dollarmath, mdformat-myst, mdformat-obsidian and mdformat-mkdocs's arit
 
 ## 3. Is math safe to admit?
 
-The danger an opener brings is what a line start does to it.
-Admitting a type must not let a break put block syntax, or a co-plugin's definition syntax, at the start of a line; §3.5's line-start rules would still apply to it.
+The danger an opening atom brings is what a line start does to it.
+Admitting a type must not let a break put block syntax, or a co-plugin's definition syntax, at the start of a line; §3.5's line-start checks would still apply to it.
 
 *Measured,* with mdformat-dollarmath 0.0.5:
 

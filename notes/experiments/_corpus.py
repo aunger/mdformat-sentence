@@ -3,7 +3,7 @@
 The corpus is parsed with markdown-it (the `commonmark` preset plus `table`,
 which is what mdformat-gfm adds and what the pipe table at the end needs; without
 it that table parses as a paragraph). Every paragraph is in scope, including those
-inside list items and the blockquote, because the rule list is the specification's
+inside list items and the blockquote, because the list of provisions is the specification's
 own prose. A break is a newline inside one paragraph's inline content, so nothing
 inside a code block, an HTML block, a table or a heading is ever counted.
 

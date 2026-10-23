@@ -15,8 +15,8 @@ ______________________________________________________________________
 
 ### Paths in `include`
 
-**Observed.** `include` takes names only, looked up among the shipped sets and in `.mdformat-sentence/` beside the `.mdformat.toml` mdformat read (§4).
-A path would let the projects of a monorepo share one set; under names only, each project with its own `.mdformat.toml` keeps its own copy.
+**Observed.** `include` takes names only, looked up among the shipped rules files and in `.mdformat-sentence/` beside the `.mdformat.toml` mdformat read (§4).
+A path would let the projects of a monorepo share one rules file; under names only, each project with its own `.mdformat.toml` keeps its own copy.
 
 **Intention.** Add paths if monorepo users ask.
 It breaks no configuration to add them later, where taking them away later would break every configuration that used one, which is why they start absent.
@@ -32,7 +32,7 @@ Nothing is designed for it yet, and the spec does not advertise it.
 ### Publishing `--sentence-include`
 
 **Observed.** The flag exists but is hidden from `--help` and outside the versioning policy (§4).
-Its earlier design needed a separate `dest`, a working-directory base for paths and a rule for when no table is configured; names-only lookup removed the path base.
+Its earlier design needed a separate `dest`, a working-directory base for paths and handling for when no table is configured; names-only lookup removed the path base.
 
 **Intention.** Publish it if a use appears that the config file cannot serve, after settling the one wrinkle left: the plugin cannot tell `cli_include` written in TOML from the flag.
 
@@ -48,7 +48,7 @@ It composes with an `inline` owner but not with a `paragraph` owner; mdformat-ha
 
 ### Verify by dry run instead of a hand-kept list
 
-**Observed.** Section 3.5's line-start rules are lists kept by hand, the co-plugin definitions among them.
+**Observed.** Section 3.5's line-start checks are lists kept by hand, the co-plugin definitions among them.
 The hook-point review (`DESIGN-REVIEW-HOOK-POINT-2026-10-06.md` at `9264f70`, section *8. Future work*, F1) prototyped a dry run of the real paragraph pipeline from the `inline` slot: it catches render-level hazards (the task box, enumerators, the `<div>` indent) and reproduced the hand-kept list exactly under mdformat-gfm and mdformat-mkdocs, but only when compared against a dry run of the all-pinned text.
 Compared against the decided text it misfires under mkdocs, whose `inline` postprocessor rewrites `%20`.
 It cannot see parse-level traps such as `[^x]:` and `*[HTML]:`, which `paragraph()` does not rewrite.
@@ -57,17 +57,17 @@ It cannot see parse-level traps such as `[^x]:` and `*[HTML]:`, which `paragraph
 
 ## Detection
 
-### More sentence openers
+### More opening atoms
 
 **Observed.** Only a code span, an image, an autolink or a tag-only raw HTML segment opens a sentence regardless of case (§3.3).
 A co-plugin's atoms open nothing, which costs breaks before inline math and wikilinks.
-An mdformat-gfm bare URL as an opener was measured at 24 gaps in about 150,000 paragraphs and deferred.
+An mdformat-gfm bare URL as an opening atom was measured at 24 gaps in about 150,000 paragraphs and deferred.
 
-**Intention.** `MATH-AND-OPENERS.md` sets out how named openers could be added, as a rules-file key rather than as rules, and what has to be measured first.
+**Intention.** `MATH-AND-OPENERS.md` sets out how named opening atoms could be added, as a rules-file key rather than as rules, and what has to be measured first.
 
-### Clause breaks, rules 5 and 6
+### Clause breaks, provisions 5 and 6
 
-**Observed.** Section 5.1 declines rule 5 because punctuation alone over-fires, and §5.2 shows that rule 6 is invisible to punctuation and mostly to vocabulary.
+**Observed.** Section 5.1 declines provision 5 because punctuation alone over-fires, and §5.2 shows that provision 6 is invisible to punctuation and mostly to vocabulary.
 
 **Intention.** If clause breaks are ever added they are a separate decision, and a parse is the mechanism to evaluate first.
 It would add a model dependency that this design's footprint, mdformat and `tomli` below Python 3.11, does not have.
