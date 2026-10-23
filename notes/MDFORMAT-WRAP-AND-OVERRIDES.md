@@ -23,7 +23,7 @@ ______________________________________________________________________
 
 ## 1. Where the wrap value is read
 
-Five places, and no two of them agree on how to read it.
+It is read in several places, and no two of them agree on how to read it.
 
 **The default.** `DEFAULT_OPTS` in `_conf.py:11-22` is a `MappingProxyType`, and `wrap` is `"keep"` at `_conf.py:13`.
 
@@ -35,7 +35,7 @@ It is wired as argparse's `type=` at `_cli.py:233-238`, so a bad value is a pars
 
 The two gates disagree on `1`: `--wrap 1` is accepted, `wrap = 1` in `.mdformat.toml` raises `InvalidConfError`.
 Measured, `wraparg.py` §1.
-It is a pre-existing inconsistency and harmless here; it is recorded only because it proves the two are genuinely separate code paths, which §5 depends on.
+It is a pre-existing inconsistency and harmless here; it is recorded only because it shows the two are separate code paths, which §5 depends on.
 
 **The renderer's predicate.** `RenderContext.do_wrap` at `renderer/_context.py:641-644`:
 
@@ -45,7 +45,7 @@ return isinstance(wrap_mode, int) or wrap_mode == "no"
 ```
 
 Note the two `.get()`s with defaults.
-This is what makes `do_wrap` safe to evaluate when the key is absent, which §2 shows is a real case.
+This is what makes `do_wrap` safe to evaluate when the key is absent, which §2 shows can happen.
 
 **The renderer's use of the value.** `paragraph` at `renderer/_context.py:390-406` reads `context.options["mdformat"]["wrap"]` at line 395 with a bare subscript and no default, guarded only by `if context.do_wrap` on line 394.
 An `int` is reduced by `context.env["indent_width"]` and floored at 1, then the value goes to `_wrap` as `width`.
@@ -64,13 +64,13 @@ Measured, `wrapkeep.py`, from an inline postprocessor reading `context.options["
 
 | how mdformat was invoked | `"wrap"` in `options["mdformat"]` | value |
 | --- | --- | --- |
-| `mdformat.text(src)` | **absent** | — |
+| `mdformat.text(src)` | **absent** | none |
 | `mdformat.text(src, options={"wrap": "keep"})` | present | `"keep"` |
 | CLI, no `--wrap` | present | `"keep"` |
 | CLI, `--wrap keep` | present | `"keep"` |
 | `wrap = "keep"` in `.mdformat.toml` | present | `"keep"` |
 
-The API row is absent because `build_mdit` at `_util.py:32-42` assigns the caller's mapping verbatim at line 33 — `mdit.options["mdformat"] = mdformat_opts` — with no defaults merged into it.
+The API row is absent because `build_mdit` at `_util.py:32-42` assigns the caller's mapping verbatim at line 33, `mdit.options["mdformat"] = mdformat_opts`, with no defaults merged into it.
 The three CLI rows are identical because `_cli.py:56` builds `{**DEFAULT_OPTS, **toml_opts, **cli_core_opts}` and `_cli.py:32-34` drops every argparse value that is `None`, so an unset `--wrap` contributes nothing to the merge.
 
 **A plugin can therefore distinguish an explicit `keep` from a defaulted one through the Python API and cannot through the CLI.**
@@ -91,7 +91,7 @@ ______________________________________________________________________
 
 The question this section answers is narrow: *can* a plugin make itself work under `--wrap keep`, where §2.5's table says it is inert.
 It can.
-`DESIGN.md` declines to, and §3.1's three consequences are why.
+`DESIGN.md` declines to, and §3.1's consequences are why.
 
 ### 3.1 Route B: assign the option in `update_mdit`
 
@@ -106,11 +106,11 @@ Measured, `wrapkeep.py`.
 Under a caller who asked for `keep`, the baseline sees zero wrap points and returns the input byte for byte; with the assignment, 17 wrap points reach the hook point and the paragraph comes out on two lines.
 It works because `build_mdit` calls `plugin.update_mdit(mdit)` at `_util.py:42`, after `mdit.options["mdformat"]` has been assigned at line 33 and before anything renders.
 
-Three consequences, all measured or read:
+The consequences, all measured or read:
 
 1. **The second pass does not fire.**
    `_api.py:39` tests `options.get("wrap", DEFAULT_OPTS["wrap"]) != "keep"` against the **caller's** mapping, which still says `keep`, so the re-render at `_api.py:40` is skipped.
-   Calls at the hook point stay at 1 where the honest `--wrap no` gives 2.
+   Calls at the hook point stay at 1 where an ordinary `--wrap no` gives 2.
    That is the pass `DESIGN.md` §2.3 relies on.
 1. **The option is global to the render.**
    There is one `mdit.options["mdformat"]` and every enabled plugin reads it, so they all see `wrap="no"` too.
@@ -131,7 +131,7 @@ Both have to be patched together, which means patching `paragraph` as well.
 
 `DEFAULT_RENDERERS` is a `mappingproxy`, so it cannot be assigned into from outside.
 The supported way to replace a renderer is a plugin's own `RENDERERS` mapping, which `render_tree` merges at `renderer/__init__.py:89`.
-That is the `paragraph` renderer hook `DESIGN.md` §2.2 rejects on unrelated grounds, so route C arrives at a door already closed.
+That is the `paragraph` renderer hook `DESIGN.md` §2.2 rejects on unrelated grounds, so route C is already ruled out.
 
 ______________________________________________________________________
 
@@ -140,15 +140,15 @@ ______________________________________________________________________
 If route B were ever taken, the pass it skips can be put back.
 Measured, `secondpass.py`.
 
-Of the four node types tried — `root`, `document`, `inline`, `paragraph` — three fire and `document` does not.
+Of the four node types tried, `root`, `document`, `inline` and `paragraph`, three fire and `document` does not.
 `root` is the whole rendered document, applied by `RenderTreeNode.render` at `renderer/_tree.py:9-14` like any other postprocessor.
 
-A guarded re-render from `POSTPROCESSORS["root"]` takes calls at the hook point from 1 back to 2 and produces output identical to the honest `--wrap no`, on a bare paragraph and on a document containing a list, a blockquote and a fenced code block.
+A guarded re-render from `POSTPROCESSORS["root"]` takes calls at the hook point from 1 back to 2 and produces output identical to an ordinary `--wrap no`, on a bare paragraph and on a document containing a list, a blockquote and a fenced code block.
 
-Two caveats, both measured:
+Caveats:
 
 - **The trailing newline doubles.**
-  A root postprocessor is handed already-finalized output — `render_tree` appends the final `"\n"` at `renderer/__init__.py:94-99` — so re-rendering it finalizes twice.
+  A root postprocessor is handed already-finalized output: `render_tree` appends the final `"\n"` at `renderer/__init__.py:94-99` — so re-rendering it finalizes twice.
   `.rstrip("\n")` on the way in and on the way out fixes it; without that the output ends `'.\n\n'` and no longer matches.
 - **It needs a re-entrancy guard.**
   The re-render runs the same plugin, including this postprocessor.
@@ -156,9 +156,9 @@ Two caveats, both measured:
 - **The second pass has to be given the first pass's whole configuration, and the measurement did not give it one.**
   `secondpass.py` calls `mdformat.text(..., options={"wrap": "keep"}, extensions={"probe"})` with both hardcoded, which silently drops every other enabled plugin, every code formatter and every other option from the pass it is restoring.
   That is harmless in a measurement with one plugin and no options, and it is not harmless in a plugin: a real implementation has only `context.options` to rebuild them from, and `codeformatters` is not in there at all.
-  Nothing below about matching the honest `--wrap no` transfers past the one-plugin case.
+  Nothing below about matching an ordinary `--wrap no` transfers past the one-plugin case.
 
-**Honest limit on the claim.** Route B *alone* already matched the honest `--wrap no` byte for byte on both documents tried.
+**Limit on the claim.** Route B *alone* already matched an ordinary `--wrap no` byte for byte on both documents tried.
 No input has been exhibited here where one pass and two disagree.
 The re-render restores the pass, not a known output difference; mdformat runs two because escaping depends on wrapping (`_api.py:35-40`), so this is insurance against that class of case rather than a fix for a measured one.
 
@@ -174,7 +174,7 @@ The user asked for no wrapping and got wrapping: line breaks inserted at compute
 What makes that more than cosmetic is that `no` is the **only** wrap value whose meaning the plugin redefines.
 `--wrap keep` means the same thing with the plugin installed as without it.
 `--wrap 80` means the same thing.
-`--wrap no` means "one line per paragraph" alone and "one sentence per line" with this plugin present, so the same flag value produces two categorically different documents depending on what is installed, with nothing on the command line to say which one you got.
+`--wrap no` means "one line per paragraph" alone and "one sentence per line" with this plugin present, so the same flag value produces two different documents depending on what is installed, with nothing on the command line to say which one you got.
 
 ### 5.2 The second defect: `--wrap no` without the plugin is silent and destructive
 
@@ -195,7 +195,7 @@ Postprocessors chain (`renderer/__init__.py:84-88`), so two such plugins compose
 
 ### 5.4 What the change would touch
 
-Mechanically `--wrap sentence` is identical to `--wrap no` plus this plugin, because `no` already means "emit wrap points, do not width-wrap" — `_wrap`'s early return at `renderer/_context.py:356-357`.
+Mechanically `--wrap sentence` is identical to `--wrap no` plus this plugin, because `no` already means "emit wrap points, do not width-wrap", which is `_wrap`'s early return at `renderer/_context.py:356-357`.
 It adds a name and a rejection, not a mechanism.
 
 **Four call sites, not three.**
@@ -208,7 +208,7 @@ It adds a name and a rejection, not a mechanism.
 | `renderer/_context.py:348-362`, `_wrap` | treat it like `"no"` |
 
 The TOML gate is the one the earlier summary of this work missed.
-Measured, `wraparg.py` §1: `wrap = "sentence"` in `.mdformat.toml` raises `InvalidConfError` today, so changing only the CLI would leave the mode unreachable from a config file — which is how a repo actually pins its formatter.
+Measured, `wraparg.py` §1: `wrap = "sentence"` in `.mdformat.toml` raises `InvalidConfError` today, so changing only the CLI would leave the mode unreachable from a config file, which is how a repo pins its formatter.
 
 `_api.py:39`'s `!= "keep"` already triggers the second pass for any new value, so that site needs nothing.
 
@@ -239,20 +239,20 @@ A larger ask than B, and a cleaner shape.
 
 Both still touch the four sites in §5.4; what changes is that the accepted set is computed rather than hardcoded, which is the part that makes it a mechanism instead of a favor.
 
-**What neither variant buys.**
+**What neither variant provides.**
 The flag would *designate* but not *enforce*.
 Postprocessors chain (`renderer/__init__.py:84-88`), so a plugin that is not the named one still runs unless plugins cooperate by checking whether they were named.
 That makes it a convention, and §5.3's disclaimer stands unchanged.
 
-**Two costs to state in any request.**
+**Costs to state in any request.**
 Variant B needs `keep` and `no` reserved against a plugin id colliding with them.
-Both make a shared `.mdformat.toml` valid on one machine and invalid on another, since the value's legality depends on what is installed — arguably correct, since the plugin genuinely is required, but it is a new failure mode for a checked-in config.
+Both make a shared `.mdformat.toml` valid on one machine and invalid on another, since the value's legality depends on what is installed, which is arguably correct since the plugin is required, but it is a new failure mode for a checked-in config.
 
 ### 5.6 The smaller ask: split wrap-point production from width wrapping
 
-This one does not touch the option space at all, and it is the smallest true statement of what the plugin needs.
+This one does not touch the option space at all, and it is the smallest change that gives the plugin what it needs.
 
-**The conflation.** `do_wrap` is one predicate serving two questions, and `renderer/_context.py` uses it at five places (plus the definition at :641-644) which divide cleanly four to one:
+**The conflation.** `do_wrap` is one predicate serving two questions, and `renderer/_context.py` uses it at five places (plus the definition at :641-644) which divide four to one:
 
 | use | job |
 | --- | --- |
@@ -262,9 +262,9 @@ This one does not touch the option space at all, and it is the smallest true sta
 
 A plugin that converts wrap points to newlines needs the first group and has no opinion about the second.
 There is no way to ask for that today except `no`, which to a user without the plugin means "put every paragraph on one line".
-That is why `no` is doing double duty, and it is the defect underneath §5.1 and §5.2 both.
+So `no` does double duty, and that is the defect underneath §5.1 and §5.2 both.
 
-**The ask.** Let a plugin declare that it requires wrap points — a new Protocol member such as `NEEDS_WRAP_POINTS`, or a separately named postprocessor hook — and gate the production group on `do_wrap or any(plugin declared it)` while leaving `paragraph`'s width-wrapping gated on `do_wrap` alone.
+**The ask.** Let a plugin declare that it requires wrap points, through a new Protocol member such as `NEEDS_WRAP_POINTS` or a separately named postprocessor hook, and gate the production group on `do_wrap or any(plugin declared it)` while leaving `paragraph`'s width-wrapping gated on `do_wrap` alone.
 Opt-in by declaration, so every existing plugin is unaffected and the default behavior of every existing invocation is unchanged.
 
 **Measured feasible**, `experiments/wrapsplit.py`.
@@ -284,27 +284,27 @@ Asked in the other order, the named mode has to carry the split inside it.
 
 Searched on 2026-09-17, on the mdformat issue tracker, for issues about `--wrap`, wrap modes, and plugins controlling wrapping.
 An earlier pass over that search concluded that nothing proposes new wrap modes, plugin-defined wrap modes or semantic line breaks, and that this was greenfield.
-**That was wrong, and the correction matters more than anything else in §5.**
+**That was wrong.**
 The search term was `--wrap`; the prior art is filed under *sentence*, and re-running the search on 2026-09-17 with that word returns four issues:
 
 **None of these four was read past its title and opening comment.**
 Everything attributed to them below is from that much and no more, so any later comment, counter-proposal, maintainer decision or linked PR in any of the four threads is unknown to this note.
 Read them before acting on this section.
 
-- **#4** `Sentence-based word wrapping` — **open**, opened by hukkin, the maintainer, labeled `Enhancement`, `Plugin`, `Research`. *Opening comment only.*
+- **#4** `Sentence-based word wrapping`: **open**, opened by hukkin, the maintainer, labeled `Enhancement`, `Plugin`, `Research`. *Opening comment only.*
   It proposes sentence-based wrapping as an optional mode that does not change the default, and reaches for NLTK to segment sentences.
   Whether the NLTK dependency was later argued about, and whether the `Plugin` label reflects a settled position or an initial guess, are exactly the kind of thing the unread remainder would say.
-- **#374** `Allow wrapping option of 1 sentence per line` — closed as a **duplicate** of #4. *Title and opening comment only.*
+- **#374** `Allow wrapping option of 1 sentence per line`: closed as a **duplicate** of #4. *Title and opening comment only.*
   It asks for `--wrap sentence` as a new enum value, which is §5.4's ask verbatim.
   Who closed it, and whether anything was said while closing it, is unread.
-- **#222** `Support enforcing line breaks after 'end of sentence'` — closed. *Title and opening comment only.*
-  It asks for a flag implementing the first four rules of the Semantic Line Breaks specification, which is this plugin's scope.
+- **#222** `Support enforcing line breaks after 'end of sentence'`: closed. *Title and opening comment only.*
+  It asks for a flag implementing sembr#1 through sembr#4 of the Semantic Line Breaks specification, which is this plugin's scope.
   Why it was closed is unread, and a stated reason there would bear directly on this whole section.
-- **#422** `Word-wrap on sentence (punctuation) and width.` — closed. *Title only; not opened at all.*
+- **#422** `Word-wrap on sentence (punctuation) and width.`: closed. *Title only; not opened at all.*
 
 So there is an existing thread to join and it is the maintainer's own, the `Plugin` label on it is his own triage of where this belongs, and the exact spelling §5.4 proposes has already been asked for once and folded into #4.
 Nothing found is a *rejection*: #4 is open and #374 was closed only as a duplicate.
-What changes is the shape of the ask — a comment on #4 rather than a new issue — and §5.6's split becomes the part that is genuinely new, since no issue proposes separating wrap-point production from width wrapping.
+What changes is the shape of the ask, a comment on #4 rather than a new issue, and §5.6's split becomes the part that is new, since no issue proposes separating wrap-point production from width wrapping.
 The reading limit stated above applies to every claim in this subsection.
 
 Three further open issues are adjacent and are listed only by title, without characterizing them further:
@@ -321,7 +321,7 @@ Who filed them was not checked.
 **Reasoned**, except where marked.
 
 Section 5.6's split gives a plugin wrap points without width wrapping, but the plugin still decides line layout before `paragraph()` runs, and hands it down as `\n` and pinned spaces.
-`paragraph()` splits its text on `\n` and fills each section with `_wrap` (`renderer/_context.py:390-406`), and none of §6's five members can supply that one step.
+`paragraph()` splits its text on `\n` and fills each line with `_wrap` (`renderer/_context.py:390-406`), and none of §6's five members can supply that one step.
 A plugin can replace the whole `paragraph` renderer, which `DESIGN.md` §2.2 rejects because mdformat-hatena and mdformat-sentencebreak already own it, or post-process its output, after line-start escaping has run.
 
 **The convention it would retire.**
@@ -329,7 +329,7 @@ Deciding layout in the `inline` slot rests on breakable whitespace reaching it a
 mdformat-space-control breaks it: its `softbreak` renderer returns a literal space, and with it loaded the plugin adds no break of its own.
 Measured, `experiments/spacecontrol.py`; `quirks-mdformat-space-control.md` has the detail.
 
-**The ask.** A step that `paragraph()` calls in place of `_wrap` for each section, supplied by a plugin, so that the plugin decides the breaks while `paragraph()` keeps its line-start escaping and the containers keep their indentation.
+**The ask.** A step that `paragraph()` calls in place of `_wrap` for each line, supplied by a plugin, so that the plugin decides the breaks while `paragraph()` keeps its line-start escaping and the containers keep their indentation.
 Given the inline node as well as the text, the step could treat an authored `softbreak` as a gap whatever a co-plugin rendered it as, since the tree still marks one (`DESIGN.md` §3.1); that is untried.
 
 **How it relates to the other asks.**
@@ -371,7 +371,7 @@ section [plugin.<plugin_id>].
 That is a namespace, enforced at `_cli.py:286-301`, where each action's `dest` is rewritten to `plugin.<plugin_id>.<dest>` and a non-`None` default earns a `DeprecationWarning`.
 `wrap` is a core option and sits outside that namespace entirely.
 
-**Reasoned.** The framing worth carrying forward: the door is official, the room behind it is not.
+**Reasoned.** A supported hook gives access to unsupported state.
 `update_mdit` is published, supported and typed; what route B does inside it is untyped, undocumented and visible to every other plugin in the render.
 A plugin writing `mdit.options["mdformat"]["wrap"]` is not doing anything mdformat forbids, and it is not doing anything mdformat offers either.
 
@@ -417,7 +417,7 @@ python3 -m venv v && ./v/bin/pip install 'mdformat==1.0.0'
 ./v/bin/python notes/experiments/wraparg.py
 ```
 
-Pin 1.0.0.
+Use exactly 1.0.0.
 Every line number in this note is a 1.0.0 line number and none of these are public API.
 
 ______________________________________________________________________

@@ -11,7 +11,7 @@ ______________________________________________________________________
 **Compatibility risk.** *Verified.*
 `str.islower`, `str.isupper` and `str.isalpha` use the interpreter's own Unicode data, UCD 14.0.0 on Python 3.11, and its case properties rather than UAX #29's Sentence_Break.
 `'ა'.islower()` is `True`, so a capital test written with them would never break ordinary Georgian prose.
-`DESIGN.md` §3.3 reads vendored Sentence_Break tables instead.
+`DESIGN.md` §3.3 reads vendored Sentence_Break data instead.
 
 ## `re`, `str.casefold` and `str.lower` fold case three different ways
 
@@ -24,7 +24,7 @@ In the other direction `re` equates Turkish `I` with `ı` and `İ` with `i`, whi
 ## `unicodedata` has no Sentence_Break
 
 **Compatibility risk.** *Read.*
-The property is not exposed at all, so the tables are generated from a vendored `SentenceBreakProperty.txt` (§3.3).
+The property is not exposed at all, so the Unicode data is generated from a vendored `SentenceBreakProperty.txt` (§3.3).
 
 ## `tomllib` arrived in 3.11
 

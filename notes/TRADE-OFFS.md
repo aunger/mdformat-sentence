@@ -13,11 +13,11 @@ ______________________________________________________________________
 
 | cost | what it buys | kind |
 | --- | --- | --- |
-| Rule 5 is declined (§5.1). In the specification's own prose, 40.8% of the breaks are at clause punctuation (§5.2). | No comma rule that over-fires on serial lists, coordinate phrases and introductory adverbials, and no length floor to patch it. | missed breaks, the largest scope cost |
-| Rule 6 is not implemented. 41.7% of the same breaks fall at no sentence end, clause punctuation, link or markup boundary, and a 36-word break-word list recovers 12 of those 43 (§5.2). With the 7.8% at links and markup, half carry no punctuation at all. | No vocabulary whose words also have a non-clausal reading. | missed breaks |
-| Rules 10 and 11 are not implemented: no break is taken beside a link or before inline markup (§5). 7.8% of the same breaks fall there, the cheapest 7.8% on the table (§5.2). | Breaks at sentence ends and nowhere else, as §1 promises. | missed breaks |
-| Rule 12 is not implemented: a sentence longer than any column stays on one line (§1). | Line positions are a function of the text alone, so a word added inside a sentence, away from any gap or abbreviation rule (§6.2), changes only the line it is on. An edit beside a gap can still change whether that gap breaks: `One. Two.` edited to `One. two.` joins the two lines (§1). | long lines |
-| The plugin implements the rule behind 9.7% of the breaks a sembr author places by hand (§5.2). | A promise that fits in one sentence (§1). | a minority of hand-written breaks |
+| Sembr#5 is declined (§5.1). In the specification's own prose, 40.8% of the breaks are at clause punctuation (§5.2). | No comma heuristic that over-fires on serial lists, coordinate phrases and introductory adverbials, and no length floor to patch it. | missed breaks, the largest scope cost |
+| Sembr#6 is not implemented. 41.7% of the same breaks fall at no sentence end, clause punctuation, link or markup boundary, and a 36-word break-word list recovers 12 of those 43 (§5.2). With the 7.8% at links and markup, half carry no punctuation at all. | No vocabulary whose words also have a non-clausal reading. | missed breaks |
+| Sembr#10 and sembr#11 are not implemented: no break is taken beside a link or before inline markup (§5). 7.8% of the same breaks fall there, and they are the one unimplemented part that is not hard (§5.2). | Breaks at sentence ends and nowhere else, as §1 promises. | missed breaks |
+| Sembr#12 is not implemented: a sentence longer than any column stays on one line (§1). | Line positions are a function of the text alone, so a word added inside a sentence, away from any gap or abbreviation rule (§6.2), changes only the line it is on. An edit beside a gap can still change whether that gap breaks: `One. Two.` edited to `One. two.` joins the two lines (§1). | long lines |
+| The plugin implements sembr#4, the source of 9.7% of the breaks a sembr author places by hand (§5.2). | A promise that fits in one sentence (§1). | a minority of hand-written breaks |
 
 ## The hook point and the recorder (§2.2, §3.1, §3.6)
 
@@ -26,7 +26,7 @@ ______________________________________________________________________
 | The plugin owns `RENDERERS["inline"]`, which only one plugin can own. If another loads first, this plugin goes inert behind mdformat's "Plugin conflict" warning, and which wins follows load order. | Decisions on mdformat's own text, whatever co-plugins are installed. | inert, with a warning and the canary |
 | The recorder rides on a convention, not a contract: `RenderTreeNode.render` consults `context.postprocessors.get(type, ())`, and `RenderContext` has a `postprocessors` field. | One render instead of two, no copied state. If upstream drops the convention, every paragraph backs off and the gate fails; if it renames the field, `_replace` raises. | loud failure on drift |
 | A node whose children were not rendered, or cannot be located exactly once, is an atom. | No back-off on gfm bare URLs or mkdocs attribute lists. | missed breaks |
-| An atom hides its brackets from pairing, so a prose bracket whose partner lies inside one is left unpaired. Reasoned only; no real case was found. | The same atom rule everywhere. | possibly a wrong break |
+| An atom hides its brackets from pairing, so a prose bracket whose partner lies inside one is left unpaired. Reasoned only; no real case was found. | The same atom definition everywhere. | possibly a wrong break |
 | Locating a container's children by finding their joined records is measured, not proven: 846 of 846 containers were unambiguous in the hook-point review (`DESIGN-REVIEW-HOOK-POINT-2026-10-06.md` at `9264f70`, section *5. What it costs*, K6). | No re-render. An ambiguous find makes an atom. | missed breaks |
 | Later postprocessors receive text with no wrap point, the shape they see under `--wrap keep`. mdformat-mkdocs 5.3.0's spaced-URL fixer is wrong at `--wrap keep`, so with this plugin loaded it misfires at `--wrap no` too: `The term \[x\](see the y note) is escaped.` becomes a link. The CLI refuses the file; the API changes the render without complaint. No hook placement avoids both this and the load-order failure. | Width independence under every load order. | a known incompatibility, see `quirks-mdformat-mkdocs.md` |
 | A co-plugin that rewrote sentence punctuation in its own `inline` postprocessor would not be seen. None tested does. | The same. | unseen input |
@@ -47,17 +47,17 @@ ______________________________________________________________________
 | Brackets pair per kind; an unclosed opener can be adopted by a later closer across a sentence end, `It failed :(. Then came a) and b).` | An unclosed `:(` or `1(a` no longer silences the rest of the paragraph. | a missed break |
 | A Greek question, ending in `;`, never ends a sentence. | The terminators stay a Unicode property, and English semicolons never break. | missed breaks |
 | A citation marker after the period, `held.[1] Then` or `held.<sup>1</sup> Then`, ends no sentence. | The footnote strip stays exact. | missed breaks |
-| A sentence opening with a symbol or a dialogue dash, `$HOME is set.`, `— Oui.`, is not broken. | The capital test stays one rule. | missed breaks |
+| A sentence opening with a symbol or a dialogue dash, `$HOME is set.`, `— Oui.`, is not broken. | The capital test stays one check. | missed breaks |
 
 ## Configuration (§4)
 
 | cost | what it buys | kind |
 | --- | --- | --- |
-| `include` takes names only, so the projects of a monorepo cannot share one set by path. | One resolution rule, and sets that travel together. | duplication |
-| A token's fate is not readable in one place: it is whichever rule matched last, across every included file (§4). | A file overrides an inherited rule by writing a later one, without knowing or repeating how the earlier one was expressed (§3.3). | reading a composed rule set takes every file |
-| `--sentence-include` is hidden and unstable. | No published promise while its design settles. | no supported flag for ad hoc sets |
+| `include` takes names only, so the projects of a monorepo cannot share one rules file by path. | One way to resolve a name, and rules files that travel together. | duplication |
+| A token's fate is not readable in one place: it is whichever rule matched last in the decision list, across every included rules file (§4). | A rules file overrides an inherited rule by writing a later one, without knowing or repeating how the earlier one was expressed (§3.3). | reading a composed decision list takes every rules file |
+| `--sentence-include` is hidden and unstable. | No published promise while its design settles. | no supported flag for ad hoc rules files |
 | `base_rules` is boolean only, and `default` cannot be named in `include`. | One switch for the shipped rules, and room for later values. | none in practice |
-| The dependency is pinned to `mdformat>=1.0.0,<1.1`. | No silent output change from an mdformat release. | users wait for the bound to move |
+| The dependency is bounded to `mdformat>=1.0.0,<1.1`. | No silent output change from an mdformat release. | users wait for the bound to move |
 
 ## The gate (§6)
 

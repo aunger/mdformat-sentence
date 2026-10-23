@@ -2,17 +2,17 @@
 
 A lone mark is a segment made only of quotation or markup characters, and
 a run is one or more of them between two words. This runs §3.3's
-sentence-end test, capital test and the lone-mark rules over plain strings
+sentence-end test, capital test and lone-mark handling over plain strings
 split at ordinary spaces, which is what the hook point delivers for these texts.
 Stdlib only.
 
 Terminators are cut down to the ones these texts use; the real set is
-UAX #29 STerm and ATerm. No rules table, bracket depth or capital-test
+UAX #29 STerm and ATerm. No decision list, bracket depth or capital-test
 exemption is consulted: none of these texts needs one.
 
-It establishes four things:
+It establishes:
   1. the fixtures of §6.4 for quotation marks break where §3.3 says, and
-     §3.5's safety rules, tested where the newline actually lands in a run,
+     §3.5's safety checks, tested where the newline actually lands in a run,
      pin a run whose newline would open a line with ~~~ or end one in a
      no-break space;
   2. a run of lone marks is one gap: the words on either side decide
@@ -22,7 +22,7 @@ It establishes four things:
   3. what §3.3's own readings do with marks side by side, including the
      known misplacement of a spaced opening “ after a sentence end;
   4. reading the low mark „ by its glyph would misplace the historical
-     Italian closing „, spaced as it was printed, which the older rule
+     Italian closing „, spaced as it was printed, which the older criterion
      places correctly. De Amicis, Il romanzo d'un maestro, 1900, p. 189;
      Wikisource transcribes it attached, which the fixtures also cover.
 """
@@ -78,7 +78,7 @@ BLOCK_START = re.compile(r"#|>|[-*+]|\d+[.)]|~~~|\[[ xX]\]")  # §3.5, cut down 
 
 
 def safe(segs, i):
-    """§3.5 at the newline's actual neighbours: segs[i - 1] ends the line, segs[i] opens the next."""
+    """§3.5 at the newline's actual neighbors: segs[i - 1] ends the line, segs[i] opens the next."""
     return (segs[i - 1][-1:].strip() != "" and segs[i][:1].strip() != ""
             and not BLOCK_START.match(segs[i]))
 

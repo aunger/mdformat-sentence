@@ -31,7 +31,7 @@ def build(override, second, strip):
                     if override else (lambda m: None)), st
 
 P.PARSER_EXTENSIONS
-print("reference: honest --wrap no, mdformat's own double render")
+print("reference: ordinary --wrap no, mdformat's own double render")
 plug, st = build(False, False, True); P.PARSER_EXTENSIONS["probe"]=plug
 ref = mdformat.text(SRC, options={"wrap":"no"}, extensions={"probe"})
 print(f"   inline hook calls: {st['inline']}")
@@ -49,7 +49,7 @@ for label, rsp in (("route B alone (no second pass)", False),
 # The same three cases over a document that is not one bare paragraph, since
 # the point of the re-render is the escaping and indentation that only blocks
 # exercise. Also shows the trailing-newline caveat: the root postprocessor is
-# handed already-finalised output, so re-rendering it finalises twice.
+# handed already-finalized output, so re-rendering it finalizes twice.
 RICH = """Because the cascade picks by width, an edit upstream can change which candidate wins. The tool reports success.
 
 - A list item. It has two sentences.
@@ -67,7 +67,7 @@ Trailing paragraph. Second sentence.
 print("lists, blockquotes and a fenced block\n")
 plug, st = build(False, False, False); P.PARSER_EXTENSIONS["probe"] = plug
 ref2 = mdformat.text(RICH, options={"wrap": "no"}, extensions={"probe"})
-print(f"   reference, honest --wrap no  : inline calls {st['inline']}")
+print(f"   reference, ordinary --wrap no: inline calls {st['inline']}")
 for label, ov, sec, strip in (
         ("route B alone               ", True, False, False),
         ("B + root re-render, no strip", True, True, False),

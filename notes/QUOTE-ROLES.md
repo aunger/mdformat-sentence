@@ -6,7 +6,7 @@ This records the research behind that split.
 
 The question was whether any curly or angle quotation mark always opens, or always closes, in every language.
 Two agents answered it independently, one by computation from CLDR and one from typographic sources with a citation for every claim.
-Their combined answer then went to three more agents, each told to refute one part of it: the single-role verdicts, the two-role verdicts, and the lone-guillemet rule already in the specification.
+Their combined answer then went to three more agents, each told to refute one part of it: the single-role verdicts, the two-role verdicts, and the lone-guillemet criterion already in the specification.
 Only what survived is used.
 
 Measured claims come from `experiments/cldrquotes.py` and `experiments/lonemark.py`.
@@ -51,13 +51,13 @@ ______________________________________________________________________
 `《` `》` `〈` `〉` `‟` `‛` are not a quotation delimiter in any locale.
 They appear only in punctuation exemplar sets, which list a locale's characters with no direction: `《` `》` `〈` `〉` for Chinese, Cantonese, Japanese, Korean and Yi, where they mark titles, `〈` `〉` also for Venetian, and `‟` for Slovenian; `‛` appears nowhere.
 
-CLDR understates how often a mark takes its minority role, for three reasons.
+CLDR understates how often a mark takes its minority role.
 It records one primary and one alternate pair per locale, so German books' `»…«` and Swiss `«…»` are not there.
 It records nothing historical, which is where `„` closes.
 And the JSON is resolved, so about 490 locales carry root's `“…”` and `‘…’` by inheritance, while only about 129 of the 766 set a value of their own.
 
 Unicode's general category is no guarantee either.
-In CLDR every `Ps` or `Pe` mark has one role and every `Pi` or `Pf` mark has both, which looks like a rule, but `„` and `‚` are `Ps` and both close in historical text (§3).
+In CLDR every `Ps` or `Pe` mark has one role and every `Pi` or `Pf` mark has both, which looks like a regularity, but `„` and `‚` are `Ps` and both close in historical text (§3).
 UAX #44 says only that `Pi` and `Pf` "may behave like opening punctuation (gc=Ps) or closing punctuation (gc=Pe), depending on usage and quotation conventions".
 
 ______________________________________________________________________
@@ -75,7 +75,7 @@ Every minority role below was re-fetched from a current primary source and read 
 | `«` closing, `»` opening | Danish `»…«`; Finnish and Swedish `»…»` | Retskrivningsordbogen (2025) §58; Kielitoimisto |
 | `‹` closing, `›` opening | Danish `›…‹` | Retskrivningsordbogen §58 |
 
-Three minority roles in CLDR or Wikipedia did not survive checking, and none changes a verdict.
+Some minority roles in CLDR or Wikipedia did not survive checking, and none changes a verdict.
 CLDR's Uyghur `»…«` looks like display order typed as logical order: Uyghur text on three sites stores `«` first every time.
 English Wikipedia's Hebrew row, `”…„`, is display order too; the Hebrew Academy's rule is that `„` opens.
 Hebrew `‘` as a closer rests on one Wikipedia example.
@@ -91,7 +91,7 @@ A regular-expression search of Italian Wikisource for a letter, optional punctua
 
 The print spaces the mark off; the transcriptions do not.
 All three Italian pages above store it attached on Wikisource, `villaggio.„ Quegli`, `“Viènghi puro.„` and `torri!„`, checked for this note.
-So the spaced form that the lone-mark rule reads correctly is the printed one, and the form a reader would actually import is the attached one.
+So the spaced form that the lone-mark criterion reads correctly is the printed one, and the form a reader would actually import is the attached one.
 Section 3.3 therefore puts `„` in the closer set as well as the opener set, which finds `villaggio.„` as a sentence end.
 It costs nothing in modern text, where `„` touches the word it opens and follows a terminator in the same segment only by typo, `sagte.„ Hallo`, which then breaks with the mark at the end of the line where before it did not break at all.
 `‚` stays an opener only, although it closed in one edition (below), because it is nearly indistinguishable from a comma and the closer set must not contain anything a comma could be mistaken for; how often it stands in for one was not measured.
@@ -132,7 +132,7 @@ The languages on Wikipedia's list outside the `»…«` and `»…»` traditions
 Canada's Bureau de la traduction, *Le guide du rédacteur* §7.2.5, describes "une tradition rivale" in which each continuation paragraph of a long quotation opens with `»`, and notes that many consider it "puriste et désuète"; the OQLF mentions it too.
 The guide's own example types an ordinary space after that `»`, so it produces exactly a lone `»` that does not close.
 In Markdown it opens a paragraph, where either reading gives the same lines.
-A hard line break comes to the same thing, and the guide's own page separates its paragraphs that way, with `<br /><br />`: `DESIGN.md` §3.1 splits sections at hard breaks, so the `»` again has nothing before it.
+A hard line break comes to the same thing, and the guide's own page separates its paragraphs that way, with `<br /><br />`: `DESIGN.md` §3.1 splits stretches at hard breaks, so the `»` again has nothing before it.
 A soft break is not a continuation at all.
 A newline inside a Markdown paragraph renders as a space, so `Il a dit : « Il y a trois raisons.` then `» La première est la croissance. »` renders as one paragraph with a `»` in the middle of it, and reading that `»` as closing matches what the reader sees.
 
@@ -145,18 +145,18 @@ ______________________________________________________________________
 
 ## 5. What a lone mark's role decides
 
-`lonemark.py` runs §3.3's rules over plain strings.
+`lonemark.py` runs §3.3's lone-mark handling over plain strings.
 
 Section 3.3 treats a run of lone marks between two words as one gap: the words on either side decide whether it breaks, and the marks' roles decide only where in the run the newline goes.
 A wrong role can then strand a mark at the wrong end of a line, and can never add or remove a break.
 Over twenty-two texts, with marks alone and side by side, every combination of readings, 120 in all, puts the same words on each line.
 
-The run rule replaced an earlier design that decided each gap separately, with the terminator test looking back past closing marks and the capital test skipping forward past opening ones.
+The run handling replaced an earlier design that decided each gap separately, with the terminator test looking back past closing marks and the capital test skipping forward past opening ones.
 That design held for one mark between two words, but with marks side by side the readings moved breaks: `Il a dit. « “ Oui. ” » Puis il part.` had sixteen readings and four different layouts, and an opening mark followed by a closing one, `Il a dit. « » Puis il part.`, lost its break outright.
 
 The roles themselves come from shape for the guillemets and for `”` and `’`, from the set for a mark in only one, and from what precedes it for the rest.
 `”` and `’` joined the openers for Finnish and Swedish, which open with them, and a spaced one reads as closing because neither language spaces them; that also lands English nested quotes correctly, `He said: “ ‘ Yes. ’ ” Then he left.`
-The one misplacement left is a spaced opening `“` after a sentence end, which the older rule reads as closing: `He said. “ ‘ Yes. ’ ” Then he left.` leaves the `“` at the end of the first line.
+The one misplacement left is a spaced opening `“` after a sentence end, which the older criterion reads as closing: `He said. “ ‘ Yes. ’ ” Then he left.` leaves the `“` at the end of the first line.
 
 ______________________________________________________________________
 
