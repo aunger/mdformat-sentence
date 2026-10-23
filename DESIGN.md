@@ -19,13 +19,12 @@ Where it cannot tell that a sentence has ended, after an abbreviation or before 
 
 **The output does not depend on `--wrap`.**
 Line positions are a pure function of the text.
-Adding a plain word inside a sentence, one with no terminator and no bracket, changes exactly the line that word is on, and no other line, at any width.
-The exceptions are all here.
+Adding a word inside a sentence changes exactly the line that word is on, and no other line, at any width, with the exceptions listed here.
 A word that ends in a terminator can split its line.
 An unpaired bracket can be paired by a closer in a later sentence and hold back every gap between (§3.2), so one stray `(` in `One ( fine day. A b. C d. E 1) f.` holds back three breaks.
 A word added at either end of a sentence is beside a gap and can change whether that gap breaks: a lowercase word opening a sentence fails the capital test and joins two lines.
-And a word added between `et` and `al.` stops `academic.toml`'s rule from matching (§4).
-Section 6.2's locality row inserts accordingly.
+And a word added directly before the word carrying a terminator changes what a rule's `before` patterns read, so one between `et` and `al.` stops `academic.toml`'s rule from matching (§4).
+Section 6.2's locality test therefore inserts its probe word inside a sentence, never beside a gap and never directly before a word carrying a terminator.
 A minor release may also move breaks in text nobody edited (§4).
 That is the diff-stability property Semantic Line Breaks exists for, and no width-driven implementation can offer it — as soon as a break position is chosen by "the rightmost candidate that still fits in 80 columns", an edit upstream can change which candidate wins and cascade down the paragraph.
 
@@ -134,10 +133,8 @@ A second early return follows the guard: a text with no `WRAP_POINT` has no gap 
 A node type's postprocessors run in the order their plugins were loaded, which follows `--extensions` on the command line and, through the API, the iteration order of the set the caller passed, which varies with `PYTHONHASHSEED`.
 So a postprocessor cannot know whether another plugin has already rewritten its input, and two common ones do, at an integer `--wrap` only.
 
-- mdformat-gfm's own `inline` postprocessor prefixes `xxxx` to the first paragraph of a task-list item, to reserve the width of `[ ] `, and removes it again in its `list_item` renderer.
-  Loaded after gfm, a postprocessor sees `xxxxMr.` as the item's first word, so the titles rule misses it: `- [ ] Mr. Smith left early. Then he came back.` breaks after `Mr.` at `--wrap 40` and not at `--wrap no`.
-- mdformat-mkdocs's `inline` postprocessor re-wraps list-item text itself and inserts filler words, U+E000, between the real ones at positions that depend on the width.
-  Loaded after mkdocs, a postprocessor can find a filler where the next sentence's first word should be, and the break is lost where the re-wrapped item holds a sentence end.
+- mdformat-gfm's `inline` postprocessor prefixes `xxxx` to a task item's first paragraph to reserve the width of `[ ] `, so a postprocessor loaded after it sees `xxxxMr.` as the first word and `- [ ] Mr. Smith left early. Then he came back.` breaks after `Mr.` at `--wrap 40` and not at `--wrap no` (`notes/quirks-mdformat-gfm.md`).
+- mdformat-mkdocs's `inline` postprocessor re-wraps list-item text at the width and inserts U+E000 fillers between the real words, so a postprocessor loaded after it can find a filler where the next sentence's first word should be (`notes/quirks-mdformat-mkdocs.md`).
 
 Either is §1's property failing by load order alone, and it fails for a postprocessor that reads only the text as much as for one that also maps the tree.
 A renderer runs before every postprocessor of its node type, so the text it decides is mdformat's own whatever else is installed, and the prefix and the fillers land on finished text that has no wrap point left in it.
@@ -185,9 +182,6 @@ Its load-order, width and footnote results were checked on Python 3.10, 3.11, 3.
 All 48 plugin sources above were read statically, and of them only mdformat-gfm, mdformat-mkdocs and the co-plugins named in the list above and in this paragraph were run.
 The prototypes had none of §3.3's rules, quote roles or camelCase exemption, the prose was mostly English technical writing, and the adversarial inputs were of the review's own design.
 Co-plugin coverage was uneven: mdformat-footnote, mdformat-wikilink and mdformat-dollarmath were loaded together in one corpus run only, mdformat-myst and mdformat-obsidian only for comparing atoms, and the dry run that `notes/FUTURE-WORK.md` records was never tried against a `paragraph` owner.
-
-**No `WRAP_POINT` survives this plugin.**
-Section 3.4 resolves every gap to a newline or a literal space, so mdformat's own word wrap is left with nothing to act on, and no part of this design may assume that it will act.
 
 ### 2.3 Four facts about the hook point
 
@@ -251,7 +245,7 @@ Setting it discards every line break the author made by hand.
 Under `--wrap no` mdformat collapses each paragraph to a single line before this plugin sees it, so a paragraph a writer had broken at three clause boundaries arrives as one line and leaves broken at sentences only.
 Verified by execution against mdformat 1.0.0, with no plugin installed: the collapse is mdformat's, not ours, but the mode is the one this plugin asks for.
 A writer who already hand-writes full Semantic Line Breaks therefore loses rules 5 and 6 the moment they adopt this plugin, and the only mode that keeps their work is the one in which the plugin does nothing.
-That is a real cost, it is not recoverable from the output, and it must be said before someone runs the formatter over a corpus they hand-broke.
+The loss is not recoverable from the output, and it must be said before someone runs the formatter over a corpus they hand-broke.
 
 **The plugin warns when it was asked for by name and given a mode it cannot act in.**
 It stays silent on the default configuration, because warning there would fire constantly for people doing nothing wrong.
@@ -308,10 +302,9 @@ join sections with "\n"
 A section ends at every `\n` that lies outside an atom (§3.2), which is a hard break's.
 Raw inline HTML can carry a newline of its own, `<span\nclass="x">`, and so can a hard break in link text, `[a\` then a newline and `b](u)`, and a link title, `[a](u "x` then a newline and `y")`; splitting there would cut an atom in two and leave each half in a different section, with the recorded offsets pointing across the cut; that newline stays inside its section and inside its atom, and `paragraph()` keeps it as it would without this plugin.
 
-Three things about that loop carry the whole design.
+Four things about that loop carry the whole design.
 
 **Segments are the units and gaps are the only legal break positions.**
-No other position is ever a break.
 An authored soft line break is not one of them either: `text()` turns it into a wrap point like any other space (§2.2), so it arrives here as a gap and not as a section boundary.
 `node.children` still marks it as a `softbreak`, so keeping it is mechanically possible; this design declines to (§2.5), and `notes/PRESERVE-MODE.md` records the alternatives and why an opt-in add-only mode is the one that survives.
 
@@ -394,7 +387,7 @@ UAX #29 files both as `SContinue`, so a Greek question never ends a sentence her
 Adding U+003B to the terminators would break every English semicolon, and adding U+037E alone would reach only text that was never normalized, so the gap is stated rather than patched.
 
 **`…` is deliberately not among them**, because UAX #29 files it as `Other` and careful usage agrees: an ellipsis marks omission or trailing off rather than an end.
-`A moment… Nobody moved.` stays on one line, and so does `A moment... Nobody moved.`, because a shipped rule joins after **exactly three** periods (§4).
+`A moment… Nobody moved.` stays on one line, and so does `A moment... Nobody moved.`, because a shipped rule joins after **exactly three** periods (below).
 Every other count is a sentence end: two periods and four are typing rather than an ellipsis, and `A moment…. Nobody moved.` is an ellipsis that then closes a sentence.
 One case is out of reach rather than decided.
 `A moment…… Nobody moved.` carries no terminator at all, so no candidate gap exists there.
@@ -421,7 +414,7 @@ Leaving `«` out of the closers is what would silently drop every sentence end i
 The CJK marks are the exception, and each sits in one set only: `「` `『` `《` `〈` open and `」` `』` `》` `〉` close.
 The corner brackets hold those roles in every CLDR 48.2 locale that quotes with them; CLDR lists no locale quoting with the angle brackets, which Chinese uses for titles; and a search made to find a reversed use of any of the eight found none.
 `notes/experiments/cldrquotes.py` reproduces the CLDR half, and `notes/QUOTE-ROLES.md` records the search.
-Unicode's general category is no guide to this: it files the low marks `„` and `‚` as opening punctuation too, and both have closed quotations in print (`notes/QUOTE-ROLES.md`).
+Unicode's general category is no guide to this: it files the low marks `„` and `‚` as opening punctuation too, and both have closed quotations in print.
 Inside a segment the overlap costs nothing, because a closer is tested after a terminator and an opener before a capital, and neither test is reached from the position the other is asked about.
 `notes/QUOTE-ROLES.md` holds the sources for every role above and below.
 **A mark standing alone as its own segment is the one place where it does cost something, and membership in both sets cannot decide it there**; the rules below decide it, by shape for the guillemets and the right-hand curly quotes, by set for a mark in only one, and otherwise by what precedes it.
@@ -433,7 +426,7 @@ No rule is needed for them, and none is added.
 
 The point of stating it is that the behavior rests entirely on an *absence*.
 Anyone who later adds clause punctuation to the closer set, which is a tempting thing to try when working on rule 5, silently turns every `e.g.,` into a sentence-end candidate.
-The closer set is for marks that can follow a terminator *and still end the sentence*; a comma after a period means the abbreviation was not a sentence end at all.
+By the membership test above, a comma after a period means the abbreviation was not a sentence end at all.
 UAX #29 encodes the same idea as a `SContinue` set of 31 codepoints, and none is needed here: the scan crosses closers only, so everything else stops it, which covers those 31 and every other mark besides.
 
 **`)` and `]` are closers, because a sentence can end inside brackets.**
@@ -507,14 +500,14 @@ Where spaced-off marks stand as segments of their own, as French writes `« Ceci
 The consequence worth stating is that a lone mark is invisible to every pattern, and no rule can ask whether one was there.
 
 **What `at` sees is the stripped candidate**, and every shipped rule depends on it.
-Before matching, the candidate loses its whole trailing run of terminators, closers and footnote references, by the grammar above, and any leading run of the opener set, so `(Fig.`, `hand.[^1]` and `Fig...` all arrive as the bare word.
-That is why the shipped rules are written `mr|mrs|ms|dr` with no dots: a pattern reaching for punctuation has nothing to match against.
+Before matching, the candidate is stripped as defined above, so `(Fig.`, `hand.[^1]` and `Fig...` all arrive as the bare word.
+That is why the shipped titles rule is written `Mr|Mrs|Ms|Dr|Prof|Sr|Jr` with no dots: a pattern reaching for punctuation has nothing to match against.
 Nothing else is transformed: a hyphenated word is matched whole, so a rule that wants `Wrangell-St.` writes the hyphen into its own pattern, as the shipped `st` rule does with `(?:.*-)?`.
 
-**Every pattern matches case-sensitively, and a pattern wanting otherwise says so** with `re`'s own scoped flag: `at = '(?i:fig|vol|ch|sec)'`.
+**Every pattern matches case-sensitively, and a pattern wanting otherwise says so** with `re`'s own scoped flag, `(?i:…)`, as the shipped index rule does (§4).
 Nothing is folded by key or by position, because a rule that folds where it was not asked to is worse than one that does not fold where it should be.
 
-`$roman` shows what blanket folding would cost: it is homo-case for the reason below, and a folded `[IVXLCDM]+` matches `Vic` and `Di` in full, so an index rule would swallow a capitalized word as a numeral.
+`$roman` shows what blanket folding would cost: it is homo-case so that `Vic` and `Di` are not read as numerals (below).
 That cannot happen when folding is asked for one pattern at a time.
 The converse mistake is cheap: an `at` pattern that forgets the flag matches nothing that is capitalized, and the rule's mandatory example (§4) fails.
 
@@ -533,8 +526,7 @@ It returns the gap to ordinary detection, which may still decline it, and it is 
 A gap no rule matches is `allow`, which is what makes the table a list of exceptions rather than a whitelist.
 Any other value is a load error naming the two, and `break = false` is a load error rather than a synonym for `no`, because a TOML boolean is a different type and not a third verdict.
 
-**The table is consulted only at candidate gaps after ATerm.**
-No rule can create a boundary where the text has none, so nothing in a rules file breaks after `clause;`.
+The table is consulted only at candidate gaps after ATerm (above), and `allow` is not a break, so no rule can create a boundary where the text has none and nothing in a rules file breaks after `clause;`.
 
 Patterns are ordinary `re` syntax with our own classes injected, so `{1}`, alternation and quantifiers come for free and there is no vocabulary to grow.
 The classes are spelled `$name` and expand to explicit ranges at build time:
@@ -553,8 +545,7 @@ A test regenerates from the vendored copy and diffs it, which needs no network, 
 It also decouples the tables from the user's Python, which matters because the interpreter's own lag: Python 3.11 carries UCD 14.0.0.
 Lowercase POSIX spellings are a **load error**, not a synonym: UAX #29 `Numeric` is 785 codepoints against POSIX `digit`'s ten, and a user who writes `[:digit:]` meaning `0-9` should be told rather than silently given nearly eighty times what they asked for.
 The loader detects one as `[:` followed by ASCII letters and `:]` anywhere in a pattern, which Python's `re` would otherwise read as a set of those characters; a literal set that happens to have that shape is written another way, `[a:]` for `[:a:]`.
-A rules file may define its own macros in a `[macros]` table, referencing any other macro (§4), which is the notation CLDR and ICU already use for this job.
-Built-in names cannot be shadowed, so `$upper` means one thing everywhere.
+A rules file may define its own macros in a `[macros]` table (§4), the notation CLDR and ICU already use for this job.
 
 A set expands bare inside a bracket and grouped outside it; a macro is always grouped, and is a load error inside a bracket.
 Both rules exist because naive substitution is silently wrong: `$roman.*` expanded without grouping compiles as `[IVXLCDM]+|[ivxlcdm]+.*`, where the `.*` binds to the second alternative alone and the first matches a bare roman numeral anywhere.
@@ -590,12 +581,11 @@ A literal dollar is `\$`, as in `re`, and the expander never reads `\$` as a sig
   The pronoun is the commonest case of it, `So did I. Then we left.`, and it is kept because breaking after it would also split `I. M. Pei` after its first initial.
 
 - **The ellipsis**, a shipped rule too: `at_full = '(?:.*[^.])?\.\.\.[^.]*'`.
-  It reads the raw word, because `at` has lost every trailing period.
-  It asks for exactly three periods, followed by nothing with a period in it; only closers and footnote references can stand there, since the gap is a candidate.
-  So `A moment... Nobody moved.` and `A moment...” Nobody moved.` stay on one line, while two periods or four break (above).
+  It reads the raw word through `at_full`, because `at` has lost every trailing period, and asks for exactly three periods followed by nothing that holds a period, which at a candidate gap can only be closers and footnote references.
+  So `A moment...” Nobody moved.` stays on one line even with a closer after the periods, while two periods or four break (above).
 
 - **The capital test**: the next sentence must open with a character whose UAX #29 Sentence_Break value is `Upper`, `OLetter` or `Numeric`, which is to say a digit or an alphabetic character that is not lowercase.
-  The alphabetic conjunct is load-bearing: a bare *not lowercase* is a wider set that admits `#`, `>` and `-`, and the paragraph below turns on the difference.
+  The alphabetic conjunct is load-bearing: a bare *not lowercase* is a wider set that admits `$`, `@`, `#`, `>` and `-`, and the symbol case below and §3.5 both count on their failing here.
   Digits matter: `1976 was hot.` is a sentence opening.
   **Writing the case half as *not lowercase* rather than as *uppercase* is what carries the caseless scripts.**
   CJK, Arabic, Hebrew, Devanagari, Thai and Ethiopic are alphabetic and neither upper nor lower, so each passes without a clause of its own, while `a` and `ω` still fail.
@@ -620,13 +610,14 @@ A literal dollar is `\$`, as in `re`, and the expander never reads `\$` as a sig
   A leaf of a type this plugin does not know, or a node §3.1 made an atom because its children were not rendered or could not be located, is an atom for §3.2 but opens nothing, and its text is not read through the capital test either.
   A bare URL that mdformat-gfm links is such a node, and `notes/FUTURE-WORK.md` records the cost.
   An open list was tried and deletes text: with mdformat-footnote loaded, a break before `[^x]: not a definition` lets the second pass read a footnote definition there, and both notes' text is gone.
-  The closed list costs breaks before co-plugin syntax, a sentence opening with a wikilink or with inline math, `…holds. $x$ is positive.`, among them; on technical documentation it changed no line in two sets of real documents, of 35 and 31, and cost 24 gaps in about 150,000 paragraphs, each before a bare URL that mdformat-gfm links, while math-heavy prose was not measured; `notes/MATH-AND-OPENERS.md` records that measurement and where it comes from, the cost, and how named openers could be added.
+  The closed list costs breaks before co-plugin syntax, a sentence opening with a wikilink or with inline math, `…holds. $x$ is positive.`, among them.
+  On technical documentation that cost was no changed line in two sets of real documents and 24 gaps in about 150,000 paragraphs, each before a bare URL that mdformat-gfm links, while math-heavy prose was not measured; `notes/MATH-AND-OPENERS.md` records the measurement, its source, and how named openers could be added.
   Without this check, `` Install the package. `pip install foo` does the rest. `` never breaks, and neither does any sentence opening with an image or an autolink.
   Formatted text is **not** included: link text and emphasis are words, so `[the docs](u) explain it.` keeps the ordinary treatment of skipping the markup and testing the word, and declines to break for the same reason a bare lowercase word would.
   The cost is that a conditional abbreviation followed by an opaque atom breaks: `` See fig. `x` for details. `` goes wrong, where a backtick alone would have failed the capital test.
   A rule that cares can add an opaque-atom alternative to its own `after_full` pattern.
 
-**The most copied alternative in this ecosystem is declined, for the reason the capital rule already turns on.**
+**The most copied alternative in this ecosystem is declined, for the reason the capital test already turns on.**
 `jlevy/flowmark`'s `SENTENCE_END_RE` requires the run before the terminator to be two or more letters ending in a *lowercase* one, `\b\p{L}+[\p{Ll}]`, which disposes of `e.g.`, `i.e.`, `U.S.`, `A.M.` and `Ph.D.` with no list at all.
 Read from source and run against each: every one of them is already covered by the dotted-initialism rule above, so here it would buy nothing, while still leaving `Dr.`, `Fig.`, `etc.`, `vs.` and `Mr.` to the table, which is the part that is hard.
 What it costs settles it.
@@ -644,10 +635,10 @@ Everything else is code, and is not.
 | an opaque atom opens a sentence | no | tests the node's type, which no text pattern sees |
 | runs of lone marks and their roles | no | a run can be any length, which no three-position rule spans |
 | bracket depth | no | pairs found across a section |
-| block constructs, inline atoms, the footnote strip | no | safety rules, and a rules file must not be able to defeat them |
+| the line-start rule, inline atoms, the footnote strip | no | safety rules, and a rules file must not be able to defeat them |
 
 The safety row is the one that is deliberate rather than merely difficult.
-A block-construct rule that a file could countermand would let a user's rules file break the render of that user's documents, so no verdict reaches it.
+A line-start rule that a file could countermand would let a user's rules file break the render of that user's documents, so no verdict reaches it.
 Section 6.2's gate would never see that, because it runs the shipped sets over the fixtures and the corpus, never a user's file over their documents.
 mdformat's own `--validate` would catch the broken render at run time on the command line, but not under `--check` and not through the API (§2.2), and the source damage of §3.5 it cannot catch anywhere.
 
@@ -655,7 +646,7 @@ mdformat's own `--validate` would catch the broken render at run time on the com
 The repository corpus exercises none of these tokens, but Google Books English 2019 does; `notes/experiments/ngram.py` reproduces the figures, and the method's one real limitation is recorded at the end of this block.
 
 A rule only ever does work when the next token is capitalized or a digit, because the capital test has already suppressed the break before a lowercase word.
-That reframes the question for every one of them, from *is it also a word* to *what does it suppress that the capital rule does not already*, and it sorts them into three jobs.
+That reframes the question for every one of them, from *is it also a word* to *what does it suppress that the capital test does not already*, and it sorts them into three jobs.
 
 | tokens | job | also a word, or sentence-final | form |
 | -- | -- | -- | -- |
@@ -703,7 +694,7 @@ Single-letter labels outside `IVXLCDM`, such as `Sec. A`, are not covered and wi
 
 **`al` is not in the default set, and the measurement is why it looks necessary.**
 `et al.` is followed by a citation year often enough that a rule for it appears to earn its place: every one of its ten commonest continuations is a year, and measuring the bare token instead gives 44% because `al Qaeda` and `al dente` are not this abbreviation.
-Digits are sentence openings, so the capital rule does not suppress before one, and without a rule `Smith et al. 1990 showed…` breaks wrongly.
+Digits are sentence openings, so the capital test does not suppress before one, and without a rule `Smith et al. 1990 showed…` breaks wrongly.
 
 It stays out of the default anyway, because the shape that matters is already handled.
 `(Smith et al. 1990)` and `[@Smith2020, p. 12-14]` both sit inside brackets, and the bracket-depth rule below counts `(` as well as `[`.
@@ -712,8 +703,8 @@ So it ships in `academic.toml` instead, in a form tighter than any index conditi
 That suppresses `Smith et al. 1990` and `Smith et al. 1990a` and nothing else, where an index condition also wrongly suppresses `et al. II`.
 
 **`st` is a known ambiguity, and the default resolves it one way while a rule resolves it the other.**
-`St. Louis` and `Main St. Then he left.` both put a capital after the period, so neither the capital rule nor an index test separates them.
-The measurement is reassuring but not decisive: `St` is followed by `John`, `Paul`, `Louis`, `Petersburg` and `Mary`, with the *Street* sense nowhere in the top continuations, so unconditional is the right default for prose like this corpus.
+`St. Louis` and `Main St. Then he left.` both put a capital after the period, so neither the capital test nor an index test separates them.
+The measurement is reassuring but not decisive: the table above puts `St` at 0%, with the *Street* sense nowhere among its top continuations, so unconditional is the right default for prose like this corpus.
 Books under-represent addresses, though, and a discriminator does exist in what *precedes* the token, since *Saint* leads a name while *Street* trails one:
 
 ```toml
@@ -728,11 +719,10 @@ It separates `Main St. Then he left.` and `Elm St. Later he moved.` from `at St.
 
 **What the measurement cannot show, and why.**
 The wildcard returns only the ten commonest continuations and omits punctuation from them, so every figure above is a share of that top ten rather than of all occurrences.
-A 0% row means no numeral is among the ten, not that none ever follows, and a 100% row means every one of the ten is a numeral, a year for `et al` and a volume number for `Vol`, not that one always follows.
-`et al. showed that…` never enters the denominator.
+A 0% row means no numeral is among the ten, not that none ever follows, and a 100% row means every one of the ten is a numeral, not that one always follows: `et al. showed that…` never enters the denominator.
 Google's tokenizer splits the abbreviation period off and treats it as a sentence terminator, so `Fig . 1` has a frequency of exactly zero while `Fig 1` is ordinary, and every n-gram following a period is `_END_`.
 The corpus has therefore already decided the question this section is about, and decided it wrongly for abbreviations.
-The figures above are from the period-less forms, which measure *index use versus word use* — the axis that sorts the table — and say nothing directly about how often each token ends a sentence.
+The figures above are from the period-less forms, which measure *index use versus word use*, the axis that sorts the table, and say nothing directly about how often each token ends a sentence.
 `Sec` is the one row carrying a direct signal: `_END_` is Google's sentence-end marker, so `Sec` demonstrably ends sentences, which is why its rule is conditional.
 `fig` is the clearest case the method does reach: capitalized `Fig` is 97% numerals while lowercase `fig` is 46% `tree`, so the label and the fruit separate cleanly on case, which the shipped rule's `(?i:…)` deliberately declines to exploit.
 
@@ -747,6 +737,7 @@ Two structural rules follow, neither of them about any one language:
   **A run is one gap, and the two words decide it.**
   The terminator test and the rules table read the word on the left, the capital test reads the word on the right, and the marks in between are skipped by all three.
   The marks decide only where in the run the newline goes: before the first mark read as opening, or after the last mark when none is.
+  A run that ends its section has no word after it, so no sentence opens there, it never breaks, and the table is not consulted.
   A closing mark after an opening one therefore follows it onto the next line, as in `Il a dit. « » Puis il part.`, which breaks before `«`.
   **Section 3.5's two safety rules are tested where that newline lands**, between the segments on either side of it, which within a run are marks rather than the words that decided the run.
   When that position is unsafe the whole run is pinned, so `It ended. " ~~~ Then more.`, whose newline would open a line with `~~~`, and `Il a dit.` then a no-break space standing alone between two ordinary spaces and then `Puis il part.`, whose newline would end a line in a character `paragraph()` strips, both stay on one line.
@@ -779,14 +770,11 @@ A mark in mid-sentence decides nothing, because no terminator stands beside it, 
 Verified by simulation of the rules above, with ordinary spaces: `Le mot « chat » désigne un animal. Puis il part.`, `Il l'appelle « le patron ». Puis il part.` and `Il a crié « Stop ! » et il est parti.` each break exactly where a French reader expects, and only there.
 
 **Every check only vetoes, so the order they run in is free.**
-None can force a break, because `break` takes only `no` and `allow` (§4), so a gap breaks when nothing has objected, and an opaque atom satisfying the capital test does not override the block-construct rule vetoing the same gap.
-A segment of nothing but opening marks is a lone mark in a run, and the capital test reads the word after the run instead.
-With no word after the run, at the end of a section, no sentence opens, no break is in question, and the table is not consulted.
+None can force a break, because `break` takes only `no` and `allow` (above), so a gap breaks when nothing has objected, and an opaque atom satisfying the capital test does not override the line-start rule vetoing the same gap.
 
 **No boundary inside brackets.**
 A gap with a bracket pair around it (§3.2) is not a sentence boundary, and pairs are counted for `[` as well as `(`.
 A citation like `[@Smith2020, p. 12-14]` is prose brackets and its `p.` is not a sentence end; without the guard it splits.
-Link syntax never counts, because a link is an atom (§3.2); only brackets in prose do.
 
 ### 3.4 Emission and the width-independence property
 
@@ -804,6 +792,7 @@ That single decision is what makes the output width-independent, and it is why n
 
 The consequence is the property in §1.
 After the plugin's renderer returns, each line mdformat receives contains no interior wrap point, so `_wrap` has nothing to break on and returns the line unchanged whatever `fill_column` it was given.
+No part of this design may assume that `_wrap` will act.
 Verified by execution against mdformat 1.0.0 with a throwaway postprocessor of exactly this shape: a 140-character sentence survives intact at `--wrap 80`, and the same input at `--wrap no` produces byte-identical output.
 The same experiment *without* pinning produces 78- and 61-character lines at `--wrap 80`, which is the behavior this plugin exists to avoid; `notes/experiments/pin.py` reproduces both.
 
@@ -830,9 +819,8 @@ An ineligible sentence gap is simply pinned like its neighbors.
 **Line-start safety.**
 A gap is ineligible when the line the newline would open is one mdformat 1.0.0's `paragraph()` escapes or indents: it starts with `#{1,6}` followed by a space, a tab or the end of the line, with any `>`, with `-`, `*` or `+` followed by the same, with `[0-9]+` then `.` or `)` followed by the same, or with an HTML block opener that can interrupt a paragraph; or it is three or more of one of `*`, `-` and `_` with nothing else but spaces and tabs, or only `-` or only `=`.
 It is ineligible too before two things mdformat does not escape but that still do damage: a run of three or more tildes, and a task box `[ ]`, `[x]` or `[X]`.
-Several of the first list already fail the capital test, since `#`, `>`, `-`, `+` and `=` are neither letters, digits nor openers, so for them this rule is defense in depth.
-It is still not redundant there, because a `lowercase_names` pattern passes any word it matches (§4), and a broad one can let `-`, `#` or `>` through the capital test; and for an enumerator, an HTML opener, which opens a sentence as raw HTML does (§3.3), and the two entries mdformat does not escape, it is the only guard.
-This plugin has no `avoid_escapes` option (§4.1) because nothing else is needed.
+Section 3.3's capital test refuses `#`, `>`, `-`, `+` and `=` on its own, but this rule is tested regardless, because a broad `lowercase_names` pattern (§4) can pass `-`, `#` or `>`.
+For an enumerator, an HTML opener, which opens a sentence as raw HTML does (§3.3), and the two entries mdformat does not escape, it is the only guard.
 The task box is the one a co-plugin escapes rather than mdformat: mdformat-gfm's `paragraph` postprocessor turns a line-opening `[X]` into `\[X\]`, whichever order the two plugins load in, so `It is done. [X] marks a finished task.` stays on one line.
 The entry applies with or without gfm, because a missed break costs less than a check that depends on what else is installed; `notes/experiments/seam.py` reproduces the escape.
 
@@ -841,11 +829,11 @@ The HTML entry is the one it is easy to omit, because mdformat's remedy for it i
 Verified by execution against mdformat 1.0.0, with `<div>`, `<table>` and `<!-- -->`.
 `is_md_equal` passes on all three, so §6.2's render-equality gate cannot catch this one and the rule is the only guard.
 The four spaces are mdformat repairing the render, keeping `<div>` a lazy continuation line inside the paragraph, and without them the check does fire, because `<div>` at line start becomes an HTML block.
-What survives the repair is damage to the *source*, four spaces on a line this plugin promised would gain nothing but a newline, and a gate that compares rendered HTML cannot see it (above).
+What survives the repair is damage to the *source*, four spaces on a line this plugin promised would gain nothing but a newline.
 
 **The tilde entry covers an upstream mdformat defect.**
 A run of three or more tildes at a line start opens a fenced code block, and `paragraph()` does not escape it, so plain mdformat with no plugin breaks the render whenever its own word wrap puts such a run at a line start.
-Verified against mdformat 1.0.0: `Some text here and ~~~ more text after it.` formatted at `--wrap 10` comes back as a code block.
+Verified against mdformat 1.0.0: `Some text here and ~~~ more text after it.` formatted at `--wrap 10` comes back as a code block (`notes/quirks-mdformat.md`).
 Here only a newline this plugin emits can start a line, since every other gap is pinned (§3.4), so refusing the one break directly before the run is enough, and the rest of the section breaks as usual: `` Use `~~~` for fences. Then indent the block. `` still breaks after `fences.`.
 
 **Co-plugin definition syntax is refused at a line start too.**
@@ -864,7 +852,7 @@ On mdformat 1.0.0 that cannot happen; the check is a tripwire for upstream drift
 A container §3.1 could not locate is an atom, not a back-off.
 Backing off emits no break at all: every run of wrap points becomes one space, so the paragraph is one line in every wrap mode, exactly as if it held no sentence end.
 A back-off is silent in the output, so it is logged at `DEBUG` through `mdformat.renderer.LOGGER`, where §6.2's harness counts it and requires none; atoms made by §3.1's fallback are counted at `DEBUG` too.
-Handing the text back untouched would not be the same thing, because it would leave mdformat's wrap points in place, and at `--wrap 80` mdformat would then width-wrap that one paragraph, against §2.2's promise that no `WRAP_POINT` survives and §1's that no output depends on a width.
+Handing the text back untouched would not be the same thing, because it would leave mdformat's wrap points in place, and at `--wrap 80` mdformat would then width-wrap that one paragraph, against §3.4's rule that no `WRAP_POINT` survives and §1's promise that no output depends on a width.
 
 **Text preservation is a test, not a runtime check.**
 With the loop of §3.1, the emitted section and the input with each wrap point replaced by its chosen separator are one splice of the same choices, and cannot differ.
@@ -878,7 +866,7 @@ No option but rules: the configuration is rules, and they live in the same table
 
 **Every composition starts from the base rules.**
 The base is the shipped default's rules (§3.3), laid down first.
-After it come the rules of every set `[plugin.sentence]` includes, then the table's own rules, then any set named by the unstable `--sentence-include` (below), and §3.3's last-match-wins settles any gap they disagree about.
+After it come the rules of every set `[plugin.sentence]` includes, then the rules written in `[plugin.sentence]` itself, then any set named by the unstable `--sentence-include` (below), and §3.3's last-match-wins settles any gap they disagree about.
 `base_rules = false` leaves the base out and changes nothing else: the default file's macros stay, because they are notation that other rules are written in (below).
 That is the one way to drop the shipped rules, and it has to be written down, so forgetting something can only ever leave them in.
 
@@ -904,15 +892,15 @@ schema  = 1
 include = ['team']
 
 [[plugin.sentence.rule]]
-at    = '(?i:st)'
+at    = '(?i:dr)'
 break = 'allow'
 
   [[plugin.sentence.rule.example]]
   input = '''
-He walked down Main St. Then he left.
+He lives on Elm Dr. Then he left.
 '''
   output = '''
-He walked down Main St.
+He lives on Elm Dr.
 Then he left.
 '''
 ```
@@ -977,7 +965,7 @@ Case folding is per-pattern (§3.3), quote direction is decided by a mark's glyp
 What a set is for belongs in a comment at the top of it and in its name, where a reader sees it and no one expects it to do anything.
 
 **`--sentence-include` exists, unpublished and unstable.**
-It names sets to lay down after the table's own rules, may be given more than once, and takes names exactly as `include` does, so nothing it names resolves against the working directory.
+It names sets to lay down after the rules written in `[plugin.sentence]` itself, may be given more than once, and takes names exactly as `include` does, so nothing it names resolves against the working directory.
 It is hidden from `--help` with `help=argparse.SUPPRESS` and sits outside the versioning policy above: any release may change or remove it, and using it prints no warning.
 Its argparse `dest` is `cli_include` rather than `include`, because mdformat merges command-line plugin options over the config file's with a plain dict update, and a flag writing to `include` would replace the config's list outright instead of adding to it; under its own key both lists survive the merge, verified against mdformat 1.0.0 in `notes/experiments/pluginopts.py`.
 The plugin cannot tell a `cli_include` written into `[plugin.sentence]` from the flag, so that spelling is unsupported in the same way, and the unknown-key rule of §3.3 does not reject it.
@@ -990,7 +978,7 @@ That is the intended split, because it is what lets a user narrow `$roman` to re
 
 **Macros bind late, across the whole composition.**
 A composition has one macro table, built in splice order starting from the default file's, where a later file's definition of a name replaces an earlier one, which is the override §3.3's last-match-wins was chosen to match.
-Every pattern, an included set's as much as the file's own, is expanded against the finished table, so a user's `roman = …` narrows the default's index rules as well as the user's own, and the `st` snippet of §3.3 can use `$letter` because every composition carries the default's macros.
+Every pattern, an included set's as much as the file's own, is expanded against the finished table, so a user's `roman = …` narrows the default's index rules as well as the user's own.
 A macro may reference any other, and a reference that loops is a load error.
 An example runs against its own file (below), so a redefinition is checked by the examples of the file that makes it, not by those of the file it changes.
 
@@ -1141,9 +1129,7 @@ Written by J. K. Rowling.
 The sequel followed.
 '''
 
-# Exactly three periods is an ellipsis. `at` has lost every trailing
-# period, so this reads the raw word; only closers and footnote
-# references can follow the periods of a candidate.
+# Exactly three periods is an ellipsis, read raw because `at` has lost its periods.
 [[rule]]
 at_full = '(?:.*[^.])?\.\.\.[^.]*'
 break   = 'no'
@@ -1183,12 +1169,12 @@ One left behind when its rule moves is not caught by anything, because it silent
 
 **The default file is package data, loaded at runtime, and is itself the base.**
 There is no second copy in code for it to drift from, and it includes nothing.
-A separate console script prints it, so `mdformat-sentence-rules > .mdformat-sentence/mine.toml`, with `include = ['mine']` and `base_rules = false` in the table, is the whole workflow for starting from a copy of the shipped set, and the dump arrives already saying what it is.
+A separate console script prints it, so `mdformat-sentence-rules > .mdformat-sentence/mine.toml`, with `include = ['mine']` and `base_rules = false` in `[plugin.sentence]`, is the whole workflow for starting from a copy of the shipped set, and the dump arrives already saying what it is.
 A copy can add and override rules but not narrow one by editing its pattern, because its examples still run on the shipped base (above): a copied titles rule with `Dr` removed, and an example expecting a break after `Dr.`, fails at load, since the base's rule still matches.
 Narrow with a later `allow` rule instead.
 
 **A second set ships, `academic.toml`, and it is two rules on top of the default.**
-It exists because the rules that move between audiences are few and identifiable, not because academic Markdown is a different language: `al` earns its place only where unparenthesized author-year citations are house style, and five more index tokens, `eq`, `eqn`, `tbl`, `p` and `pp`, are ordinary only in papers.
+It exists because the rules that move between audiences are few and identifiable, not because academic Markdown is a different language: `al` earns its place for the reason §3.3 gives, and five more index tokens, `eq`, `eqn`, `tbl`, `p` and `pp`, are ordinary only in papers.
 
 ```toml
 schema  = 1
@@ -1236,24 +1222,7 @@ The second rule takes the default's index condition for five tokens the default 
 `cf` is not here either, for the reason it is absent from the default, which academic prose does not change.
 
 **Lifting one token out of a shipped rule is the case the ordering exists for.**
-A manual full of street addresses and no doctors overrides `dr`, the abbreviation for *Drive*, without knowing that the default grouped it with six other titles:
-
-```toml
-schema  = 1
-
-[[rule]]
-at    = '(?i:dr)'
-break = 'allow'
-
-  [[rule.example]]
-  input = '''
-He lives on Elm Dr. Then he left.
-'''
-  output = '''
-He lives on Elm Dr.
-Then he left.
-'''
-```
+The `[plugin.sentence]` table above does exactly that for `dr`, the abbreviation for *Drive*: a manual full of street addresses and no doctors lifts it without knowing that the default grouped it with six other titles.
 
 The cost of ordering is that a token's fate is no longer readable in one place: it is whichever rule matched last, across every included file.
 
@@ -1268,10 +1237,8 @@ CLI spelling is short, because mdformat namespaces only the argparse `dest` and 
 --sentence-base-rules {true,false}   dest is base_rules
 ```
 
-Its default must be `None`, for the reason in §2.4, and so must that of the unpublished `--sentence-include` (above).
-
 As with any mdformat plugin, the flags and `[plugin.sentence]` are CLI- and TOML-only: `mdformat.text()` does not populate `options["mdformat"]["plugin"]`, so a library caller gets the shipped default.
-An undocumented escape hatch exists and the test harnesses use it — `options={"plugin": {"sentence": {...}}}` reaches the hook point via the splat at `_api.py:29` — but it is not a supported mdformat interface.
+An undocumented escape hatch, `options={"plugin": {"sentence": {...}}}`, reaches the hook point and the test harnesses use it, but it is not a supported mdformat interface (`notes/quirks-mdformat.md`).
 
 **One rough edge inherited from mdformat, stated rather than worked around.**
 Nothing in `_api.py` or `_cli.py` wraps plugin code in `try`/`except`, so a malformed rules file surfaces as an uncaught traceback, and `sys.exit()` from a plugin would kill a `mdformat.text()` caller's process rather than just the CLI.
@@ -1280,12 +1247,11 @@ Nothing in `_api.py` or `_cli.py` wraps plugin code in `try`/`except`, so a malf
 
 - **Any width, column or line-length option.** §1.
 - **`avoid_escapes`.**
-  Unnecessary: §3.5's line-start rule is unconditional, so no break can land before `#`, `>`, `-`, an enumerator or an HTML block opener, and no escape and no four-space indent is ever added for the constructs §3.5 lists; an unlisted co-plugin's definition syntax can still be escaped (§3.5).
+  Unnecessary: §3.5's line-start rule is unconditional, so no escape and no four-space indent is ever added for a construct it lists, and an unlisted co-plugin's definition syntax is the one gap it leaves (§3.5).
 - **A "honor `--wrap`" mode** that would let mdformat wrap inside a sentence.
   That is a coherent product — GNU Emacs's `fill-paragraph-semlf` is exactly it — but it reintroduces geometric line breaks and therefore forfeits §1's property, which is the only reason this plugin exists.
   Anyone who wants it wants a different tool.
-- **Clause breaking, break words, short-line merging or a minimum line length.**
-  No clause or width machinery exists to configure.
+- **Clause breaking, break words, short-line merging or a minimum line length.** §1.
 - **Reading the document's language from front matter.**
   Reachable, and declined.
   With a front-matter plugin named in `--extensions` a `lang:` key survives as a node the plugin reaches from its hook point by walking to the root, and hand-scanning for it needs no YAML parser and no dependency.
@@ -1331,9 +1297,7 @@ Measured on the specification's own prose (§5.2), 63 clause marks are followed 
 The usual remedy is a length-based merge pass that folds short lines back — a geometric patch for a grammatical problem, and one this plugin has no width to compute.
 
 Implementing rule 5 correctly needs a test for whether both sides of a comma could stand alone as sentences, which is a parsing problem, and this version does not parse.
-Declining the rule is the honest position for a tool that does not parse, and `notes/FUTURE-WORK.md` records what would change that.
-
-Rule 12 is declined for the reason in §1 and needs no further defense: it is a RECOMMENDED, and honoring it is incompatible with the property this plugin sells.
+`notes/FUTURE-WORK.md` records what would change that.
 
 ### 5.2 What punctuation cannot see, measured
 
@@ -1352,13 +1316,10 @@ Its prose is every paragraph a Markdown parser finds in it, the rule list and th
 
 Breaks are classified by the first row that matches, so the rows are disjoint by construction rather than by luck; two of the breaks classified 4 or 5 also sit at a markup boundary and would have been claimed by the third row had it been tested first.
 
-Four things follow.
+Three things follow.
 
-**This plugin implements the rule that accounts for 9.7% of what a sembr author does by hand.**
-That is the size of the promise.
-
-**Declining rule 5 forgoes 40.8%.**
-Section 5.1 gives the reason and the reason stands; this is its price.
+**This plugin implements the rule behind 9.7% of what a sembr author does by hand, and declining rule 5 forgoes 40.8%.**
+The first figure is the size of the promise and the second is the price of §5.1, whose reason stands.
 
 **The remaining 41.7% has no punctuation and no markup at it.**
 Rule 6, which breaks after a *dependent* clause, is one part of that row, and neither it nor the rest has punctuation or a reliable vocabulary to find it by.
@@ -1375,8 +1336,6 @@ can make source text easier to work with,
 The following light markup languages
 are verified to support semantic line breaks:
 ```
-
-So even a perfect rule 5 would leave more than two fifths of the breaks out of reach of punctuation.
 
 **The rules 10 and 11 row is the cheapest 7.8% on the table.**
 They are in it so they are not forgotten, because they are the one part of the unimplemented remainder that is *not* a hard problem.
@@ -1434,7 +1393,7 @@ The overlapping-guards row exists because either guard alone prevents the `[^x]:
 **The source-equality row is where §3.5's line-start rule is tested.**
 Format each input with and without the plugin, both at `--wrap no`, and undo every line break the plugin added: join the line to the one before it with a space, after removing the prefix mdformat writes on every later line of the paragraph's containers, `> ` for a blockquote and, for a list item, as many spaces as its marker is wide.
 The result must be byte-identical to the baseline.
-Nothing else is undone, because a four-space indent or a backslash escape at the start of a new line is source damage that renders identically, so the render-equality row passes it and this one must not.
+Nothing else is undone, not even a blanket strip of leading `>` and whitespace, because a four-space indent or a backslash escape at the start of a new line is source damage that renders identically, so the render-equality row passes it and this one must not.
 The text-preservation row cannot see either, because it compares the plugin's input with its output, and `paragraph()` adds both later.
 `notes/experiments/sourceeq.py` runs the row with a postprocessor that has no line-start rule: ten container cases pass, nested and numbered lists among them, while the HTML indent, at the top level and in a list item, and the escape before `-` fail, and render equality passes all three.
 
@@ -1451,16 +1410,15 @@ For each rule, build a fixture where the table's verdict at some gap is that rul
 A conditional rule needs two fixtures, one where its condition on a neighboring word holds and one where it does not, so the row also catches a condition that has quietly become unreachable.
 Ordering makes this stronger than a removal test alone: a rule that is never the last match for any gap is fully shadowed by a later one, and the fixture cannot be built at all.
 A rule no fixture can distinguish was copied from somewhere else and is silently widening the exclusion.
-The checks living in code rather than in the table — the opaque-atom check, the block-construct rule, bracket pairing, inline atoms, the footnote strip — cannot be tested by removal and need hand-written fixture pairs instead.
+The checks living in code rather than in the table — the opaque-atom check, the line-start rule, bracket pairing, inline atoms, the footnote strip — cannot be tested by removal and need hand-written fixture pairs instead.
 
 Every oracle is **relative**: plain mdformat at the same width, with `extensions=set()` named explicitly.
 Absolute render equality is the wrong bar because mdformat itself already breaks the render on some inputs (§3.5's tilde fence), and holding ourselves to a standard mdformat does not meet means either failing forever or weakening the test until it says nothing.
 
-Four traps in the harness itself:
+Three traps in the harness itself:
 
-- `--extensions` is a whitelist, so every command-line baseline must name `extensions=set()`; an API baseline gets no plugins by default (§2.1), and naming it there too costs nothing.
+- `--extensions` is a whitelist (§2.1), so every baseline, API ones included, must name `extensions=set()`.
 - `--check` never validates.
-- The source-equality row must remove exactly the containers' prefix, because stripping every leading `>` and whitespace also strips the four-space indent it exists to catch.
 - The quality harness, which scores the plugin's breaks against hand-marked sentence ends by precision, recall and F1, their harmonic mean, must fail loudly rather than report a score for a plugin that never ran.
 
 The quality harness is a report, not a row: it gates nothing, and §6.4 builds it with the fuzz corpus.
@@ -1474,7 +1432,6 @@ So a shipped tool already makes the width-independent sentence-per-line promise,
 It is worth more than that, though.
 In production, rumdl has solved several of the problems §3 will have to solve, and its solutions are worth reading before writing ours: `sentence_utils.rs` for the terminator and abbreviation handling, and `text_reflow.rs` for segmentation and for the atomicity of links and code spans.
 The closer-set exclusion in §3.3 is a case where reading a working implementation is what surfaced the right rule.
-Read it as a source of solved problems and of test cases we would not have thought of.
 
 What it is not is an oracle.
 It is deliberately absent from §6.2's gate: agreement is not a target and divergence is not a defect.
@@ -1490,10 +1447,10 @@ The tool has its own blind spots, this design intends to do better in places, an
 
 1. The sentence-detection fixtures, which are where the remaining complexity actually lives.
 
-   - Detection: abbreviations, initials, camelCase and `lowercase_names` sentence openers, an index abbreviation before a punctuated number (`In Fig. 3, the curve`), a hyphenated word ending in a capital (`Jay-Z. He left.`), the capital rule, footnote references, CJK, and a period inside a code span or a link destination.
+   - Detection: abbreviations, initials, camelCase and `lowercase_names` sentence openers, an index abbreviation before a punctuated number (`In Fig. 3, the curve`), a hyphenated word ending in a capital (`Jay-Z. He left.`), the capital test, footnote references, CJK, and a period inside a code span or a link destination.
    - Quotation marks: CJK marks spaced off their words, French spaced closers, guillemets around a word or a fragment, French dialogue that closes in a later paragraph, a continuation paragraph opening with `»`, Finnish and Swedish quotations opening with `”` and `’`, nested quotations spaced French-style and English-style, a spaced `¿`, the historical Italian closing `„`, Greek and Polish quotations opening with `‟` and `‛`, German quotes, and the `?"` case.
    - Brackets: sentences ending inside parentheses and brackets, and bracket depth, including an unclosed opener such as `:(` or `1(a` followed by later sentence ends.
-   - Block constructs: a word opening with `~~~` after a sentence end, a section that merely mentions one, and runs of lone marks whose newline would open a line with `~~~` or end one in a no-break space.
+   - Safety rules: a word opening with `~~~` after a sentence end, a section that merely mentions one, and runs of lone marks whose newline would open a line with `~~~` or end one in a no-break space.
 
    Beside them, the hook point's own cases, each checked for width independence at `no`, `20`, `40` and `80` in both load orders, render equality and source equality against the co-plugins alone, and no back-off:
 
@@ -1525,6 +1482,6 @@ Panache is MIT and is a working implementation of this same approach, so its exp
 | one long sentence | eighty-eight columns with no interior terminator | unchanged, at every width |
 | a trailing newline | `Only one sentence.` | no empty line is emitted |
 
-The first is the strongest block-construct test available.
+The first is the strongest line-start test available.
 Both of its gaps matter and in opposite directions: the gap before `1.` must not break, because that puts an enumerator at line start where `paragraph()` escapes it to `1\.`, and the gap after `1.` must break, which leaves the marker at the end of a line where it is harmless.
 The escape is the enumerator's remedy as the four-space indent is the HTML opener's (§3.5), and like the indent it is invisible to `is_md_equal`, which reads `1\.` as the `1.` it renders to.
