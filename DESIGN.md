@@ -608,7 +608,7 @@ A literal dollar is `\$`, as in `re`, and the expander never reads `\$` as a sig
   A bare URL that mdformat-gfm links is such a node, and `notes/FUTURE-WORK.md` records the cost.
   An open list was tried and deletes text: with mdformat-footnote loaded, a break before `[^x]: not a definition` lets the second pass read a footnote definition there, and both notes' text is gone.
   The closed list costs breaks before co-plugin syntax, a sentence opening with a wikilink or with inline math, `…holds. $x$ is positive.`, among them.
-  On technical documentation that cost was no changed line in two collections of real documents and 24 gaps in about 150,000 paragraphs, each before a bare URL that mdformat-gfm links, while math-heavy prose was not measured; `notes/MATH-AND-OPENERS.md` records the measurement, its source, and how more opening atoms could be added.
+  On technical documentation it changed no line in two collections of real documents, of 35 and 31, and cost 24 gaps in about 150,000 paragraphs, each before a bare URL that mdformat-gfm links, while math-heavy prose was not measured; `notes/MATH-AND-OPENERS.md` records the measurement, its source, and how more opening atoms could be added.
   Without this check, `` Install the package. `pip install foo` does the rest. `` never breaks, and neither does any sentence opening with an image or an autolink.
   Formatted text is **not** included: link text and emphasis are words, so `[the docs](u) explain it.` keeps the ordinary treatment of skipping the markup and testing the word, and declines to break for the same reason a bare lowercase word would.
   The cost is that a conditional abbreviation followed by an opaque atom breaks: `` See fig. `x` for details. `` goes wrong, where a backtick alone would have failed the capital test.
@@ -815,7 +815,7 @@ An ineligible sentence gap is simply pinned like its neighbors.
 **Line-start safety.**
 A gap is ineligible when the line the newline would open is one mdformat 1.0.0's `paragraph()` escapes or indents: it starts with `#{1,6}` followed by a space, a tab or the end of the line, with any `>`, with `-`, `*` or `+` followed by the same, with `[0-9]+` then `.` or `)` followed by the same, or with an HTML block opener that can interrupt a paragraph; or it is three or more of one of `*`, `-` and `_` with nothing else but spaces and tabs, or only `-` or only `=`.
 It is ineligible too before two things mdformat does not escape but that still do damage: a run of three or more tildes, and a task box `[ ]`, `[x]` or `[X]`.
-Section 3.3's capital test refuses `#`, `>`, `-`, `+` and `=` on its own, but this check is tested regardless, because a broad `lowercase_names` pattern (§4) can pass `-`, `#` or `>`.
+Section 3.3's capital test refuses `#`, `>`, `-`, `+` and `=` on its own, but this check still applies to them, because a broad `lowercase_names` pattern (§4) can pass `-`, `#` or `>`.
 For an enumerator, an HTML opener, which opens a sentence as raw HTML does (§3.3), and the two entries mdformat does not escape, it is the only guard.
 The task box is the one a co-plugin escapes rather than mdformat: mdformat-gfm's `paragraph` postprocessor turns a line-opening `[X]` into `\[X\]`, whichever order the two plugins load in, so `It is done. [X] marks a finished task.` stays on one line.
 The entry applies with or without gfm, because a missed break costs less than a check that depends on what else is installed; `notes/experiments/seam.py` reproduces the escape.
@@ -1241,13 +1241,13 @@ Nothing in `_api.py` or `_cli.py` wraps plugin code in `try`/`except`, so a malf
 
 ### 4.1 Options not provided
 
-- **Any width, column or line-length option.** §1.
+- **Any width, column or line-length option.** Section 1.
 - **`avoid_escapes`.**
   Unnecessary: §3.5's line-start check is unconditional, so no escape and no four-space indent is ever added for a construct it lists, and an unlisted co-plugin's definition syntax is the one exception it leaves (§3.5).
 - **A "honor `--wrap`" mode** that would let mdformat wrap inside a sentence.
   That is a coherent product, and GNU Emacs's `fill-paragraph-semlf` is exactly it, but it reintroduces geometric line breaks and therefore forfeits §1's property, which is the only reason this plugin exists.
   Anyone who wants it wants a different tool.
-- **Clause breaking, break words, short-line merging or a minimum line length.** §1.
+- **Clause breaking, break words, short-line merging or a minimum line length.** Section 1.
 - **Reading the document's language from front matter.**
   Reachable, and declined.
   With a front-matter plugin named in `--extensions` a `lang:` key survives as a node the plugin reaches from its hook point by walking to the root, and hand-scanning for it needs no YAML parser and no dependency.
@@ -1279,7 +1279,7 @@ The sembr specification numbers thirteen rules, cited here as sembr#1 through se
 | 12 | 80 characters RECOMMENDED | none | **declined, §1** |
 | 13 | MAY exceed the maximum where necessary | none | n/a without sembr#12 |
 
-Sembr#4 and sembr#9 are the two this plugin implements, and they are the only MUSTs that place breaks; sembr#2, the third MUST, holds by construction (§2.2, §3.5).
+Sembr#4 and sembr#9 are the two this plugin implements, and they are the only MUST-level rules about where a break may go; sembr#2, the third MUST-level rule, holds by construction (§2.2, §3.5).
 Sembr#4 is partial by design: §3.3 holds a break back wherever it cannot tell that a sentence has ended, after an abbreviation, an initial or an initialism, before a lowercase word, inside brackets, and §3.5 refuses a break that would damage the source.
 
 ### 5.1 Declining sembr#5

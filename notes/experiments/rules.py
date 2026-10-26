@@ -1,4 +1,4 @@
-"""Classify every author line break in the corpus by which sembr# put it
+"""Classify every author line break in the corpus by which sembr rule put it
 there: sentence end (sembr#4), clause punctuation (sembr#5), hyperlink or
 inline-markup boundary (sembr#10, sembr#11), or none of the above.
 
@@ -6,7 +6,7 @@ Produces the table in DESIGN.md 5.2. Breaks are classified by first match, so
 the rows are disjoint by construction; the count after the table says how many
 of them had a second claim on them. The last row is every break with no
 punctuation and no markup at it, of which sembr#6's dependent clauses are only a
-part, so it carries no sembr# number.
+part, so no sembr#N applies to it.
 
 The scope is every paragraph, as markdown-it parses them (_corpus.py); pass
 --top-level for the paragraphs outside lists and the blockquote only.
