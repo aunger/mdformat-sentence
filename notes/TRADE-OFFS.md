@@ -54,7 +54,7 @@ ______________________________________________________________________
 | cost | what it buys | kind |
 | --- | --- | --- |
 | `include` takes names only, so the projects of a monorepo cannot share one rules file by path. | One way to resolve a name, and rules files that travel together. | duplication |
-| A token's fate is not readable in one place: it is whichever rule matched last in the decision list, across every included rules file (§4). | A rules file overrides an inherited rule by writing a later one, without knowing or repeating how the earlier one was expressed (§3.3). | reading a composed decision list takes every rules file |
+| An abbreviation's fate is not readable in one place: it is whichever rule matched last in the decision list, across every included rules file (§4). | A rules file overrides an inherited rule by writing a later one, without knowing or repeating how the earlier one was expressed (§3.3). | reading a composed decision list takes every rules file |
 | `--sentence-include` is hidden and unstable. | No published promise while its design settles. | no supported flag for ad hoc rules files |
 | `base_rules` is boolean only, and `default` cannot be named in `include`. | One switch for the shipped rules, and room for later values. | none in practice |
 | The dependency is bounded to `mdformat>=1.0.0,<1.1`. | No silent output change from an mdformat release. | users wait for the bound to move |

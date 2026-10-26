@@ -31,9 +31,8 @@ python3 -m venv v && ./v/bin/pip install 'mdformat==1.0.0'
 
 `seam.py` and `recorder.py` also need `mdformat-gfm==1.0.0`, `seam_mkdocs.py` needs `mdformat-mkdocs==5.3.0`, `mkdocs_dogfood.py` needs both, and `spacecontrol.py` needs `mdformat-space-control==0.5.0`; each installs alongside mdformat 1.0.0.
 
-Install exactly mdformat 1.0.0. Every hook-point fact in `DESIGN.md` §2 was measured against
-that version, and the wrap-point mechanics these programs depend on are internal
-to it.
+Install exactly mdformat 1.0.0.
+Every hook-point fact in `DESIGN.md` §2 was measured against that version, and the wrap-point mechanics these programs depend on are internal to it.
 
 | program | needs mdformat | what it establishes |
 | --- | --- | --- |

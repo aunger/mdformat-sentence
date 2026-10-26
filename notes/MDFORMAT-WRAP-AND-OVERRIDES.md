@@ -148,7 +148,7 @@ A guarded re-render from `POSTPROCESSORS["root"]` takes calls at the hook point 
 Caveats:
 
 - **The trailing newline doubles.**
-  A root postprocessor is handed already-finalized output: `render_tree` appends the final `"\n"` at `renderer/__init__.py:94-99` — so re-rendering it finalizes twice.
+  A root postprocessor is handed already-finalized output: `render_tree` appends the final `"\n"` at `renderer/__init__.py:94-99`, so re-rendering it finalizes twice.
   `.rstrip("\n")` on the way in and on the way out fixes it; without that the output ends `'.\n\n'` and no longer matches.
 - **It needs a re-entrancy guard.**
   The re-render runs the same plugin, including this postprocessor.

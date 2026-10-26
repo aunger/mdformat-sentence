@@ -485,7 +485,7 @@ No separate condition is needed for it, and none is offered.
 `before_full = ''` matches there and nowhere else, while any pattern requiring a character fails there.
 The stretch is §3.1's unit, the inline text between hard breaks, so this is a stretch start rather than a document one.
 `after_full` is never empty where the decision list is consulted, because a gap has a word on each side by definition; `after` is empty only when that word is nothing but punctuation.
-The one gap with nothing after it is a run of lone marks that ends its stretch (below): no sentence opens there, so it never breaks and the table is not consulted.
+The one gap with nothing after it is a run of lone marks that ends its stretch (below): no sentence opens there, so it never breaks and the decision list is not consulted.
 
 **A condition on `before` or `before_full` that needs a character does not match at a stretch start**, so a rule carrying one stays silent there and whatever the decision list had already decided stands.
 For the `st` discriminator below that is the safe direction: `St. Louis is a city.` opens its stretch, the discriminator says nothing, and the unconditional rule for `st` keeps the line whole.
@@ -607,7 +607,7 @@ A literal dollar is `\$`, as in `re`, and the expander never reads `\$` as a sig
   A bare URL that mdformat-gfm links is such a node, and `notes/FUTURE-WORK.md` records the cost.
   An open list was tried and deletes text: with mdformat-footnote loaded, a break before `[^x]: not a definition` lets the second pass read a footnote definition there, and both notes' text is gone.
   The closed list costs breaks before co-plugin syntax, a sentence opening with a wikilink or with inline math, `…holds. $x$ is positive.`, among them.
-  On technical documentation that cost was no changed line in two collections of real documents and 24 gaps in about 150,000 paragraphs, each before a bare URL that mdformat-gfm links, while math-heavy prose was not measured; `notes/MATH-AND-OPENERS.md` records the measurement, its source, and how named openers could be added.
+  On technical documentation that cost was no changed line in two collections of real documents and 24 gaps in about 150,000 paragraphs, each before a bare URL that mdformat-gfm links, while math-heavy prose was not measured; `notes/MATH-AND-OPENERS.md` records the measurement, its source, and how more opening atoms could be added.
   Without this check, `` Install the package. `pip install foo` does the rest. `` never breaks, and neither does any sentence opening with an image or an autolink.
   Formatted text is **not** included: link text and emphasis are words, so `[the docs](u) explain it.` keeps the ordinary treatment of skipping the markup and testing the word, and declines to break for the same reason a bare lowercase word would.
   The cost is that a conditional abbreviation followed by an opaque atom breaks: `` See fig. `x` for details. `` goes wrong, where a backtick alone would have failed the capital test.
@@ -963,7 +963,7 @@ What a rules file is for belongs in a comment at the top of it and in its name, 
 It names rules files to lay down after the rules written in `[plugin.sentence]` itself, may be given more than once, and takes names exactly as `include` does, so nothing it names resolves against the working directory.
 It is hidden from `--help` with `help=argparse.SUPPRESS` and sits outside the versioning policy above: any release may change or remove it, and using it prints no warning.
 Its argparse `dest` is `cli_include` rather than `include`, because mdformat merges command-line plugin options over the config file's with a plain dict update, and a flag writing to `include` would replace the config's list outright instead of adding to it; under its own key both lists survive the merge, verified against mdformat 1.0.0 in `notes/experiments/pluginopts.py`.
-The plugin cannot tell a `cli_include` written into `[plugin.sentence]` from the flag, so that spelling is unsupported in the same way, and the unknown-key load error of §3.3 does not reject it.
+The plugin cannot tell a `cli_include` written into `[plugin.sentence]` from the flag, so that spelling is unsupported in the same way, and §3.3's load error for a key the format does not define does not reject it.
 
 **What an included rules file contributes is rules and macros, never the notation.**
 The `$name` classes of §3.3 are the pattern language rather than rule content, so every file gets them and no file can shadow them.
@@ -1391,7 +1391,7 @@ The text-preservation row cannot see either, because it compares the plugin's in
 `notes/experiments/sourceeq.py` runs the row with a postprocessor that has no line-start check: ten container cases pass, nested and numbered lists among them, while the HTML indent, at the top level and in a list item, and the escape before `-` fail, and render equality passes all three.
 
 **The locality row tests §1's leading promise, which nothing else does.**
-For each paragraph, insert a *neutral* word, a plain lowercase one carrying no terminator, into sentence *n* between two of its words and never beside a gap a sentence end could stand at, format before and after, and require the diff to change exactly one line, sentence *n*'s.
+For each paragraph, insert a *neutral* word, a plain lowercase one carrying no terminator, into sentence *n* between two of its words, never beside a gap a sentence end could stand at and never directly before a word carrying a terminator, format before and after, and require the diff to change exactly one line, sentence *n*'s.
 The neutrality matters: a word carrying a terminator legitimately creates a line.
 So does the position: a lowercase word opening sentence *n* fails the capital test at the gap before it and joins two lines, and a word between `et` and `al.` stops academic's rule from matching, both of which §1 states as the limit of its promise.
 This passes on the first day and proves little, because every sentence already occupies its own line, so locality currently falls out of the structure rather than being earned.
