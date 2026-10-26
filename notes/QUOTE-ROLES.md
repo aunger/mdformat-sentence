@@ -132,7 +132,7 @@ The languages on Wikipedia's list outside the `»…«` and `»…»` traditions
 Canada's Bureau de la traduction, *Le guide du rédacteur* §7.2.5, describes "une tradition rivale" in which each continuation paragraph of a long quotation opens with `»`, and notes that many consider it "puriste et désuète"; the OQLF mentions it too.
 The guide's own example types an ordinary space after that `»`, so it produces exactly a lone `»` that does not close.
 In Markdown it opens a paragraph, where either reading gives the same lines.
-A hard line break comes to the same thing, and the guide's own page separates its paragraphs that way, with `<br /><br />`: `DESIGN.md` §3.1 splits stretches at hard breaks, so the `»` again has nothing before it.
+A hard line break comes to the same thing, and the guide's own page separates its paragraphs that way, with `<br /><br />`: `DESIGN.md` §3.1 splits a paragraph into parts at hard breaks, so the `»` again has nothing before it.
 A soft break is not a continuation at all.
 A newline inside a Markdown paragraph renders as a space, so `Il a dit : « Il y a trois raisons.` then `» La première est la croissance. »` renders as one paragraph with a `»` in the middle of it, and reading that `»` as closing matches what the reader sees.
 

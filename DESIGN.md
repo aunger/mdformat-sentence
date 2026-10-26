@@ -112,7 +112,7 @@ The relevant mdformat 1.0.0 pipeline, in order, from `mdformat/renderer/_context
 1. `text()` escapes inline markup, then, if `context.do_wrap` and the node is inside a paragraph, replaces every run of `[ \t\n]+` with `WRAP_POINT` (`\x00`).
 1. `softbreak()` becomes `WRAP_POINT`.
    `hardbreak()` becomes a backslash *and* a newline, glued to the preceding segment with no wrap point between them when no space precedes the backslash.
-   When one does, `foo. \` arrives as `foo.`, a wrap point and a lone `\` segment ending its stretch (§3.1), which is safe only because a run of lone marks that ends its stretch never breaks (§3.3).
+   When one does, `foo. \` arrives as `foo.`, a wrap point and a lone `\` segment ending its paragraph part (§3.1), which is safe only because a run of lone marks that ends its paragraph part never breaks (§3.3).
 1. `link()` and `image()` replace every interior `WRAP_POINT` with a space, so a whole link or image is one unbreakable atom.
 1. **The plugin runs here**, as the renderer for `inline` nodes.
    It calls mdformat's own, `DEFAULT_RENDERERS["inline"]`, which joins the renderings of steps 1 to 3, and decides the gaps in the result.
@@ -285,8 +285,8 @@ Normative, except where a passage reports a measurement or a verification; those
 
 ```
 atoms = locate(records, node)                     # once per inline node: offsets and types, from the one render
-for each stretch in split_outside(inline_text, "\n", atoms):   # hard breaks
-    parts = re.split(r"(\x00+)", stretch)             # keeps each run, whose length the offsets need (§2.3)
+for each paragraph_part in split_outside(inline_text, "\n", atoms):   # hard breaks
+    parts = re.split(r"(\x00+)", paragraph_part)           # keeps each run, whose length the offsets need (§2.3)
     segs  = parts[0::2]
     state = scan(segs, atoms)                     # §3.3's cross-segment facts
     emit  = [segs[0]]
@@ -294,14 +294,15 @@ for each stretch in split_outside(inline_text, "\n", atoms):   # hard breaks
         emit.append("\n" if is_sentence_break(segs, i, state) else " ")
         emit.append(segs[i + 1])
     yield "".join(emit)
-join stretches with "\n"
+join paragraph_parts with "\n"
 ```
 
-A *stretch* is the inline text between hard breaks, and it ends at every `\n` that lies outside an atom (§3.2), which is a hard break's.
-Raw inline HTML can carry a newline of its own, `<span\nclass="x">`, and so can a hard break in link text, `[a\` then a newline and `b](u)`, and a link title, `[a](u "x` then a newline and `y")`; splitting there would cut an atom in two and leave each half in a different stretch, with the recorded offsets pointing across the cut; that newline stays inside its stretch and inside its atom, and `paragraph()` keeps it as it would without this plugin.
+A *paragraph part* is the inline text of a paragraph between hard breaks, and it ends at every `\n` that lies outside an atom (§3.2), which is a hard break's.
+A paragraph with no hard break is a single part.
+Raw inline HTML can carry a newline of its own, `<span\nclass="x">`, and so can a hard break in link text, `[a\` then a newline and `b](u)`, and a link title, `[a](u "x` then a newline and `y")`; splitting there would cut an atom in two and leave each half in a different paragraph part, with the recorded offsets pointing across the cut; that newline stays inside its paragraph part and inside its atom, and `paragraph()` keeps it as it would without this plugin.
 
 **Segments are the units and gaps are the only legal break positions.**
-An authored soft line break is not a stretch boundary: `text()` turns it into a wrap point like any other space (§2.2), so it arrives here as a gap.
+An authored soft line break is not a boundary between paragraph parts: `text()` turns it into a wrap point like any other space (§2.2), so it arrives here as a gap.
 `node.children` still marks it as a `softbreak`, so keeping it is mechanically possible; this design declines to (§2.5), and `notes/PRESERVE-MODE.md` records the alternatives and why an opt-in add-only mode is the one that survives.
 
 **The node is rendered once, and recorded as it renders.**
@@ -311,7 +312,7 @@ The records of `node.children` concatenate to `inline_text` by construction, whi
 A container's children are located by finding their joined records inside the container's own record, which places emphasis, strong emphasis and every other container's pieces, except the atoms of §3.2, which are recorded whole.
 **A node whose children were not rendered, or whose children's joined records are not found exactly once in its own record, is an atom.**
 That covers mdformat-gfm's bare URL, which renders its source and never its `text` child, mdformat-mkdocs's `{…}` attribute list, and any co-plugin container that transforms its children; such a node is never a reason to back off.
-Each stretch's `scan` reads the offsets that fall inside it, so a paragraph with hard breaks is still rendered once, not once per stretch.
+Each paragraph part's `scan` reads the offsets that fall inside it, so a paragraph with hard breaks is still rendered once, not once per paragraph part.
 Both of §3.3's uses read it, the opaque-atom check and bracket depth, since whether a span is a code span, an image or a link is a fact about a node rather than about text.
 Child offsets add type information at existing positions and never add a position.
 mdformat has already collapsed each link, image and code span into a single segment with literal interior spaces, so punctuation cannot detach from its atom: `` See `a b`. Next [x y](u). `` segments as `` ['See', '`a b`.', 'Next', '[x y](u).'] ``, and `` `a b`. `` is one segment.
@@ -327,8 +328,8 @@ A renderer that does not pass its context to its children leaves them unrecorded
 **Every gap that is not a sentence break becomes a literal space, never a wrap point**, which §3.4 calls *pinning* and explains.
 
 **`is_sentence_break` sees the whole segment list.**
-It cannot be a function of two adjacent segments, for the reasons in §3.3: bracket pairs are found across the whole stretch, and a run of lone marks is one gap whose break the words on either side of the whole run decide.
-`scan` computes those once per stretch.
+It cannot be a function of two adjacent segments, for the reasons in §3.3: bracket pairs are found across the whole paragraph part, and a run of lone marks is one gap whose break the words on either side of the whole run decide.
+`scan` computes those once per paragraph part.
 
 ### 3.2 Inline atoms
 
@@ -341,15 +342,15 @@ Atoms are consumed by bracket depth and by the sentence-end test.
 
 **Bracket depth counts prose brackets only.**
 Only the characters of prose leaves are read, so a `)` inside a URL or a code span is never counted at all.
-That is what keeps one link from closing a bracket it never opened and corrupting every later gap in the stretch.
+That is what keeps one link from closing a bracket it never opened and corrupting every later gap in the paragraph part.
 
 **Brackets are paired before depth is counted, and a bracket left unpaired counts nothing.**
-Walking a stretch's prose brackets in order, each `)` pairs with the nearest earlier unpaired `(`, and each `]` with the nearest earlier unpaired `[`, if there is one.
+Walking a paragraph part's prose brackets in order, each `)` pairs with the nearest earlier unpaired `(`, and each `]` with the nearest earlier unpaired `[`, if there is one.
 Depth at a gap is the number of pairs that open before it and close after it.
-Prose has unbalanced brackets of both kinds, and a counter misreads both: an unopened closer, `1) first`, drives a running count negative, and an unclosed opener, a smiley `:(` or a label `1(a`, holds it above zero and blocks every later break in the stretch.
+Prose has unbalanced brackets of both kinds, and a counter misreads both: an unopened closer, `1) first`, drives a running count negative, and an unclosed opener, a smiley `:(` or a label `1(a`, holds it above zero and blocks every later break in the paragraph part.
 Pairing costs neither, because neither bracket has a partner.
 What pairing can still misread is an unclosed opener adopted by a later closer of its kind across a sentence end, `It failed :(. Then came a) and b).`, which holds that one break back and never adds one.
-`scan` already reads the whole stretch, so the pairing is one pass with a stack per bracket kind.
+`scan` already reads the whole paragraph part, so the pairing is one pass with a stack per bracket kind.
 
 **A terminator inside an atom never ends a sentence.**
 The test reads the terminator's own position, after the footnote strip and the scan back over closers (§3.3), and fails when that position lies inside an atom, so `` Install the `foo.` Then run… `` and `See the [docs](https://ex.com/a.b.) The next…` do not break after the atom.
@@ -481,15 +482,15 @@ Stripped is what an index needs: `after = '$mixed'` holds for `3`, `3,`, `3.` an
 Raw is what makes *unpunctuated* expressible: `before_full = '$upper$letter*'` says a capitalized word carrying no punctuation, which `Paris,` and `at` and `1890` each fail for a different reason.
 No separate condition is needed for it, and none is offered.
 
-**`before` and `before_full` are the empty string when the word carrying the terminator opens the stretch**, and that is what makes *nothing precedes* sayable without a keyword for it.
+**`before` and `before_full` are the empty string when the word carrying the terminator opens the paragraph part**, and that is what makes *nothing precedes* sayable without a keyword for it.
 `before_full = ''` matches there and nowhere else, while any pattern requiring a character fails there.
-The stretch is §3.1's unit, the inline text between hard breaks, so this is a stretch start rather than a document one.
+The paragraph part is §3.1's unit, the inline text between hard breaks, so this is the start of a paragraph part rather than of the document.
 `after_full` is never empty where the decision list is consulted, because a gap has a word on each side by definition; `after` is empty only when that word is nothing but punctuation.
-The one gap with nothing after it is a run of lone marks that ends its stretch (below): no sentence opens there, so it never breaks and the decision list is not consulted.
+The one gap with nothing after it is a run of lone marks that ends its paragraph part (below): no sentence opens there, so it never breaks and the decision list is not consulted.
 
-**A condition on `before` or `before_full` that needs a character does not match at a stretch start**, so a rule carrying one stays silent there and whatever the decision list had already decided stands.
-For the `st` discriminator below that is the safe direction: `St. Louis is a city.` opens its stretch, the discriminator says nothing, and the unconditional rule for `st` keeps the line whole.
-A rule whose verdict is `no` and whose condition is on `before` or `before_full` has the opposite exposure, and its author should carry an example for the stretch-start case.
+**A condition on `before` or `before_full` that needs a character does not match at the start of a paragraph part**, so a rule carrying one stays silent there and whatever the decision list had already decided stands.
+For the `st` discriminator below that is the safe direction: `St. Louis is a city.` opens its paragraph part, the discriminator says nothing, and the unconditional rule for `st` keeps the line whole.
+A rule whose verdict is `no` and whose condition is on `before` or `before_full` has the opposite exposure, and its author should carry an example for the case at the start of a paragraph part.
 
 **Positions are counted from the words on either side of a gap, not from the gap's own neighbors.**
 Where spaced-off marks stand as segments of their own, as French writes `« Ceci est important. »`, the whole run of them between two words is one gap (below): `at`, `at_full`, `before` and `before_full` read leftward from the word carrying the terminator, and `after` and `after_full` read the word after the run, so `at` is `important` and not `»`.
@@ -629,7 +630,7 @@ Everything else is code, and is not.
 | the capital test and its two exemptions | no, though `lowercase_names` lives in rules files | it applies after every terminator, and the decision list only after ATerm |
 | an opaque atom opens a sentence | no | tests the node's type, which no text pattern sees |
 | runs of lone marks and their roles | no | a run can be any length, which no three-position rule spans |
-| bracket depth | no | pairs found across a stretch |
+| bracket depth | no | pairs found across a paragraph part |
 | the line-start check, inline atoms, the footnote strip | no | safety guards, and a rules file must not be able to defeat them |
 
 The safety row is the one that is deliberate rather than merely difficult.
@@ -732,7 +733,7 @@ The principles that follow are structural, and none is about any one language:
   **A run is one gap, and the two words decide it.**
   The terminator test and the decision list read the word on the left, the capital test reads the word on the right, and the marks in between are skipped by all three.
   The marks decide only where in the run the newline goes: before the first mark read as opening, or after the last mark when none is.
-  A run that ends its stretch has no word after it, so no sentence opens there, it never breaks, and the decision list is not consulted.
+  A run that ends its paragraph part has no word after it, so no sentence opens there, it never breaks, and the decision list is not consulted.
   A closing mark after an opening one therefore follows it onto the next line, as in `Il a dit. « » Puis il part.`, which breaks before `«`.
   **Section 3.5's two safety checks are tested where that newline lands**, between the segments on either side of it, which within a run are marks rather than the words that decided the run.
   When that position is unsafe the whole run is pinned, so `It ended. " ~~~ Then more.`, whose newline would open a line with `~~~`, and `Il a dit.` then a no-break space standing alone between two ordinary spaces and then `Puis il part.`, whose newline would end a line in a character `paragraph()` strips, both stay on one line.
@@ -829,11 +830,11 @@ What survives the repair is damage to the *source*, four spaces on a line this p
 **The tilde entry covers an upstream mdformat defect.**
 A run of three or more tildes at a line start opens a fenced code block, and `paragraph()` does not escape it, so plain mdformat with no plugin breaks the render whenever its own word wrap puts such a run at a line start.
 Verified against mdformat 1.0.0: `Some text here and ~~~ more text after it.` formatted at `--wrap 10` comes back as a code block (`notes/quirks-mdformat.md`).
-Here only a newline this plugin emits can start a line, since every other gap is pinned (§3.4), so refusing the one break directly before the run is enough, and the rest of the stretch breaks as usual: `` Use `~~~` for fences. Then indent the block. `` still breaks after `fences.`.
+Here only a newline this plugin emits can start a line, since every other gap is pinned (§3.4), so refusing the one break directly before the run is enough, and the rest of the paragraph part breaks as usual: `` Use `~~~` for fences. Then indent the block. `` still breaks after `fences.`.
 
 **Co-plugin definition syntax is refused at a line start too.**
 A gap is also ineligible when the line the newline would open begins with a definition another plugin parses: `[label]:` for mdformat-footnote's `[^x]:`, `*[label]:` for an mdformat-mkdocs abbreviation, and `(label)=` for an mdformat-myst target.
-The test reads that whole line as it would come out, the rest of the stretch with every other gap as a space, in mdformat's escaped text, because a label can hold spaces, `*[Hyper Text]:`, and mdformat writes `\*\[HTML\]:`.
+The test reads that whole line as it would come out, the rest of the paragraph part with every other gap as a space, in mdformat's escaped text, because a label can hold spaces, `*[Hyper Text]:`, and mdformat writes `\*\[HTML\]:`.
 The pattern is `\\?\*?\\?\[[^\]\n]*?\\?\]:|\\?\([^\s)]+\)=`, matched at the start of that line.
 The `(label)=` entry matches any line that begins with one, so `Sentence one. (Label)= Then more.` is held even where myst would not read a target there; that costs a missed break, never a wrong one.
 **The list is closed over the co-plugins the gate loads (§6.2).**
@@ -850,7 +851,7 @@ A back-off is silent in the output, so it is logged at `DEBUG` through `mdformat
 Handing the text back untouched would not be the same thing, because it would leave mdformat's wrap points in place, and at `--wrap 80` mdformat would then width-wrap that one paragraph, against §3.4's guarantee that no `WRAP_POINT` survives and §1's promise that no output depends on a width.
 
 **Text preservation is a test, not a runtime check.**
-With the loop of §3.1, the emitted stretch and the input with each wrap point replaced by its chosen separator are one splice of the same choices, and cannot differ.
+With the loop of §3.1, the emitted paragraph part and the input with each wrap point replaced by its chosen separator are one splice of the same choices, and cannot differ.
 What such a check would catch, emission that alters the text between wrap points, is a coding error, and §6.2's text-preservation row catches it over every fixture and the corpus instead.
 
 ______________________________________________________________________
@@ -1442,7 +1443,7 @@ The tool has its own blind spots, this design intends to do better in places, an
    - Detection: abbreviations, initials, camelCase and `lowercase_names` sentence openers, an index abbreviation before a punctuated number (`In Fig. 3, the curve`), a hyphenated word ending in a capital (`Jay-Z. He left.`), the capital test, footnote references, CJK, and a period inside a code span or a link destination.
    - Quotation marks: CJK marks spaced off their words, French spaced closers, guillemets around a word or a fragment, French dialogue that closes in a later paragraph, a continuation paragraph opening with `»`, Finnish and Swedish quotations opening with `”` and `’`, nested quotations spaced French-style and English-style, a spaced `¿`, the historical Italian closing `„`, Greek and Polish quotations opening with `‟` and `‛`, German quotes, and the `?"` case.
    - Brackets: sentences ending inside parentheses and brackets, and bracket depth, including an unclosed opener such as `:(` or `1(a` followed by later sentence ends.
-   - Safety checks: a word opening with `~~~` after a sentence end, a stretch that merely mentions one, and runs of lone marks whose newline would open a line with `~~~` or end one in a no-break space.
+   - Safety checks: a word opening with `~~~` after a sentence end, a paragraph part that merely mentions one, and runs of lone marks whose newline would open a line with `~~~` or end one in a no-break space.
 
    Beside them, the hook point's own cases, each checked for width independence at `no`, `20`, `40` and `80` in both load orders, render equality and source equality against the co-plugins alone, and no back-off:
 
