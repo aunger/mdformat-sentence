@@ -29,6 +29,7 @@ Prose in `DESIGN.md` is one sentence per line, because `DESIGN.md` is also a fix
 So every line break must be one the shipped default would make, and no gap inside a line may be one it would make.
 The common traps are a line ending in an abbreviation or initial the default holds, a break inside brackets, and a next line opening with something §3.5 refuses at a line start, such as `1.` or `-`.
 Write "Section 6.2", not "§6.2", at the start of a sentence.
+Cite the Semantic Line Breaks specification's rules as "sembr#5" within a sentence and "Sembr#5" at its start, since a lowercase opening fails the capital test.
 Run `mdformat --check DESIGN.md` with plain mdformat 1.0.0, and `mdformat --compact-tables --check DESIGN.md` with mdformat-gfm 1.0.0 added, before committing.
 
 Never run mdformat over `notes/corpus/`: `sembr.md` there is verbatim third-party text pinned by a checksum, and `notes/corpus/README.md` explains why mdformat's own `exclude` cannot protect it.
