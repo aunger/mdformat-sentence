@@ -6,7 +6,7 @@ The probe is a stand-in `inline` renderer, as DESIGN.md §2.2 places the plugin:
 DEFAULT_RENDERERS["inline"], breaks at a wrap point after [.!?] before a capital, and pins every
 other wrap point to a space. It runs alone and beside space-control, in both load orders.
 
-It establishes three things:
+It establishes:
   1. with space-control loaded, the `softbreak` between two authored lines reaches the `inline`
      renderer as a literal space, not a wrap point, at --wrap no and 40, so the sentence end there
      is not a gap the probe can break; without it the same position is a wrap point;

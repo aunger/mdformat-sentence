@@ -8,7 +8,7 @@ container's children are found by locating their joined records inside the conta
 A node whose children were not rendered, or whose children cannot be located exactly once, is an
 atom.
 
-It establishes four things:
+It establishes:
   1. the top-level records concatenate to the text the default inline renderer returns, and the
      pieces match what a re-render walk reports on ordinary input, atoms nested in emphasis included;
   2. the recorder adds no render of its own, where the walk renders the paragraph's children again;

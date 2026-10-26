@@ -31,7 +31,7 @@ def plugin(override_wrap):
         return "".join(out)
     def update_mdit(mdit):
         if override_wrap:
-            mdit.options["mdformat"]["wrap"] = "no"     # <- the whole trick
+            mdit.options["mdformat"]["wrap"] = "no"     # <- the override
     return types.SimpleNamespace(
         CHANGES_AST=False, RENDERERS={}, POSTPROCESSORS={"inline": pp},
         add_cli_argument_group=lambda g: None, update_mdit=update_mdit), calls

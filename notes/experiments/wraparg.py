@@ -1,4 +1,4 @@
-"""Four facts about `wrap` as an *argument*, as opposed to `wrap` at the hook point.
+"""Facts about `wrap` as an *argument*, as opposed to `wrap` at the hook point.
 
 1. TOML validation is a separate gate from CLI validation, and they disagree.
 2. `--wrap sentence` is rejected by argparse today, which is the fail-loud
@@ -34,7 +34,7 @@ for lit in ('"keep"', '"no"', '"sentence"', "1", "2", "80"):
     print(f"   {lit:<12} {cli:<34} {toml}")
 print("\n   `--wrap 1` is accepted and `wrap = 1` is not: _cli.py:193 tests"
       "\n   `width < 1`, _conf.py:60 tests `wrap_value > 1`. Pre-existing, ours"
-      "\n   only in that it shows the two gates are genuinely separate code.\n")
+      "\n   only in that it shows the two gates are separate code.\n")
 
 print("2. `--wrap sentence` today\n")
 with tempfile.TemporaryDirectory() as d:
