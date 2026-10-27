@@ -41,7 +41,7 @@ Every hook-point fact in `DESIGN.md` §2 was measured against that version, and 
 | `addonly.py` | yes | The author's line breaks survive to the hook point as `softbreak` children on pass 1 and are gone on pass 2. |
 | `proto.py` | yes | A working add-only postprocessor. Idempotent, width-independent, and not a pure function of the text. |
 | `proto2.py` | yes | The same harness with a pluggable decision function. The shape every later experiment varies. |
-| `breaks.py` | markdown-it-py only | **Half of real sembr line breaks carry no punctuation at all.** A break-word list recovers 12 of the 43 that are not at markup either; 30% of all breaks stay undetectable. The reason sembr#5 cannot be recovered from layout. |
+| `breaks.py` | markdown-it-py only | **Half of real sembr line breaks carry no punctuation at all.** A break-word list recovers 12 of the 43 that are not at markup either; 30% of all breaks stay undetectable. The measurement behind `DESIGN.md` §5.2, and the reason `PRESERVE-MODE.md` rejects a keep policy based on punctuation (its §3) and says break words only narrow the loss (its §4). |
 | `triage2.py` | no | Sentence coverage separates hand sembr from geometric wrapping almost perfectly on this corpus: all 9 real paragraphs score 1.00 and 24 of the 27 hard-wrapped ones score 0.00, the exceptions being two at 0.50 and one at 1.00. It prints the full distribution, because min/median/max hides exactly the middle that decides this. |
 | `cov.py` | no | What "coverage" means, on worked cases, including a width-wrapped paragraph that scores 1.00 by coincidence. |
 | `thresh.py` | no | Any coverage *threshold* reintroduces paragraph-sized diffs: one edit, 18 changed lines. |
