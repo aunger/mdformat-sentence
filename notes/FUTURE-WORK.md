@@ -88,6 +88,7 @@ mdformat 0.7.17 and 0.7.22 were read and match, but only 1.0.0 was run.
 
 **Observed.** The plugin decides line layout from the `inline` slot and hands it to `paragraph()` through the wrap channel, because mdformat 1.0.0 lets no plugin supply that step, and mdformat-space-control shows what that costs (`quirks-mdformat-space-control.md`).
 `MDFORMAT-WRAP-AND-OVERRIDES.md` sets out what could be asked upstream: named wrap modes in §5.5, a split of wrap-point production from width wrapping in §5.6, and a line-breaking step in `paragraph()` in §5.8, with the existing issue to join in §5.7.
+Section 5.8 also records what such a step must be handed, since a node and its text do not give the offsets that `DESIGN.md` §3.1's recorder supplies, and reasons, from the two injections `experiments/parahook.py` measures, that no `paragraph` placement in 1.0.0 reaches wrap points while keeping `paragraph()`'s escaping except through the `inline` slot.
 Nothing has been filed, and the design does not wait on it.
 
 ### Issues for other projects
