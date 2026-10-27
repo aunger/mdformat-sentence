@@ -17,7 +17,7 @@ ______________________________________________________________________
 
 No idea here licenses the plugin to delete an author's line break automatically.
 The one that survives is **add-only**: never delete, only add the missing sentence breaks, behind an explicit opt-in.
-The case that motivates the whole question, a width-wrapped paragraph dropped into a hand-broken document, is not solvable inside a formatter; §10 says where its signal actually lives.
+The case that motivates the whole question, a width-wrapped paragraph dropped into a hand-broken document, is not solvable inside a formatter; section 10 says where its signal actually lives.
 
 ______________________________________________________________________
 
@@ -32,7 +32,7 @@ Rendering the children individually and tracking cumulative offsets recovers tho
 Only on the first render pass.
 A paragraph that pass 1 collapsed arrives at pass 2 with children `['text']`, and the information is gone.
 That is not fatal: if pass 1 preserves a break, pass 2 re-parses it as a softbreak and preserves it again, so the arrangement is self-stabilizing.
-Every variant below measures idempotent for this reason, which is also why idempotency turns out to discriminate nothing (§11).
+Every variant below measures idempotent for this reason, which is also why idempotency turns out to discriminate nothing (section 11).
 
 So preservation is mechanically available.
 The ladder is about whether it is wise, and which breaks.
@@ -61,7 +61,7 @@ Each turns on a line break the author typed mid-paragraph, which sentence-only t
 | `preserves_authored_clause_break_after_comma` | `First clause,` + newline + `second clause. Next sentence. Done.` | the authored break after `clause,` stays | `First clause, second clause.` + newline + `Next sentence.` + newline + `Done.` |
 | `abbreviations_do_not_trigger_breaks` | `We use tools, e.g. the parser,` + newline + `and more. End.` | `e.g.` joins, and the authored break after `parser,` stays | `We use tools, e.g. the parser, and more.` + newline + `End.` |
 
-They are recorded here rather than in `DESIGN.md` §6.4 because they test a mode the specification does not adopt; if add-only is ever built, they are its first fixtures.
+They are recorded here rather than in `DESIGN.md` section 6.4 because they test a mode the specification does not adopt; if add-only is ever built, they are its first fixtures.
 
 ______________________________________________________________________
 
@@ -118,7 +118,7 @@ If per-gap punctuation cannot decide, perhaps the paragraph as a whole can: scor
 The score distribution is spread across the whole range, with five paragraphs at exactly 0.000, so no threshold sits safely under it.
 No program in `experiments/` reproduces these three numbers; they were produced by a scorer that was not kept, so take them as the weakest measurements in this note.
 
-**Status.** Rejected, and it inherits §3's blindness rather than escaping it. Aggregating a signal that is absent does not produce a signal.
+**Status.** Rejected, and it inherits section 3's blindness rather than escaping it. Aggregating a signal that is absent does not produce a signal.
 
 **A misleading result.** Evaluated against `DESIGN.md` this idea looks flawless: all 62 of its paragraphs that have an internal sentence end score 1.000 with zero variance, because that document is already pure sentence-per-line.
 The corpus, not the threshold, was doing the work. See `corpus/README.md`.
@@ -127,8 +127,8 @@ ______________________________________________________________________
 
 ## 6. Idea: judge the paragraph on sentences only, which are knowable
 
-The failure in §3 to §5 is always the same: inferring clause boundaries.
-So infer nothing about clauses. Ask only a question §3.3 of `DESIGN.md` can already answer.
+The failure in sections 3 to 5 is always the same: inferring clause boundaries.
+So infer nothing about clauses. Ask only a question section 3.3 of `DESIGN.md` can already answer.
 
 > Scan the paragraph as the author left it.
 > If every sentence end is already followed by a line break, the layout respects the promise; assume the extra breaks are deliberate and preserve them all.
@@ -141,12 +141,12 @@ So infer nothing about clauses. Ask only a question §3.3 of `DESIGN.md` can alr
 | real hand-written sembr, n=9 | 1.00 at min, median and max |
 | the same text hard-wrapped at 62, 72, 80, n=27 | 0.00 median, 26 of 27 below 1.00 |
 
-Near-perfect separation against 31–69% misclassification for §5, but not perfect: three of the 27 hard-wrapped paragraphs score above zero, two at 0.50 (one at width 62, one at width 72) and one at 1.00 (at width 72).
+Near-perfect separation against 31–69% misclassification for section 5, but not perfect: three of the 27 hard-wrapped paragraphs score above zero, two at 0.50 (one at width 62, one at width 72) and one at 1.00 (at width 72).
 The other 24 score 0.00, so the middle is nearly empty rather than empty.
-The 1.00 is the case that matters, because it is indistinguishable from the hand-written class; §7 names the mechanism, a wrap that happens to land just after a sentence end, so it is a false *preserve*, in the safe direction.
-It is also the only idea here that addresses §2's defect, because it is the only one that can recognize geometric wrapping as geometric.
+The 1.00 is the case that matters, because it is indistinguishable from the hand-written class; section 7 names the mechanism, a wrap that happens to land just after a sentence end, so it is a false *preserve*, in the safe direction.
+It is also the only idea here that addresses section 2's defect, because it is the only one that can recognize geometric wrapping as geometric.
 
-**Costs.** The detector is sound; the *remedy* is not. See §8.
+**Costs.** The detector is sound; the *remedy* is not. See section 8.
 
 **Status.** The detector survives and is the most useful thing on this ladder. The all-or-nothing remedy attached to it does not.
 
@@ -169,13 +169,13 @@ A 12-line paragraph at coverage 0.33; one hand-added break moves it to 0.67; the
 A per-gap decision can perturb one gap. A per-paragraph decision can perturb the whole paragraph.
 For any threshold greater than zero and at most one there is an input one edit away from crossing it.
 
-**Status.** Rejected, and it is worse than §6. Softening a binary decision into a graded one reintroduces exactly the instability the graded decision was meant to smooth.
+**Status.** Rejected, and it is worse than section 6. Softening a binary decision into a graded one reintroduces exactly the instability the graded decision was meant to smooth.
 
 Also measured, `cov.py`: a width-wrapped paragraph scores 1.00 when the wrap happens to land just after a sentence end. That error is in the safe direction, preserving junk rather than destroying meaning.
 
 ______________________________________________________________________
 
-## 8. Idea: keep §6's trigger, shrink the remedy
+## 8. Idea: keep section 6's trigger, shrink the remedy
 
 When the detector fires it knows exactly which gap is missing a break.
 That gap is the whole defect. Repair it and leave everything else alone.
@@ -189,10 +189,10 @@ That gap is the whole defect. Repair it and leave everything else alone.
 
 Both leave a clean paragraph untouched and both are idempotent.
 
-**The catch.** `keep = existing_breaks | sentence_ends` is §2. The minimal remedy *is* add-only, and §6's detector adds nothing to it: where coverage is 1.00 there is nothing to add, and where it is not, add-only already adds exactly the missing breaks.
+**The catch.** `keep = existing_breaks | sentence_ends` is section 2. The minimal remedy *is* add-only, and section 6's detector adds nothing to it: where coverage is 1.00 there is nothing to add, and where it is not, add-only already adds exactly the missing breaks.
 So this idea is not a new mode. It is a demonstration that the detector's value is diagnostic rather than operative.
 
-**Does a threshold of exactly zero rescue the destructive branch?** It demands unanimous evidence, and it is the best version of §6. Measured, `k0.py`:
+**Does a threshold of exactly zero rescue the destructive branch?** It demands unanimous evidence, and it is the best version of section 6. Measured, `k0.py`:
 
 | edit to a hand-sembr paragraph | coverage | branch | diff | clause breaks |
 | --- | --- | --- | --- | --- |
@@ -212,7 +212,7 @@ Unanimity over a set of size one is not unanimity.
 Restoring the edit does not restore the layout, because the break positions no longer exist in the file and cannot be derived from the text.
 Rewrapped output scores 1.00, so the paragraph is classified preserve forever after and its machine-chosen breaks are defended indefinitely.
 
-**Status.** The remedy collapses into §2. The destructive branch is rejected at every threshold including zero.
+**Status.** The remedy collapses into section 2. The destructive branch is rejected at every threshold including zero.
 
 ______________________________________________________________________
 
@@ -238,27 +238,27 @@ The case that motivates all of this: an agent inserts a width-wrapped paragraph 
 
 Sentence-only flattens the whole document, which is not a repair but a different destruction.
 Add-only freezes the new paragraph's geometric breaks.
-Every automatic deleting policy is §3 to §8.
+Every automatic deleting policy is sections 3 to 8.
 
 The information actually needed is "was this paragraph written by something that does not know about sembr", and that is not in the text.
 It is in version control.
 A pre-commit wrapper that runs sentence-only over **changed line ranges only** has blast radius bounded by what was edited, and needs no heuristic anywhere.
-This is the same principle as §9, with the commit boundary doing the declaring instead of a comment.
+This is the same principle as section 9, with the commit boundary doing the declaring instead of a comment.
 mdformat cannot do it, since it sees one file and no history, so it is a wrapper rather than a plugin mode.
 
 The plugin-only answer that survives CI is weaker but safe: add-only, never delete, plus a warning naming any paragraph whose layout ignores sentence boundaries.
 The warning channel exists and is measured: `mdformat.renderer.LOGGER`, with a `RendererWarningPrinter` handler attached in `_cli.py` that prints WARNING and above to stderr.
 It is attached on the CLI path only, but that does not make the API path silent: with no handler configured, `logging.lastResort` still writes the message to stderr, unprefixed.
 What the CLI adds is the `Warning: ` prefix, and only on the first render pass.
-Measured, `wraparg.py` §3; `MDFORMAT-WRAP-AND-OVERRIDES.md` §7 is the full account.
+Measured, `wraparg.py` section 3; `MDFORMAT-WRAP-AND-OVERRIDES.md` section 7 is the full account.
 
 **Status.** The VCS-scoped wrapper is the only design that serves the motivating case without a heuristic. It is out of scope for the plugin and worth building separately.
 
 ______________________________________________________________________
 
-## 11. What this says about `DESIGN.md` §6.2
+## 11. What this says about `DESIGN.md` section 6.2
 
-Every variant on this ladder was run end to end, and **all of them pass idempotency and all of them pass §6.1's width-independence invariant**, including the one that silently deletes 45% of an author's line breaks.
+Every variant on this ladder was run end to end, and **all of them pass idempotency and all of them pass section 6.1's width-independence invariant**, including the one that silently deletes 45% of an author's line breaks.
 
 Idempotency is necessary and nowhere near sufficient.
 Two invariants would catch what the current gate cannot:
@@ -295,18 +295,18 @@ ______________________________________________________________________
 
 1. Keep sentence-only exactly as `DESIGN.md` specifies it. Nothing on this ladder amends the specification.
 1. Reject every deleting variant: per-gap punctuation, punctuation plus break words, paragraph scoring, coverage thresholds, and coverage at exactly zero.
-1. Treat §2, add-only, as a possible future mode. If it is ever built: explicit opt-in, per-gap, no heuristic, documented as freezing existing breaks including accidental ones, with §6.2 extended by the two invariants in §11. Whether it is worth building is not a question this note settles.
-1. The agent-insertion case is not solvable inside the plugin; §10 sets out where its signal lives.
+1. Treat section 2, add-only, as a possible future mode. If it is ever built: explicit opt-in, per-gap, no heuristic, documented as freezing existing breaks including accidental ones, with section 6.2 extended by the two invariants in section 11. Whether it is worth building is not a question this note settles.
+1. The agent-insertion case is not solvable inside the plugin; section 10 sets out where its signal lives.
 
 ______________________________________________________________________
 
 ## 14. Wrong turns, kept
 
-**Section 3 was proposed as "the variant that fixes most of it"** on the strength of two hand-made examples. Against real sembr it deletes half of the author's breaks. The corpus was the error, and §5 records the same trap in its general form.
+**Section 3 was proposed as "the variant that fixes most of it"** on the strength of two hand-made examples. Against real sembr it deletes half of the author's breaks. The corpus was the error, and section 5 records the same trap in its general form.
 
-**Section 7 was proposed as the fix for §6's remedy problem.** It reintroduces the paragraph-sized blast radius that §6 had just been credited with avoiding, measured at 18 diff lines from one edit.
+**Section 7 was proposed as the fix for section 6's remedy problem.** It reintroduces the paragraph-sized blast radius that section 6 had just been credited with avoiding, measured at 18 diff lines from one edit.
 
 **A third claim was overcorrected:** that no deleting policy can ever be stable, because a paragraph-scale branch always has paragraph-scale blast radius.
-The true statement is narrower. What matters is how far an input must travel to flip the branch, and §8 measures that distance as one edit for roughly half of real paragraphs. The conclusion holds; the reasoning given for it was too broad.
+The true statement is narrower. What matters is how far an input must travel to flip the branch, and section 8 measures that distance as one edit for roughly half of real paragraphs. The conclusion holds; the reasoning given for it was too broad.
 
-**Sembr#10 and sembr#11 were described as having "nothing to match on",** lumped in with sembr#6. They are trivially matchable and §3 now says so.
+**Sembr#10 and sembr#11 were described as having "nothing to match on",** lumped in with sembr#6. They are trivially matchable and section 3 now says so.

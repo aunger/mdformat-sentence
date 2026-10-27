@@ -9,17 +9,17 @@ The entries that are not missed breaks say so.
 
 ______________________________________________________________________
 
-## Scope (§1, §5)
+## Scope (sections 1 and 5)
 
 | cost | what it buys | kind |
 | --- | --- | --- |
-| Sembr#5 is declined (§5.1). In the specification's own prose, 40.8% of the breaks are at clause punctuation (§5.2). | No comma heuristic that over-fires on serial lists, coordinate phrases and introductory adverbials, and no length floor to patch it. | missed breaks, the largest scope cost |
-| Sembr#6 is not implemented. 41.7% of the same breaks fall at no sentence end, clause punctuation, link or markup boundary, and a 36-word break-word list recovers 12 of those 43 (§5.2). With the 7.8% at links and markup, half carry no punctuation at all. | No vocabulary whose words also have a non-clausal reading. | missed breaks |
-| Sembr#10 and sembr#11 are not implemented: no break is taken beside a link or before inline markup (§5). 7.8% of the same breaks fall there, and they are the one unimplemented part that is not hard (§5.2). | Breaks at sentence ends and nowhere else, as §1 promises. | missed breaks |
-| Sembr#12 is not implemented: a sentence longer than any column stays on one line (§1). | Line positions are a function of the text alone, so a word added inside a sentence, away from any gap or abbreviation rule (§6.2), changes only the line it is on. An edit beside a gap can still change whether that gap breaks: `One. Two.` edited to `One. two.` joins the two lines (§1). | long lines |
-| The plugin implements sembr#4, the source of 9.7% of the breaks a sembr author places by hand (§5.2). | A promise that fits in one sentence (§1). | a minority of hand-written breaks |
+| Sembr#5 is declined (section 5.1). In the specification's own prose, 40.8% of the breaks are at clause punctuation (section 5.2). | No comma heuristic that over-fires on serial lists, coordinate phrases and introductory adverbials, and no length floor to patch it. | missed breaks, the largest scope cost |
+| Sembr#6 is not implemented. 41.7% of the same breaks fall at no sentence end, clause punctuation, link or markup boundary, and a 36-word break-word list recovers 12 of those 43 (section 5.2). With the 7.8% at links and markup, half carry no punctuation at all. | No vocabulary whose words also have a non-clausal reading. | missed breaks |
+| Sembr#10 and sembr#11 are not implemented: no break is taken beside a link or before inline markup (section 5). 7.8% of the same breaks fall there, and they are the one unimplemented part that is not hard (section 5.2). | Breaks at sentence ends and nowhere else, as section 1 promises. | missed breaks |
+| Sembr#12 is not implemented: a sentence longer than any column stays on one line (section 1). | Line positions are a function of the text alone, so a word added inside a sentence, away from any gap or abbreviation rule (section 6.2), changes only the line it is on. An edit beside a gap can still change whether that gap breaks: `One. Two.` edited to `One. two.` joins the two lines (section 1). | long lines |
+| The plugin implements sembr#4, the source of 9.7% of the breaks a sembr author places by hand (section 5.2). | A promise that fits in one sentence (section 1). | a minority of hand-written breaks |
 
-## The hook point and the recorder (§2.2, §3.1, §3.6)
+## The hook point and the recorder (sections 2.2, 3.1 and 3.6)
 
 | cost | what it buys | kind |
 | --- | --- | --- |
@@ -33,7 +33,7 @@ ______________________________________________________________________
 | With mdformat-space-control 0.5.0 loaded, an authored line break reaches the plugin as a literal space, and mdformat's second render pass joins every break the first pass made, so the plugin adds no break at all: a break survives only where the author already had one at a sentence end. | No workaround for another plugin's `softbreak` renderer; the plugin decides on mdformat's own text. | inert with that plugin, see `quirks-mdformat-space-control.md` |
 | A `root` postprocessor, the canary, is part of the module surface. | A lost `inline` slot is reported rather than silent. | surface |
 
-## Detection (§3.2, §3.3, §3.5)
+## Detection (sections 3.2, 3.3 and 3.5)
 
 | cost | what it buys | kind |
 | --- | --- | --- |
@@ -49,17 +49,17 @@ ______________________________________________________________________
 | A citation marker after the period, `held.[1] Then` or `held.<sup>1</sup> Then`, ends no sentence. | The footnote strip stays exact. | missed breaks |
 | A sentence opening with a symbol or a dialogue dash, `$HOME is set.`, `— Oui.`, is not broken. | The capital test stays one check. | missed breaks |
 
-## Configuration (§4)
+## Configuration (section 4)
 
 | cost | what it buys | kind |
 | --- | --- | --- |
 | `include` takes names only, so the projects of a monorepo cannot share one rules file by path. | One way to resolve a name, and rules files that travel together. | duplication |
-| An abbreviation's fate is not readable in one place: it is whichever rule matched last in the decision list, across every included rules file (§4). | A rules file overrides an inherited rule by writing a later one, without knowing or repeating how the earlier one was expressed (§3.3). | reading a composed decision list takes every rules file |
+| An abbreviation's fate is not readable in one place: it is whichever rule matched last in the decision list, across every included rules file (section 4). | A rules file overrides an inherited rule by writing a later one, without knowing or repeating how the earlier one was expressed (section 3.3). | reading a composed decision list takes every rules file |
 | `--sentence-include` is hidden and unstable. | No published promise while its design settles. | no supported flag for ad hoc rules files |
 | `base_rules` is boolean only, and `default` cannot be named in `include`. | One switch for the shipped rules, and room for later values. | none in practice |
 | The dependency is bounded to `mdformat>=1.0.0,<1.1`. | No silent output change from an mdformat release. | users wait for the bound to move |
 
-## The gate (§6)
+## The gate (section 6)
 
 | cost | what it buys | kind |
 | --- | --- | --- |

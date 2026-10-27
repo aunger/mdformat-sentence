@@ -1,8 +1,8 @@
-"""Pinning: DESIGN.md §3.4's width-independence claim, run.
+"""Pinning: DESIGN.md section 3.4's width-independence claim, run.
 
 Two throwaway `inline` postprocessors break after every [.!?] at a wrap
 point. The *pinned* one turns every other wrap point into a literal space,
-which is §3.4's rule; the *unpinned* one leaves them for mdformat's own
+which is section 3.4's rule; the *unpinned* one leaves them for mdformat's own
 word wrap. A paragraph that is one 140-character sentence shows the
 difference: pinned, it survives intact at --wrap 80 and the output is
 byte-identical to --wrap no; unpinned, mdformat wraps it into two lines.

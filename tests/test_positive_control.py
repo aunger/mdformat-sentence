@@ -1,4 +1,4 @@
-"""The positive control of §6.2 and §6.4: it must fail when the plugin is absent."""
+"""The positive control of sections 6.2 and 6.4: it must fail when the plugin is absent."""
 
 import mdformat
 import pytest

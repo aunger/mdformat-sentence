@@ -27,29 +27,29 @@ CHANGES_AST = False
 
 
 def update_mdit(mdit: MarkdownIt) -> None:
-    """Do nothing: the plugin adds no syntax (§2)."""
+    """Do nothing: the plugin adds no syntax (section 2)."""
 
 
 def add_cli_argument_group(group: argparse._ArgumentGroup) -> None:
-    """Add this plugin's flags (§2.4); §4 defines them."""
+    """Add this plugin's flags (section 2.4); section 4 defines them."""
 
 
 def _render_inline(node: RenderTreeNode, context: RenderContext) -> str:
-    """The `inline` renderer of §2.2."""
+    """The `inline` renderer of section 2.2."""
     if node.parent is None or node.parent.type != "paragraph":
         return DEFAULT_RENDERERS["inline"](node, context)
     context.env[_RAN] = True
     text = DEFAULT_RENDERERS["inline"](node, context)
     if WRAP_POINT not in text:
         return text
-    # Segmentation (§3.1) and emission (§3.4) decide the gaps here; until
+    # Segmentation (section 3.1) and emission (section 3.4) decide the gaps here; until
     # they are built, the text goes back as mdformat rendered it.
     return text
 
 
 def _canary(text: str, node: RenderTreeNode, context: RenderContext) -> str:
-    """Once per render pass, report a lost `inline` slot (§2.2), or warn
-    that `--extensions` named the plugin under `--wrap keep` (§2.5).
+    """Once per render pass, report a lost `inline` slot (section 2.2), or warn
+    that `--extensions` named the plugin under `--wrap keep` (section 2.5).
 
     Every read degrades to silence or a nameless message rather than
     raising.

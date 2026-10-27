@@ -24,7 +24,7 @@ The CLI refuses the file ("Formatted Markdown renders to different HTML than inp
 The cause is that `text()` escapes brackets according to `env["used_refs"]`, which grows as rendering proceeds, so text rendered before the link that uses `foo` is not escaped.
 
 The same state makes rendering impure: a second render of the children sees a grown set and renders differently, 49 characters against 47 here.
-`DESIGN.md` §3.1 avoids rendering twice for this reason (`experiments/recorder.py`, `experiments/seam.py` §3).
+`DESIGN.md` section 3.1 avoids rendering twice for this reason (`experiments/recorder.py`, `experiments/seam.py` section 3).
 
 ## A tilde fence at a line start is not escaped
 
@@ -86,16 +86,16 @@ The cause was not investigated.
 
 mdformat's `tests/test_commonmark_spec.py` asserts that a second pass changes nothing (`md_new == md_2nd_pass`), but it parametrizes `wrap` over `["keep", "no", 60]` only (*read* at the same commit), so no test reaches a width this narrow.
 
-This plugin's output does not depend on width (§2.5), so it never asks mdformat to wrap at 5.
-The trigger is a bare `*` ending a line, and §3.5 guards only a `*` that would start one.
+This plugin's output does not depend on width (section 2.5), so it never asks mdformat to wrap at 5.
+The trigger is a bare `*` ending a line, and section 3.5 guards only a `*` that would start one.
 No sentence-only output was found that reaches it: a `*` attached to a terminator is escaped on pass 1, `Done.* Next` giving `Done.\* Next` (*verified*).
-If §6.2's "idempotency vs baseline" row ever fails, check this entry before the plugin.
+If section 6.2's "idempotency vs baseline" row ever fails, check this entry before the plugin.
 
 ## The CLI and TOML disagree on `wrap = 1`
 
 **Compatibility risk, harmless here.** *Read.*
 `_cli.py`'s `validate_wrap_arg` accepts a width of 1 or more; `_conf.py` requires more than 1.
-This plugin's output is the same at every integer width (§2.5), so nothing depends on the difference.
+This plugin's output is the same at every integer width (section 2.5), so nothing depends on the difference.
 
 ## Renderer conflicts keep the first plugin loaded
 
@@ -107,7 +107,7 @@ Section 2.2's canary reports when this plugin loses the `inline` slot.
 
 **Compatibility risk.** *Verified* (`experiments/seam.py`, `experiments/seam_mkdocs.py`).
 A node type's postprocessors run in plugin-load order, so a postprocessor cannot know whether another plugin rewrote its input first.
-This is why the plugin is a renderer (§2.2).
+This is why the plugin is a renderer (section 2.2).
 
 ## Validation has gaps
 
@@ -118,14 +118,14 @@ Section 2.2 lists these.
 ## `mdformat.file()` passes a filename but reads no config
 
 **Compatibility risk.** *Read* in `_api.py`.
-A plugin that walks up from the filename to find `.mdformat.toml` finds the file the CLI would have read, which mdformat itself did not (§4).
+A plugin that walks up from the filename to find `.mdformat.toml` finds the file the CLI would have read, which mdformat itself did not (section 4).
 
 ## Plugin options reach the hook point through an undocumented splat
 
 **Compatibility risk.** *Read* (`_api.py`).
-`options={"plugin": {"sentence": {...}}}` reaches `context.options` through `mdformat.text()`, which is not a supported interface; the test harnesses use it (§4).
+`options={"plugin": {"sentence": {...}}}` reaches `context.options` through `mdformat.text()`, which is not a supported interface; the test harnesses use it (section 4).
 
-## Plugin option flags have cases that §2.4 does not cover
+## Plugin option flags have cases that section 2.4 does not cover
 
 **Compatibility risk.** *Verified* 2026-10-07, and again 2026-10-12 (the unhashable default 2026-10-16), by calling `make_arg_parser` from `mdformat/_cli.py` with the stand-in plugins below, no plugin installed.
 Section 2.4 covers the `dest` rewrite and the requirement that a default must be `None` or `argparse.SUPPRESS`.
@@ -203,11 +203,11 @@ print(run(["a.md"]))
 ## Plugin errors are not caught
 
 **Compatibility risk.** *Read.*
-Nothing in `_api.py` or `_cli.py` wraps plugin code in `try`/`except`, so a malformed rules file surfaces as a traceback, and `sys.exit()` from a plugin would end an API caller's process (§4).
+Nothing in `_api.py` or `_cli.py` wraps plugin code in `try`/`except`, so a malformed rules file surfaces as a traceback, and `sys.exit()` from a plugin would end an API caller's process (section 4).
 
 ## `mdformat.renderer.LOGGER` reaches stderr without a handler
 
 **Compatibility risk.** *Verified* by `experiments/wraparg.py`.
 `_cli.py` attaches a handler to the logger that prefixes `Warning: ` and writes to stderr, and that handler is CLI-only.
 A library caller is not silent anyway: with no handler configured, `logging.lastResort` writes a warning to stderr unprefixed.
-`DESIGN.md` §2.5's own warning cannot reach an API caller for another reason, its guard, so this matters only to other messages the plugin might log.
+`DESIGN.md` section 2.5's own warning cannot reach an API caller for another reason, its guard, so this matters only to other messages the plugin might log.

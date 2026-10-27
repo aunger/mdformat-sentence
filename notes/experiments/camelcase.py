@@ -1,4 +1,4 @@
-"""camelCase sentence openers in English documentation: DESIGN.md §3.3.
+"""camelCase sentence openers in English documentation: DESIGN.md section 3.3.
 
 For every gap inside paragraph prose where the left segment ends in a
 terminator (. ! ?) plus optional closers, record whether the next word is

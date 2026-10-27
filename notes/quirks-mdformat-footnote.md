@@ -19,7 +19,7 @@ Sentence one here. [^x]: not a definition, just text.
 
 at `--wrap 18` or `20` comes back as `Sentence one here.` and nothing else: mdformat's own wrap puts `[^x]:` at a line start, where the second render pass can read a definition, and both the paragraph's tail and the real note are gone.
 At `--wrap 15` the wrap happens to fall elsewhere and the text survives.
-Section 3.3 keeps a footnote reference from opening a sentence, and §3.5 refuses a break that would put `[label]:` at a line start; either alone prevents this.
+Section 3.3 keeps a footnote reference from opening a sentence, and section 3.5 refuses a break that would put `[label]:` at a line start; either alone prevents this.
 
 ## Footnote references are atoms
 

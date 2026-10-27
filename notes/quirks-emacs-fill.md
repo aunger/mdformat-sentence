@@ -1,7 +1,7 @@
 # Quirks: GNU Emacs `fill-paragraph-semlf`
 
 A note, not a specification.
-`DESIGN.md` §4.1 cites `fill-paragraph-semlf` as the existing product that honors the fill width inside a sentence.
+`DESIGN.md` section 4.1 cites `fill-paragraph-semlf` as the existing product that honors the fill width inside a sentence.
 This records what it does, and unlike the other `quirks-*.md` files it records prior art rather than something the design works around.
 
 *Read* means read from source: `lisp/textmodes/fill.el` and `lisp/textmodes/paragraphs.el` on the `emacs-31` branch of the `emacs-mirror/emacs` mirror at `65dc4f1c6d91c85911daea3e913adcb91e0e65b2`.
@@ -15,7 +15,7 @@ ______________________________________________________________________
 `fill-region-as-paragraph-semlf` binds `fill-column` to `most-positive-fixnum` for its first call only, which joins the paragraph into one line.
 It then finds each sentence end with `forward-sentence` and fills that sentence with `fill-region-as-paragraph-default` under the ambient `fill-column`.
 Its docstring says so: "The variable `fill-column` controls the width for filling."
-A sentence longer than the column therefore wraps at whitespace on width alone, which is the mode §4.1 declines, and the output is not a function of the text.
+A sentence longer than the column therefore wraps at whitespace on width alone, which is the mode section 4.1 declines, and the output is not a function of the text.
 
 ## A single space does not end a sentence by default
 

@@ -9,13 +9,13 @@ ______________________________________________________________________
 
 ## 1. Where the design stands
 
-`DESIGN.md` §3.3 lets a sentence open, regardless of case, only with a code span, an image, an autolink, or a raw HTML segment that is nothing but tags.
-Every other inline node a co-plugin adds, math, a wikilink, a footnote reference, is an atom for §3.2 and opens nothing.
+`DESIGN.md` section 3.3 lets a sentence open, regardless of case, only with a code span, an image, an autolink, or a raw HTML segment that is nothing but tags.
+Every other inline node a co-plugin adds, math, a wikilink, a footnote reference, is an atom for section 3.2 and opens nothing.
 Its text is not read through the capital test either, so `$X$` opens nothing just as `$x$` does.
 
 The list is closed because an open one deletes text.
 With mdformat-footnote loaded, a break before `[^x]: not a definition, just text.` puts a footnote definition at a line start, the second render pass reads it as one, and both notes' text is gone.
-All four members of the hook-point review reproduced that (`DESIGN-REVIEW-HOOK-POINT-2026-10-06.md` at `9264f70`, section *3. Evidence register*, R9); §6.4's `[^x]:` fixture is the check that keeps it.
+All four members of the hook-point review reproduced that (`DESIGN-REVIEW-HOOK-POINT-2026-10-06.md` at `9264f70`, section *3. Evidence register*, R9); section 6.4's `[^x]:` fixture is the check that keeps it.
 
 The cost is every sentence that opens with co-plugin syntax:
 
@@ -35,7 +35,7 @@ It cannot force a break, it never sees a node's type, and it is not consulted af
 An opening atom is a property of the word after any terminator, so it is the wrong shape for the decision list.
 
 **As a key of a rules file, yes, the way `lowercase_names` already is.**
-`lowercase_names` lets a named lowercase word pass the capital test, and it is a file key rather than a rule for the same reasons (§4).
+`lowercase_names` lets a named lowercase word pass the capital test, and it is a file key rather than a rule for the same reasons (section 4).
 A second key could name node types that open a sentence:
 
 ```toml
@@ -45,7 +45,7 @@ opener_types = ['math_inline']
 
 The name is a placeholder of this note, not a decision.
 It would compose like `lowercase_names`: every file in a composition contributes, a file can add types and none can take one away; unlike `lowercase_names`, its default would name none.
-The recorder of §3.1 already knows each atom's node type, so the check costs a set lookup.
+The recorder of section 3.1 already knows each atom's node type, so the check costs a set lookup.
 
 A text pattern instead of a node type, say `openers = '\$.*'`, would be more general and riskier: it reads atom text through a pattern, which is what the closed list was made to stop.
 Node types are the narrower tool.
@@ -56,7 +56,7 @@ mdformat-dollarmath, mdformat-myst, mdformat-obsidian and mdformat-mkdocs's arit
 ## 3. Is math safe to admit?
 
 The danger an opening atom brings is what a line start does to it.
-Admitting a type must not let a break put block syntax, or a co-plugin's definition syntax, at the start of a line; §3.5's line-start checks would still apply to it.
+Admitting a type must not let a break put block syntax, or a co-plugin's definition syntax, at the start of a line; section 3.5's line-start checks would still apply to it.
 
 *Measured,* with mdformat-dollarmath 0.0.5:
 

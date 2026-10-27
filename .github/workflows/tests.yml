@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # The gate (§6) against the pinned mdformat range.
+  # The gate (section 6) against the pinned mdformat range.
   pinned:
     strategy:
       fail-fast: false
@@ -28,7 +28,7 @@ jobs:
       - run: python -m pytest
 
   # The same gate against mdformat's newest release, outside the pinned
-  # range, so an upstream change is seen before the bound moves (§2).
+  # range, so an upstream change is seen before the bound moves (section 2).
   # It does not block a merge.
   newest-mdformat:
     continue-on-error: true

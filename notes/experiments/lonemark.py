@@ -1,7 +1,7 @@
-"""Lone quotation marks: DESIGN.md §3.3, simulated.
+"""Lone quotation marks: DESIGN.md section 3.3, simulated.
 
 A lone mark is a segment made only of quotation or markup characters, and
-a run is one or more of them between two words. This runs §3.3's
+a run is one or more of them between two words. This runs section 3.3's
 sentence-end test, capital test and lone-mark handling over plain strings
 split at ordinary spaces, which is what the hook point delivers for these texts.
 Stdlib only.
@@ -11,15 +11,15 @@ UAX #29 STerm and ATerm. No decision list, bracket depth or capital-test
 exemption is consulted: none of these texts needs one.
 
 It establishes:
-  1. the fixtures of §6.4 for quotation marks break where §3.3 says, and
-     §3.5's safety checks, tested where the newline actually lands in a run,
+  1. the fixtures of section 6.4 for quotation marks break where section 3.3 says, and
+     section 3.5's safety checks, tested where the newline actually lands in a run,
      pin a run whose newline would open a line with ~~~ or end one in a
      no-break space;
   2. a run of lone marks is one gap: the words on either side decide
      whether it breaks, and the marks' roles only decide where in the
      run the newline goes, so no reading of any mark, alone or side by
      side, changes which words share a line;
-  3. what §3.3's own readings do with marks side by side, including the
+  3. what section 3.3's own readings do with marks side by side, including the
      known misplacement of a spaced opening “ after a sentence end;
   4. reading the low mark „ by its glyph would misplace the historical
      Italian closing „, spaced as it was printed, which the older criterion
@@ -56,7 +56,7 @@ def opens_sentence(seg):
 
 
 def spec_role(segs, i, shape_open=SHAPE_OPEN):
-    """§3.3: by shape for guillemets and ” ’, by set for a mark in one set only,
+    """Section 3.3: by shape for guillemets and ” ’, by set for a mark in one set only,
     and otherwise by what precedes it."""
     ch = segs[i][0]
     if ch in shape_open:
@@ -74,17 +74,17 @@ def spec_roles(segs, shape_open=SHAPE_OPEN):
     return {i: spec_role(segs, i, shape_open) for i, s in enumerate(segs) if is_lone(s)}
 
 
-BLOCK_START = re.compile(r"#|>|[-*+]|\d+[.)]|~~~|\[[ xX]\]")  # §3.5, cut down to these texts
+BLOCK_START = re.compile(r"#|>|[-*+]|\d+[.)]|~~~|\[[ xX]\]")  # section 3.5, cut down to these texts
 
 
 def safe(segs, i):
-    """§3.5 at the newline's actual neighbors: segs[i - 1] ends the line, segs[i] opens the next."""
+    """Section 3.5 at the newline's actual neighbors: segs[i - 1] ends the line, segs[i] opens the next."""
     return (segs[i - 1][-1:].strip() != "" and segs[i][:1].strip() != ""
             and not BLOCK_START.match(segs[i]))
 
 
 def emit(segs, roles):
-    """Words decide whether a run breaks; roles decide where in it; §3.5 can still refuse it there."""
+    """Words decide whether a run breaks; roles decide where in it; section 3.5 can still refuse it there."""
     words = [i for i, s in enumerate(segs) if not is_lone(s)]
     breaks = set()
     for left, right in zip(words, words[1:]):
@@ -205,7 +205,7 @@ for t in TEXTS:
     invariant &= len(seen) == 1
 print(f"{len(TEXTS)} texts, {total} readings; the same words on every line in all of them: {invariant}\n")
 
-print("3. §3.3's readings of marks side by side\n")
+print("3. Section 3.3's readings of marks side by side\n")
 for t in ("Il a dit. « “ Oui. ” » Puis il part.", "He said. “ ‘ Yes. ’ ” Then he left."):
     print(t)
     for line in run(t).split("\n"):
@@ -214,6 +214,6 @@ print("   The leading “ after `said.` reads as closing, the older rule's known
 
 print("4. The rejected option: reading „ and ‚ by glyph\n")
 t = "degli “ umiliati del villaggio. „ Quegli era un avvocato"
-for label, got in (("older rule (§3.3)", run(t)),
+for label, got in (("older rule (section 3.3)", run(t)),
                    ("by glyph", run(t, shape_open=SHAPE_OPEN | set("„‚")))):
     print(f"   {label:18} {got!r}")

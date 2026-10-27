@@ -1,4 +1,4 @@
-"""Why DESIGN.md is not dogfooded under mdformat-mkdocs. notes/quirks-mdformat-mkdocs.md, DESIGN.md §6.2.
+"""Why DESIGN.md is not dogfooded under mdformat-mkdocs. notes/quirks-mdformat-mkdocs.md, DESIGN.md section 6.2.
 
 Needs mdformat 1.0.0, mdformat-mkdocs 5.3.0 and mdformat-gfm 1.0.0, which install together.
 Runs at mdformat's default --wrap keep, with compact tables, and without this plugin.

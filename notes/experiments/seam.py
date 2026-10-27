@@ -1,8 +1,8 @@
-"""The hook point: an `inline` postprocessor against an `inline` renderer. DESIGN.md §2.2, §3.1.
+"""The hook point: an `inline` postprocessor against an `inline` renderer. DESIGN.md sections 2.2 and 3.1.
 
 Both probes break after [.!?] before a capital or a `[`, and back off (one
 line, every gap a space) when the children's renderings do not add up to the
-text they decide, as §3.6 says. The postprocessor re-renders the children
+text they decide, as section 3.6 says. The postprocessor re-renders the children
 against the live render state; the renderer copies that state before its
 children render and re-renders against the copy. mdformat-gfm is the
 co-plugin, loaded before and after each probe.
@@ -20,7 +20,7 @@ It establishes:
      where it did not the first, 47 characters against 49; the copy makes the
      two renderings equal;
   4. gfm's paragraph postprocessor escapes a task box `[X]` at the start of a
-     line a break created, whichever hook broke it, so §3.5 must refuse it;
+     line a break created, whichever hook broke it, so section 3.5 must refuse it;
   5. the walk is not what makes the postprocessor fail: a text-only postprocessor,
      with no walk, loaded after gfm sees `xxxxMr.` as the task item's first word
      at an integer width, so a rule that holds `Mr.` misses and the output depends
@@ -38,7 +38,7 @@ from mdformat.renderer import DEFAULT_RENDERERS
 
 BACKOFFS = []
 VETO_TASK_BOX = [False]
-HELD = {"Mr."}  # a stand-in for §3.3's titles rule
+HELD = {"Mr."}  # a stand-in for section 3.3's titles rule
 
 
 def decide(text):

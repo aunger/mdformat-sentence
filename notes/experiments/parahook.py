@@ -1,15 +1,15 @@
-r"""What each paragraph-level hook point receives, against the `inline` slot. MDFORMAT-WRAP-AND-OVERRIDES.md §5.8.
+r"""What each paragraph-level hook point receives, against the `inline` slot. MDFORMAT-WRAP-AND-OVERRIDES.md section 5.8.
 
 Needs mdformat 1.0.0.
 
 One paragraph is rendered at --wrap no through four stand-in plugins, each breaking at a wrap
-point after a period and pinning every other wrap point to a space, as DESIGN.md §3.4 does:
+point after a period and pinning every other wrap point to a space, as DESIGN.md section 3.4 does:
   a. a `paragraph` postprocessor alone;
-  b. the `inline` renderer of DESIGN.md §2.2;
+  b. the `inline` renderer of DESIGN.md section 2.2;
   c. a `paragraph` renderer that injects (b) into the context and calls mdformat's own
-     `paragraph()`, the contingency of DESIGN.md §2.2 and notes/FUTURE-WORK.md;
+     `paragraph()`, the contingency of DESIGN.md section 2.2 and notes/FUTURE-WORK.md;
   d. a `paragraph` renderer that injects the same decision as an `inline` postprocessor instead,
-     through `context._replace(postprocessors=...)`, DESIGN.md §3.1's own mechanism.
+     through `context._replace(postprocessors=...)`, DESIGN.md section 3.1's own mechanism.
 The paragraph holds a sentence that ends in `1.`, so a break after it puts `1.` at a line start,
 where `paragraph()` must escape it.
 
