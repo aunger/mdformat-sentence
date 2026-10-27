@@ -341,9 +341,11 @@ So the ask has to carry the structure as well as the step: either `paragraph()` 
 
 **Measured**, `experiments/parahook.py`, at `--wrap no` on one paragraph with a code span, a link and emphasis.
 A `paragraph` postprocessor receives one line with no wrap point in it, after `_wrap` and line-start escaping.
+That it comes after line-start escaping was read from `paragraph()` in `renderer/_context.py` and not run, since the input has no line start to escape.
 The `inline` renderer receives the same paragraph with a wrap point at each of its eight gaps.
-A `paragraph` renderer reaches those eight only by injecting an `inline` renderer into the context before calling mdformat's `paragraph()`, and then produces output identical to the `inline` renderer's; that is `DESIGN.md` §2.2's contingency for a lost `inline` slot, not a placement with anything of its own.
-So within 1.0.0 the `inline` renderer of a paragraph's only child is the paragraph-level hook, and this ask is for the slot that does not exist, not for a move the plugin could make today.
+A `paragraph` renderer that leaves mdformat's `paragraph()` to do the line-start escaping reaches those eight only by injecting an `inline` renderer into the context before calling it, and then produces output identical to the `inline` renderer's; that is `DESIGN.md` §2.2's contingency for a lost `inline` slot, not a placement with anything of its own.
+A `paragraph` renderer could also render its inline child itself, as `paragraph()` does, and see the same eight, but it would then have to reimplement the escaping; that variant was read and not run.
+So within 1.0.0 the `inline` renderer of a paragraph's only child is the paragraph-level hook that keeps `paragraph()`'s escaping, and this ask is for the slot that does not exist, not for a move the plugin could make today.
 
 **How it relates to the other asks.**
 It builds on §5.6 rather than replacing it, since the step needs wrap points to choose among, and a plugin named as the line-breaker, as §5.5's variants would name it, is the one whose step runs.

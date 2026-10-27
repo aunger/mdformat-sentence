@@ -15,7 +15,9 @@ It establishes three things:
      to re-derive both;
   2. the `inline` renderer receives the same paragraph with a wrap point at every gap;
   3. a `paragraph` renderer reaches those wrap points only by injecting an `inline` renderer,
-     which is the same hook point with one more layer, and its output is identical to (b)'s.
+     which is the same hook point with one more layer, and its output is identical to (b)'s
+     (the script compares them and prints the result). Line-start escaping is not exercised: the
+     input has no line start to escape, so "after escaping" in 1. is read from `paragraph()`.
 
 It prints what each hook receives, the number of wrap points in it, and the final output.
 """
@@ -68,9 +70,11 @@ def run(label, renderers, postprocessors):
     for hook, text in SEEN.items():
         print(f"  {hook} receives {text!r}  (wrap points: {text.count(WRAP_POINT)})")
     print(f"  output: {out!r}")
+    return out
 
 
 PP = {"paragraph": paragraph_postprocessor}
 run("a. paragraph postprocessor alone", {}, PP)
-run("b. inline renderer", {"inline": inline_renderer}, PP)
-run("c. paragraph renderer injecting an inline renderer", {"paragraph": paragraph_renderer}, PP)
+out_b = run("b. inline renderer", {"inline": inline_renderer}, PP)
+out_c = run("c. paragraph renderer injecting an inline renderer", {"paragraph": paragraph_renderer}, PP)
+print(f"== output of c identical to output of b: {out_b == out_c}")
