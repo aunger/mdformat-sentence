@@ -12,7 +12,7 @@ This plugin takes sembr#4, the break after a sentence, and nothing below it, whi
 
 ______________________________________________________________________
 
-## 1. What this is, and what it is not
+## 1 What this is, and what it is not
 
 **The whole promise, in one sentence:** a line break after every sentence end the plugin can recognize, nowhere else, at any width.
 Where it cannot tell that a sentence has ended, after an abbreviation or before a lowercase word, it leaves the line long rather than guess (section 3.3).
@@ -53,7 +53,7 @@ A first version small enough to build and test is worth deferring work for, and 
 What it defers is recorded rather than dropped: the observation that prompted a deferral and the intention behind it go in `notes/FUTURE-WORK.md`, and a cost accepted along the way goes in `notes/TRADE-OFFS.md`.
 An intention recorded there is not a commitment.
 
-## 2. Name, packaging and the hook point
+## 2 Name, packaging and the hook point
 
 Distribution `mdformat-sentence`, module `mdformat_sentence`, entry-point id `sentence`.
 The name was unregistered on PyPI as of 2026-09-12, verified against the JSON API, as was the plural `mdformat-sentences`.
@@ -277,7 +277,7 @@ CI runs the CLI, so the warning keys off `--extensions` rather than off wrap.
 
 ______________________________________________________________________
 
-## 3. Algorithm
+## 3 Algorithm
 
 Normative, except where a passage reports a measurement or a verification; those say so, and they are the evidence for the behavior beside them rather than part of it.
 
@@ -856,7 +856,7 @@ What such a check would catch, emission that alters the text between wrap points
 
 ______________________________________________________________________
 
-## 4. Config surface
+## 4 Config surface
 
 The configuration is rules alone, and they live in the same table as mdformat's own.
 
@@ -1259,7 +1259,7 @@ Nothing in `_api.py` or `_cli.py` wraps plugin code in `try`/`except`, so a malf
 
 ______________________________________________________________________
 
-## 5. Conformance to the specification
+## 5 Conformance to the specification
 
 The sembr specification numbers thirteen rules, cited here as sembr#1 through sembr#13.
 
@@ -1342,7 +1342,7 @@ One document and 103 breaks is a small sample, and `notes/corpus/README.md` expl
 
 ______________________________________________________________________
 
-## 6. Verification
+## 6 Verification
 
 ### 6.1 The width-independence invariant
 
