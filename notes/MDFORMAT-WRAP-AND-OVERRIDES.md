@@ -1,7 +1,7 @@
 # mdformat's wrap arguments, its plugin interface, and what a plugin can override
 
 A reference, not a decision, and not a specification.
-`DESIGN.md` is normative; nothing here amends it, and where the two disagree section 9 says so rather than settling it.
+`DESIGN.md` is normative; nothing here amends it, and where the two disagree this note's section 9 says so rather than settling it.
 
 It exists for three questions that are still open and will be asked later: whether to patch mdformat, whether to file an upstream request for a wrap mode, and how to implement the warning `DESIGN.md` section 2.5 specifies.
 It answers what mdformat does and what a plugin is able to reach, and stops there.
@@ -34,7 +34,7 @@ It is wired as argparse's `type=` at `_cli.py:233-238`, so a bad value is a pars
 `_validate_keys` at `_conf.py:99-105` separately rejects any key not in `DEFAULT_OPTS`.
 
 The two gates disagree on `1`: `--wrap 1` is accepted, `wrap = 1` in `.mdformat.toml` raises `InvalidConfError`.
-Measured, `wraparg.py` section 1.
+Measured, `wraparg.py` check 1.
 It is a pre-existing inconsistency and harmless here; it is recorded only because it shows the two are separate code paths, which section 5 depends on.
 
 **The renderer's predicate.** `RenderContext.do_wrap` at `renderer/_context.py:641-644`:
@@ -91,7 +91,7 @@ ______________________________________________________________________
 
 The question this section answers is narrow: *can* a plugin make itself work under `--wrap keep`, where section 2.5's table says it is inert.
 It can.
-`DESIGN.md` declines to, and section 3.1's consequences are why.
+`DESIGN.md` declines to, and this note's section 3.1 shows why.
 
 ### 3.1 Route B: assign the option in `update_mdit`
 
@@ -182,7 +182,7 @@ Run `--wrap no` on a hand-broken corpus without the plugin installed and mdforma
 That is `DESIGN.md` section 2.5's cost, measured in `experiments/handwritten.py`, and it is the failure mode of a CI config that names `--wrap no` on a machine where the plugin did not install.
 
 `--wrap sentence` fails loud instead.
-Measured, `wraparg.py` section 2: today it exits 2 at argument parsing with `argument --wrap: invalid validate_wrap_arg value: 'sentence'`, before a file is opened.
+Measured, `wraparg.py` check 2: today it exits 2 at argument parsing with `argument --wrap: invalid validate_wrap_arg value: 'sentence'`, before a file is opened.
 An unrecognized wrap mode is rejected; `no` is always recognized, and means something destructive.
 
 ### 5.3 The common cause
@@ -208,7 +208,7 @@ It adds a name and a rejection, not a mechanism.
 | `renderer/_context.py:348-362`, `_wrap` | treat it like `"no"` |
 
 The TOML gate is the one the earlier summary of this work missed.
-Measured, `wraparg.py` section 1: `wrap = "sentence"` in `.mdformat.toml` raises `InvalidConfError` today, so changing only the CLI would leave the mode unreachable from a config file, which is how a repo pins its formatter.
+Measured, `wraparg.py` check 1: `wrap = "sentence"` in `.mdformat.toml` raises `InvalidConfError` today, so changing only the CLI would leave the mode unreachable from a config file, which is how a repo pins its formatter.
 
 `_api.py:39`'s `!= "keep"` already triggers the second pass for any new value, so that site needs nothing.
 
@@ -230,7 +230,7 @@ The validation this needs is available at the moment it is needed.
 `run` at `_cli.py:26-33` passes `mdformat.plugins.PARSER_EXTENSIONS` into `make_arg_parser` *before* calling `parse_args`, so `validate_wrap_arg` can be given the registry to check against.
 Measured: with a plugin registered, the mapping reaching `make_arg_parser` already contains its id.
 
-For this plugin the entry-point id is `sentence` (`DESIGN.md` section 2), so variant B yields the exact spelling section 5 wants, `--wrap sentence`, at no cost in ergonomics.
+For this plugin the entry-point id is `sentence` (`DESIGN.md` section 2), so variant B yields the exact spelling that this note's section 5 wants, `--wrap sentence`, at no cost in ergonomics.
 
 **Variant C, the plugin declares its modes.**
 Add an optional `WRAP_MODES: Iterable[str]` to the `ParserExtensionInterface` Protocol (section 6), and let mdformat accept any value an enabled plugin declared.
@@ -302,7 +302,7 @@ Read them before acting on this section.
   Why it was closed is unread, and a stated reason there would bear directly on this whole section.
 - **#422** `Word-wrap on sentence (punctuation) and width.`: closed. *Title only; not opened at all.*
 
-So there is an existing thread to join and it is the maintainer's own, the `Plugin` label on it is his own triage of where this belongs, and the exact spelling section 5.4 proposes has already been asked for once and folded into #4.
+So there is an existing thread to join and it is the maintainer's own, the `Plugin` label on it is his own triage of where this belongs, and the exact spelling that section 5.4 proposes has already been asked for once and folded into #4.
 Nothing found is a *rejection*: #4 is open and #374 was closed only as a duplicate.
 What changes is the shape of the ask, a comment on #4 rather than a new issue, and section 5.6's split becomes the part that is new, since no issue proposes separating wrap-point production from width wrapping.
 The reading limit stated above applies to every claim in this subsection.
@@ -334,12 +334,12 @@ Given the inline node as well as the text, the step could treat an authored `sof
 
 **What the step would still lack, and what the ask has to carry.**
 A node and a string do not give offsets.
-`DESIGN.md` section 3.2's atoms, a link, a code span, a footnote reference, are placed by section 3.1's recorder, and the recorder works only because the `inline` renderer controls the context its children render through.
+`DESIGN.md` section 3.2's atoms, a link, a code span, a footnote reference, are placed by the recorder of `DESIGN.md` section 3.1, and the recorder works only because the `inline` renderer controls the context its children render through.
 A step that `paragraph()` calls after the inline render controls nothing upstream of it, so handed the text alone it would have to render the children again, which section 3.1 rejects as impure, or find atoms in the text, which `DESIGN.md` section 2.2 tried and found wrong on `[fig.]` and on wikilinks.
 So the ask has to carry the structure as well as the step: either `paragraph()` records each node's rendering as the inline child renders and passes the span map to the step, or `paragraph()` lets the plugin supply the context its inline child renders through, so that the step records for itself.
 The second is not the `inline` slot as it stands.
 In that slot the plugin is the renderer, so its recording and its layout decision are one function whose result goes down to `_wrap` as `\n` and pinned spaces, and a second plugin that owns `inline` displaces both; under this ask the plugin owns no renderer, `paragraph()` renders its child through whatever `inline` renderer is loaded, and an `inline` owner no longer displaces the step.
-**Reasoned.** It can still starve it: section 3.1's records add up to the text only because mdformat's own `inline` renderer joins its children's renders with nothing between them, so a foreign owner that does not pass the supplied context to its children, or a foreign owner or an `inline` postprocessor that transforms the joined text, as mdformat-mkdocs's postprocessor does with its fillers (`quirks-mdformat-mkdocs.md`), leaves the whole node an atom under section 3.1's rule, and the step keeps its escaping and loses every break in that paragraph.
+**Reasoned.** It can still starve it: `DESIGN.md` section 3.1's records add up to the text only because mdformat's own `inline` renderer joins its children's renders with nothing between them, so a foreign owner that does not pass the supplied context to its children, or a foreign owner or an `inline` postprocessor that transforms the joined text, as mdformat-mkdocs's postprocessor does with its fillers (`quirks-mdformat-mkdocs.md`), leaves the whole node an atom under section 3.1's rule, and the step keeps its escaping and loses every break in that paragraph.
 That last case is not special to the second alternative: `RenderTreeNode.render` runs a node's postprocessors inside its render, so a step that `paragraph()` calls after rendering its inline child runs after every `inline` postprocessor under either alternative, downstream of the load-order seam `DESIGN.md` section 2.2 chose the renderer slot to stay ahead of, and the ask should say whether the step runs before them.
 **Reasoned.** The first is the smaller interface, and it is the one under which two plugins' steps would read the same map.
 
@@ -404,7 +404,7 @@ mdformat itself uses it once, to warn about renderer conflicts between plugins (
 `RendererWarningPrinter` at `_cli.py:20-23` is a `logging.Handler` whose `emit` writes `f"Warning: {record.msg}\n"` to stderr for `WARNING` and above.
 It is attached by `log_handler_applied` (`_cli.py:438-446`) and passed as `_first_pass_contextmanager` at `_cli.py:137`.
 
-Two details that change how a warning behaves, both measured in `wraparg.py` section 3-4 and neither of them obvious from the code:
+Two details that change how a warning behaves, both measured in `wraparg.py` checks 3 and 4 and neither of them obvious from the code:
 
 - **It wraps the first pass only.**
   `_api.py:26-33` runs the build and the first render inside that context manager; the second render at `_api.py:40` is outside it.
@@ -417,10 +417,10 @@ The consequence for `DESIGN.md` section 2.5: an `mdformat.text()` caller **does*
 What the CLI adds is the `Warning: ` prefix and only on the first pass.
 Section 9 records this as the one place this note and `DESIGN.md` disagree.
 
-**Volume.** The warning section 2.5 specifies is raised from the inline postprocessor, so it fires once per paragraph, not once per document: three paragraphs give three lines on stderr.
+**Volume.** The warning that `DESIGN.md` section 2.5 specifies is raised from the inline postprocessor, so it fires once per paragraph, not once per document: three paragraphs give three lines on stderr.
 Whoever implements section 2.5 needs a once-per-render latch; the option mapping is shared and mutable, so there is somewhere to put one.
 
-The second pass does *not* double it, although `wraparg.py` section 4 measures three lines under `--wrap keep` and six under `--wrap no`.
+The second pass does *not* double it, although `wraparg.py` check 4 measures three lines under `--wrap keep` and six under `--wrap no`.
 That experiment warns unconditionally; section 2.5's warning is guarded by `not context.do_wrap`, which is true only under `keep`, and `_api.py:39` re-renders only when `wrap != "keep"`.
 The two conditions are complementary, so the pass that doubles a warning is never the pass that raises this one.
 The latch is needed per paragraph, not across passes.

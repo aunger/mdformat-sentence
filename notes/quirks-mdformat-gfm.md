@@ -9,7 +9,7 @@ ______________________________________________________________________
 
 ## `xxxx` is glued to a task item's first word at an integer width
 
-**Compatibility risk.** *Verified* (`experiments/seam.py` sections 2 and 5).
+**Compatibility risk.** *Verified* (`experiments/seam.py` checks 2 and 5).
 gfm's `inline` postprocessor prefixes `xxxx` to the first paragraph of a task-list item to reserve the width of `[ ] `, and its `list_item` renderer removes the four characters again.
 Any `inline` postprocessor loaded after gfm sees `xxxxMr.` as the first word, so `- [ ] Mr. Smith left early. Then he came back.` decides differently at `--wrap 40` than at `--wrap no`.
 mdformat-openmmlab carries a copy of the same postprocessor (*read*).
@@ -17,13 +17,13 @@ mdformat-openmmlab carries a copy of the same postprocessor (*read*).
 
 ## A task box at a line start is escaped
 
-**Compatibility risk.** *Verified* (`experiments/seam.py` section 4).
+**Compatibility risk.** *Verified* (`experiments/seam.py` check 4).
 gfm's `paragraph` postprocessor turns a line-opening `[ ]`, `[x]` or `[X]` into `\[X\]`, whichever order the plugins load in, so a break before one changes the source.
 Section 3.5 refuses that break, with or without gfm.
 
 ## A bare URL renders its source, not its child
 
-**Compatibility risk.** *Verified* (`experiments/recorder.py` section 4).
+**Compatibility risk.** *Verified* (`experiments/recorder.py` check 4).
 `gfm_autolink` has a `text` child, but its renderer returns the source text and never renders the child.
 A tree walk that expects a container's rendering to contain its children's cannot place it; the hook-point review measured the old walk backing off on bare URLs containing `_(`, `__` or `*` (`DESIGN-REVIEW-HOOK-POINT-2026-10-06.md` at `9264f70`, section *3. Evidence register*, R6).
 Section 3.1 makes such a node an atom.

@@ -11,10 +11,10 @@ UAX #29 STerm and ATerm. No decision list, bracket depth or capital-test
 exemption is consulted: none of these texts needs one.
 
 It establishes:
-  1. the fixtures of section 6.4 for quotation marks break where section 3.3 says, and
-     section 3.5's safety checks, tested where the newline actually lands in a run,
-     pin a run whose newline would open a line with ~~~ or end one in a
-     no-break space;
+  1. the fixtures of section 6.4 for quotation marks break where
+     section 3.3 says, and section 3.5's safety checks, tested where the
+     newline actually lands in a run, pin a run whose newline would open
+     a line with ~~~ or end one in a no-break space;
   2. a run of lone marks is one gap: the words on either side decide
      whether it breaks, and the marks' roles only decide where in the
      run the newline goes, so no reading of any mark, alone or side by

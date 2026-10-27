@@ -128,7 +128,7 @@ ______________________________________________________________________
 ## 6. Idea: judge the paragraph on sentences only, which are knowable
 
 The failure in sections 3 to 5 is always the same: inferring clause boundaries.
-So infer nothing about clauses. Ask only a question section 3.3 of `DESIGN.md` can already answer.
+So infer nothing about clauses. Ask only a question that `DESIGN.md` section 3.3 can already answer.
 
 > Scan the paragraph as the author left it.
 > If every sentence end is already followed by a line break, the layout respects the promise; assume the extra breaks are deliberate and preserve them all.
@@ -238,7 +238,7 @@ The case that motivates all of this: an agent inserts a width-wrapped paragraph 
 
 Sentence-only flattens the whole document, which is not a repair but a different destruction.
 Add-only freezes the new paragraph's geometric breaks.
-Every automatic deleting policy is sections 3 to 8.
+Every automatic deleting policy is one of those in sections 3 to 8.
 
 The information actually needed is "was this paragraph written by something that does not know about sembr", and that is not in the text.
 It is in version control.
@@ -250,7 +250,7 @@ The plugin-only answer that survives CI is weaker but safe: add-only, never dele
 The warning channel exists and is measured: `mdformat.renderer.LOGGER`, with a `RendererWarningPrinter` handler attached in `_cli.py` that prints WARNING and above to stderr.
 It is attached on the CLI path only, but that does not make the API path silent: with no handler configured, `logging.lastResort` still writes the message to stderr, unprefixed.
 What the CLI adds is the `Warning: ` prefix, and only on the first render pass.
-Measured, `wraparg.py` section 3; `MDFORMAT-WRAP-AND-OVERRIDES.md` section 7 is the full account.
+Measured, `wraparg.py` check 3; `MDFORMAT-WRAP-AND-OVERRIDES.md` section 7 is the full account.
 
 **Status.** The VCS-scoped wrapper is the only design that serves the motivating case without a heuristic. It is out of scope for the plugin and worth building separately.
 
@@ -295,7 +295,7 @@ ______________________________________________________________________
 
 1. Keep sentence-only exactly as `DESIGN.md` specifies it. Nothing on this ladder amends the specification.
 1. Reject every deleting variant: per-gap punctuation, punctuation plus break words, paragraph scoring, coverage thresholds, and coverage at exactly zero.
-1. Treat section 2, add-only, as a possible future mode. If it is ever built: explicit opt-in, per-gap, no heuristic, documented as freezing existing breaks including accidental ones, with section 6.2 extended by the two invariants in section 11. Whether it is worth building is not a question this note settles.
+1. Treat section 2, add-only, as a possible future mode. If it is ever built: explicit opt-in, per-gap, no heuristic, documented as freezing existing breaks including accidental ones, with `DESIGN.md` section 6.2 extended by the two invariants in section 11. Whether it is worth building is not a question this note settles.
 1. The agent-insertion case is not solvable inside the plugin; section 10 sets out where its signal lives.
 
 ______________________________________________________________________

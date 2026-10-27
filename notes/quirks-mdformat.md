@@ -24,7 +24,7 @@ The CLI refuses the file ("Formatted Markdown renders to different HTML than inp
 The cause is that `text()` escapes brackets according to `env["used_refs"]`, which grows as rendering proceeds, so text rendered before the link that uses `foo` is not escaped.
 
 The same state makes rendering impure: a second render of the children sees a grown set and renders differently, 49 characters against 47 here.
-`DESIGN.md` section 3.1 avoids rendering twice for this reason (`experiments/recorder.py`, `experiments/seam.py` section 3).
+`DESIGN.md` section 3.1 avoids rendering twice for this reason (`experiments/recorder.py`, `experiments/seam.py` check 3).
 
 ## A tilde fence at a line start is not escaped
 

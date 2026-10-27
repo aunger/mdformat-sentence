@@ -15,7 +15,7 @@ ______________________________________________________________________
 `fill-region-as-paragraph-semlf` binds `fill-column` to `most-positive-fixnum` for its first call only, which joins the paragraph into one line.
 It then finds each sentence end with `forward-sentence` and fills that sentence with `fill-region-as-paragraph-default` under the ambient `fill-column`.
 Its docstring says so: "The variable `fill-column` controls the width for filling."
-A sentence longer than the column therefore wraps at whitespace on width alone, which is the mode section 4.1 declines, and the output is not a function of the text.
+A sentence longer than the column therefore wraps at whitespace on width alone, which is the mode that section 4.1 declines, and the output is not a function of the text.
 
 ## A single space does not end a sentence by default
 

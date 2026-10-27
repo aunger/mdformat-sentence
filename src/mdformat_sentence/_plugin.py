@@ -42,8 +42,9 @@ def _render_inline(node: RenderTreeNode, context: RenderContext) -> str:
     text = DEFAULT_RENDERERS["inline"](node, context)
     if WRAP_POINT not in text:
         return text
-    # Segmentation (section 3.1) and emission (section 3.4) decide the gaps here; until
-    # they are built, the text goes back as mdformat rendered it.
+    # Segmentation (section 3.1) and emission (section 3.4) decide the
+    # gaps here; until they are built, the text goes back as mdformat
+    # rendered it.
     return text
 
 

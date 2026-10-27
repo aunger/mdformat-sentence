@@ -27,7 +27,7 @@ Check any claim about mdformat by running it against 1.0.0, and say whether a cl
 
 Prose in `DESIGN.md` is one sentence per line, because `DESIGN.md` is also a fixture (section 6.2, the dogfood row), and new prose in `notes/` follows the same convention.
 So every line break must be one the shipped default would make, and no gap inside a line may be one it would make.
-The common traps are a line ending in an abbreviation or initial the default holds, a break inside brackets, and a next line opening with something section 3.5 refuses at a line start, such as `1.` or `-`.
+The common traps are a line ending in an abbreviation or initial the default holds, a break inside brackets, and a next line opening with something that section 3.5 refuses at a line start, such as `1.` or `-`.
 Refer to sections as "section 6.2" or "sections 6.2 and 6.4", never with the section sign, and as "Section 6.2" at the start of a sentence, since a lowercase opening fails the capital test.
 Cite the Semantic Line Breaks specification's rules as "sembr#5" within a sentence and "Sembr#5" at its start, since a lowercase opening fails the capital test.
 Run `mdformat --check DESIGN.md` with plain mdformat 1.0.0, and `mdformat --compact-tables --check DESIGN.md` with mdformat-gfm 1.0.0 added, before committing.

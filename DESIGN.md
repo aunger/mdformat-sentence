@@ -268,7 +268,7 @@ Measured in `notes/experiments/wrapkeep.py`.
 Checked in the renderer, the warning would fire once per paragraph rather than once per file, so the canary's `root` postprocessor of section 2.2 checks it instead, once per render pass.
 It warns only if the renderer has set its flag in `context.env`, so a paragraph must have reached the plugin, and since markdown-it creates `env` afresh for every render, the flag resets for each file with no state kept in the module.
 Section 2.3's double render does *not* double it: the guard above is `not context.do_wrap`, true only under `keep`, and `_api.py` re-renders only when `wrap != "keep"`, so the pass that would repeat a warning is never the pass that raises this one.
-Measured in `notes/experiments/wraparg.py` section 4: three paragraphs give three calls at the hook point under `--wrap keep` and six under `--wrap no`, and only the `keep` pass, which renders once, can warn.
+Measured in check 4 of `notes/experiments/wraparg.py`: three paragraphs give three calls at the hook point under `--wrap keep` and six under `--wrap no`, and only the `keep` pass, which renders once, can warn.
 
 **What the plugin cannot see is whether `keep` was chosen or merely defaulted.**
 `_cli.py` builds `{**DEFAULT_OPTS, **toml_opts, **cli_core_opts}` and argparse drops unset values, so an omitted `--wrap`, an explicit `--wrap keep`, and `wrap = "keep"` in TOML all arrive identical.
@@ -333,7 +333,7 @@ It cannot be a function of two adjacent segments, for the reasons in section 3.3
 
 ### 3.2 Inline atoms
 
-An *atom* is an inline node section 3.1 records whole: a link, an image, a code span, raw inline HTML, any leaf of a type this plugin does not know, such as one a math plugin adds, and any node whose children were not rendered or cannot be located exactly once in its rendering.
+An *atom* is an inline node that section 3.1 records whole: a link, an image, a code span, raw inline HTML, any leaf of a type this plugin does not know, such as one a math plugin adds, and any node whose children were not rendered or cannot be located exactly once in its rendering.
 Autolinks are links, so `<https://x.y/a)b>` is one atom.
 Only `text` leaves are prose; every other node with children, emphasis, strong emphasis, strikethrough, is a container whose children section 3.1 locates, unless that last clause makes it an atom.
 Verified against mdformat 1.0.0, with links and code spans inside emphasis and strong emphasis, strikethrough from `mdformat-gfm`, a badge `[![b](i)](t)`, raw HTML, and an autolink containing `)`: the pieces' lengths add up exactly, and every bracket in link syntax, a URL or code lands inside an atom.
@@ -461,7 +461,7 @@ A rules file contributes an ordered list of `[[rule]]` tables, and the lists of 
 At a candidate gap every rule whose patterns match is considered, and the last one decides.
 Ordering is what makes a rule overridable without knowing how it was written: a later rule matching `st` settles `st`, whatever pattern an earlier rule used to reach it.
 Last rather than first, because a macro's later definition already overrides its earlier one, and a file cannot be half assignment and half matcher without surprising its author.
-The snippets in this section show one `[[rule]]` each; as a file, each sits under `schema = 1`, on top of the base rules, and carries the example section 4 requires, and `$letter` is the default file's macro rather than a built-in class.
+The snippets in this section show one `[[rule]]` each; as a file, each sits under `schema = 1`, on top of the base rules, and carries the example that section 4 requires, and `$letter` is the default file's macro rather than a built-in class.
 
 Each rule carries at least one and at most six patterns, each `fullmatch`ed against a single word, and a rule matches only where all of its patterns do.
 **A rule with no pattern is a load error, and so is any key the format does not define**, in a rule, in an example or at the top of a file.
@@ -604,7 +604,7 @@ A literal dollar is `\$`, as in `re`, and the expander never reads `\$` as a sig
 - **An opaque inline atom opens a sentence**, whatever it contains, and the list of them is closed.
   Only a code span, an image, an autolink written `<url>`, or a segment that is nothing but raw inline HTML tags, `<img src="x">` or `<br>`, opens a sentence regardless of case, because each renders as a thing rather than as prose and case does not apply to it.
   Raw inline HTML before a word is read by what it holds: the test skips the tags at the start of a segment as it skips opening markup, so `<em>then</em>` is tested at `t` and declines.
-  A leaf of a type this plugin does not know, or a node section 3.1 made an atom because its children were not rendered or could not be located, is an atom for section 3.2 but opens nothing, and its text is not read through the capital test either.
+  A leaf of a type this plugin does not know, or a node that section 3.1 made an atom because its children were not rendered or could not be located, is an atom for section 3.2 but opens nothing, and its text is not read through the capital test either.
   A bare URL that mdformat-gfm links is such a node, and `notes/FUTURE-WORK.md` records the cost.
   An open list was tried and deletes text: with mdformat-footnote loaded, a break before `[^x]: not a definition` lets the second pass read a footnote definition there, and both notes' text is gone.
   The closed list costs breaks before co-plugin syntax, a sentence opening with a wikilink or with inline math, `…holds. $x$ is positive.`, among them.
@@ -754,7 +754,7 @@ The principles that follow are structural, and none is about any one language:
   Counting open quotations would be the language-free alternative, and it fails on ordinary French: a quotation can close in a paragraph it did not open in, as dialogue does when `«` opens the exchange, a dash marks each reply, and `»` closes it at the end.
 
 **A mark's role decides which line it lands on, and decides whether a break happens only through section 3.5.**
-Only the words around a run decide whether it breaks, so a reading can change the outcome only by moving the newline onto a position section 3.5 refuses, which none of the texts below has, and it is verified by simulation: over twenty-two texts with lone marks, alone and side by side, in French, German, Finnish, English, Italian, Japanese and Chinese, every combination of readings, 120 in all, puts the same words on each line.
+Only the words around a run decide whether it breaks, so a reading can change the outcome only by moving the newline onto a position that section 3.5 refuses, which none of the texts below has, and it is verified by simulation: over twenty-two texts with lone marks, alone and side by side, in French, German, Finnish, English, Italian, Japanese and Chinese, every combination of readings, 120 in all, puts the same words on each line.
 So a wrong reading costs a quotation mark stranded at the wrong end of a line and nothing more.
 That cost remains for every spaced mark the third criterion reads, because after a sentence end it reads the first mark as closing, even one that opens the next sentence: `He said. " Hello. " Then he left.` leaves the first `"` at the end of the first line, and `He said. “ ‘ Yes. ’ ” Then he left.` leaves the `“` there.
 Straight quotes are the common case, since they are the marks most often typed with spaces by mistake.
@@ -778,7 +778,7 @@ Every gap resolves to exactly one of two characters:
 
 ```
 sentence break that section 3.5 allows  ->  "\n"
-everything else                  ->  " "
+everything else                         ->  " "
 ```
 
 Turning every gap that is not a sentence break into a literal space, never a wrap point, is *pinning*.
@@ -973,7 +973,7 @@ The `$name` classes of section 3.3 are the pattern language rather than rule con
 The split lets a user narrow `$roman` to reject `iiiv` while leaving `$numeric` meaning one thing everywhere.
 
 **Macros bind late, across the whole composition.**
-A composition has one macro table, built in splice order starting from the default file's, where a later file's definition of a name replaces an earlier one, which is the override section 3.3's last-match-wins was chosen to match.
+A composition has one macro table, built in splice order starting from the default file's, where a later file's definition of a name replaces an earlier one, which is the override that section 3.3's last-match-wins was chosen to match.
 Every pattern, an included rules file's as much as the file's own, is expanded against the finished macro table, so a user's `roman = …` narrows the default's index rules as well as the user's own.
 A macro may reference any other, and a reference that loops is a load error.
 An example runs against its own file (below), so a redefinition is checked by the examples of the file that makes it, not by those of the file it changes.
@@ -1170,7 +1170,7 @@ A copy can add and override rules but not narrow one by editing its pattern, bec
 Narrow with a later `allow` rule instead.
 
 **A second rules file ships, `academic.toml`, and it is two rules on top of the default.**
-It exists because the rules that move between audiences are few and identifiable, not because academic Markdown is a different language: `al` belongs here for the reason section 3.3 gives, and five more index abbreviations, `eq`, `eqn`, `tbl`, `p` and `pp`, are ordinary only in papers.
+It exists because the rules that move between audiences are few and identifiable, not because academic Markdown is a different language: `al` belongs here for the reason that section 3.3 gives, and five more index abbreviations, `eq`, `eqn`, `tbl`, `p` and `pp`, are ordinary only in papers.
 
 ```toml
 schema  = 1
@@ -1289,7 +1289,7 @@ That is a gap in conformance and is stated as one.
 
 The reason is that sembr#5 cannot be implemented from punctuation alone without over-firing.
 Read unconditionally, it breaks at every comma at paren depth zero with no test for whether an independent clause follows, which shatters serial lists (`LaTeX,` / `Markdown,` / `and plain text,`), coordinate prepositional phrases and introductory adverbials.
-Measured on the specification's own prose (section 5.2), 63 clause marks are followed by whitespace and its author broke the line at 42 of them, so a naive reading of sembr#5 would also break at the other 21, one position in three, where the author did not; `notes/experiments/rules.py` reproduces the count.
+Measured on the specification's own prose (section 5.2 below), 63 clause marks are followed by whitespace and its author broke the line at 42 of them, so a naive reading of sembr#5 would also break at the other 21, one position in three, where the author did not; `notes/experiments/rules.py` reproduces the count.
 The usual remedy is a length-based merge pass that folds short lines back, a geometric patch for a grammatical problem, and one this plugin has no width to compute.
 
 Implementing sembr#5 correctly needs a test for whether both sides of a comma could stand alone as sentences, which is a parsing problem, and this version does not parse.
@@ -1423,7 +1423,7 @@ MD013, rumdl's line-length rule, has four reflow modes, one of them `sentence-pe
 Verified by execution against `rumdl==0.2.60`: in that mode, with `line-length = 80`, a 136-character sentence is left intact on one line, and the reflow trigger contains no length test at all.
 So a shipped tool already makes the width-independent sentence-per-line promise, which is evidence that section 1 describes a coherent product rather than one person's idiosyncrasy.
 
-In production, rumdl has solved several of the problems section 3 will have to solve, and its solutions are worth reading before writing ours: `sentence_utils.rs` for the terminator and abbreviation handling, and `text_reflow.rs` for segmentation and for the atomicity of links and code spans.
+In production, rumdl has solved several of the problems that section 3 will have to solve, and its solutions are worth reading before writing ours: `sentence_utils.rs` for the terminator and abbreviation handling, and `text_reflow.rs` for segmentation and for the atomicity of links and code spans.
 The closer-set exclusion in section 3.3 is a case where reading a working implementation is what surfaced the right behavior.
 
 What it is not is an oracle.
@@ -1463,7 +1463,7 @@ The tool has its own blind spots, this design intends to do better in places, an
    | `The term \[x\](see the y note) is escaped. Then more.` | mkdocs | a known failure, recorded and not gating (`notes/TRADE-OFFS.md`) |
 
 1. The fuzz corpus and the quality harness, once the fixtures pass.
-   The fuzz corpus fixes the sample sizes section 6.2 leaves open and feeds section 6.1, and the quality harness reports precision, recall and F1 against hand-marked sentence ends (section 6.2) without gating anything.
+   The fuzz corpus fixes the sample sizes that section 6.2 leaves open and feeds section 6.1, and the quality harness reports precision, recall and F1 against hand-marked sentence ends (section 6.2) without gating anything.
 
 **Three fixtures in the next table come from Panache's semantic-wrap suite**, paraphrased rather than copied, and hold as Panache states them.
 Three more from the same suite turn on keeping an authored soft break, which this design does not do (section 2.5); `notes/PRESERVE-MODE.md` keeps them as examples of what an add-only mode would add.

@@ -57,7 +57,7 @@ It records nothing historical, which is where `„` closes.
 And the JSON is resolved, so about 490 locales carry root's `“…”` and `‘…’` by inheritance, while only about 129 of the 766 set a value of their own.
 
 Unicode's general category is no guarantee either.
-In CLDR every `Ps` or `Pe` mark has one role and every `Pi` or `Pf` mark has both, which looks like a regularity, but `„` and `‚` are `Ps` and both close in historical text (section 3).
+In CLDR every `Ps` or `Pe` mark has one role and every `Pi` or `Pf` mark has both, which looks like a regularity, but `„` and `‚` are `Ps` and both close in historical text (section 3 below).
 UAX #44 says only that `Pi` and `Pf` "may behave like opening punctuation (gc=Ps) or closing punctuation (gc=Pe), depending on usage and quotation conventions".
 
 ______________________________________________________________________

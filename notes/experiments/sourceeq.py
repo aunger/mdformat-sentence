@@ -8,7 +8,7 @@ the paragraph's containers: "> " for a blockquote, and for a list item as
 many spaces as its marker is wide. Nothing else is undone.
 
 The postprocessor here breaks after every [.!?] with no line-start check, so
-Section 3.5's hazards happen. It establishes:
+section 3.5's hazards happen. It establishes:
   1. the prefix removal is exact: every container case passes, nested too, and
      so does a numbered list, whose markers mdformat pads to one width;
   2. the row fails where section 3.5's line-start check is the only guard, the
