@@ -24,7 +24,7 @@ FALLBACK = "mdformat-sentence made an atom by fallback"
 # Recorded whole, children and all (§3.2). Autolinks are links.
 ATOMS = frozenset({"link", "image"})
 # Leaves that are neither prose nor atoms: a soft break is a gap, and a
-# hard break's newline ends a section.
+# hard break's newline ends a paragraph part.
 BREAKS = frozenset({"softbreak", "hardbreak"})
 
 _RUN = re.compile(f"({re.escape(WRAP_POINT)}+)")
@@ -62,8 +62,8 @@ class Piece(NamedTuple):
     atom: bool
 
 
-class Section(NamedTuple):
-    """A run of text between hard breaks, split at its wrap points.
+class ParagraphPart(NamedTuple):
+    """The inline text between hard breaks (§3.1), split at its wrap points.
 
     `starts[i]` is the offset of `segments[i]` in the paragraph's text,
     so the gap after segment `i` begins at `starts[i] + len(segments[i])`.
@@ -74,7 +74,7 @@ class Section(NamedTuple):
 
 
 class State(NamedTuple):
-    """Section 3.3's cross-segment facts about one section."""
+    """Section 3.3's cross-segment facts about one paragraph part."""
 
     atoms: list[Piece]
     depth: list[int]
@@ -131,7 +131,7 @@ def _joined(node, records) -> str | None:
     return "".join(records[id(c)] for c in node.children)
 
 
-def sections(text: str, pieces: list[Piece]) -> Iterator[Section]:
+def paragraph_parts(text: str, pieces: list[Piece]) -> Iterator[ParagraphPart]:
     """Split at every newline outside an atom (§3.1), then at wrap points,
     keeping each run's length in the offsets (§2.3)."""
     inside = _atom_test(pieces)
@@ -139,9 +139,9 @@ def sections(text: str, pieces: list[Piece]) -> Iterator[Section]:
     for end in [*(m.start() for m in re.finditer("\n", text)), len(text)]:
         if end < len(text) and inside(end):
             continue
-        parts = _RUN.split(text[begin:end])
-        starts = list(accumulate(map(len, parts), initial=begin))
-        yield Section(parts[0::2], starts[0::2])
+        split = _RUN.split(text[begin:end])
+        starts = list(accumulate(map(len, split), initial=begin))
+        yield ParagraphPart(split[0::2], starts[0::2])
         begin = end + 1
 
 
@@ -156,13 +156,13 @@ def _atom_test(pieces: list[Piece]) -> Callable[[int], bool]:
     return inside
 
 
-def scan(text: str, section: Section, pieces: list[Piece]) -> State:
-    """Section 3.3's facts, computed once per section: the atoms in it,
+def scan(text: str, part: ParagraphPart, pieces: list[Piece]) -> State:
+    """Section 3.3's facts, computed once per paragraph part: the atoms in it,
     and the bracket depth at each gap (§3.2)."""
-    first = section.starts[0]
-    last = section.starts[-1] + len(section.segments[-1])
+    first = part.starts[0]
+    last = part.starts[-1] + len(part.segments[-1])
     inside = [p for p in pieces if p.start < last and p.end > first]
-    gaps = [s + len(seg) for s, seg in zip(section.starts, section.segments)][:-1]
+    gaps = [s + len(seg) for s, seg in zip(part.starts, part.segments)][:-1]
     depth = [0] * len(gaps)
     for opened, closed in _pairs(text, [p for p in inside if not p.atom], first, last):
         for i in range(bisect_right(gaps, opened), bisect_left(gaps, closed)):
@@ -194,9 +194,9 @@ def is_sentence_break(segments: list[str], i: int, state: State) -> bool:
 def decide(text: str, pieces: list[Piece]) -> str:
     """Resolve every gap to a newline or a literal space (§3.4)."""
     out = []
-    for section in sections(text, pieces):
-        segments = section.segments
-        state = scan(text, section, pieces)
+    for part in paragraph_parts(text, pieces):
+        segments = part.segments
+        state = scan(text, part, pieces)
         emit = [segments[0]]
         for i in range(len(segments) - 1):
             emit.append("\n" if is_sentence_break(segments, i, state) else " ")

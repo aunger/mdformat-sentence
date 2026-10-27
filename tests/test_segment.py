@@ -12,7 +12,7 @@ import pytest
 
 from _gate import WIDTHS, run
 from mdformat_sentence import _plugin
-from mdformat_sentence._segment import BACK_OFF, FALLBACK, locate, scan, sections
+from mdformat_sentence._segment import BACK_OFF, FALLBACK, locate, paragraph_parts, scan
 
 
 @pytest.fixture
@@ -36,11 +36,11 @@ def decided(monkeypatch):
 
 
 def segments(text, pieces):
-    return [s.segments for s in sections(text, pieces)]
+    return [p.segments for p in paragraph_parts(text, pieces)]
 
 
 def depths(text, pieces):
-    return [scan(text, s, pieces).depth for s in sections(text, pieces)]
+    return [scan(text, p, pieces).depth for p in paragraph_parts(text, pieces)]
 
 
 def test_atoms_keep_their_punctuation(decided):
@@ -72,12 +72,12 @@ def test_containers_are_located_and_atoms_inside_them_kept_whole(decided):
 def test_a_run_of_wrap_points_keeps_its_length(decided):
     text, pieces = decided("w \\*\t\n  z. Then more.\n")
     assert "\x00\x00" in text
-    (section,) = sections(text, pieces)
-    for start, segment in zip(section.starts, section.segments):
+    (part,) = paragraph_parts(text, pieces)
+    for start, segment in zip(part.starts, part.segments):
         assert text[start : start + len(segment)] == segment
 
 
-def test_sections_end_at_hard_breaks_only(decided):
+def test_paragraph_parts_end_at_hard_breaks_only(decided):
     text, pieces = decided(
         'Raw <span\nclass="x">HTML</span> here. A [link\\\nbreak](u) and '
         '[a](u "x\ny"). Line\\\nTwo. And  \nthree.\n'
@@ -102,7 +102,7 @@ def test_bracket_depth(decided, md, expected):
     assert depths(*decided(md + "\n")) == [expected]
 
 
-def test_brackets_pair_within_a_section(decided):
+def test_brackets_pair_within_a_paragraph_part(decided):
     assert depths(*decided("A ( b\\\nc ) d.\n")) == [[0, 0], [0, 0]]
 
 
