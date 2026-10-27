@@ -336,7 +336,9 @@ Given the inline node as well as the text, the step could treat an authored `sof
 A node and a string do not give offsets.
 `DESIGN.md` §3.2's atoms, a link, a code span, a footnote reference, are placed by §3.1's recorder, and the recorder works only because the `inline` renderer controls the context its children render through.
 A step that `paragraph()` calls after the inline render controls nothing upstream of it, so handed the text alone it would have to render the children again, which §3.1 rejects as impure, or find atoms in the text, which `DESIGN.md` §2.2 tried and found wrong on `[fig.]` and on wikilinks.
-So the ask has to carry the structure as well as the step: either `paragraph()` records each node's rendering as the inline child renders and passes the span map to the step, or the step is called around the inline render with the context the inline node renders through supplied by the plugin.
+So the ask has to carry the structure as well as the step: either `paragraph()` records each node's rendering as the inline child renders and passes the span map to the step, or `paragraph()` lets the plugin supply the context its inline child renders through, so that the step records for itself.
+The second is not the `inline` slot as it stands.
+In that slot the plugin is the renderer, so its recording and its layout decision are one function whose result goes down to `_wrap` as `\n` and pinned spaces, and a second plugin that owns `inline` displaces both; under this ask the plugin owns no renderer, `paragraph()` renders its child through whatever `inline` renderer is loaded, and an `inline` owner composes with the step instead of displacing it.
 **Reasoned.** The first is the smaller interface, and it is the one under which two plugins' steps would read the same map.
 
 **Measured**, `experiments/parahook.py`, at `--wrap no` on one paragraph with a code span, a link and emphasis.
