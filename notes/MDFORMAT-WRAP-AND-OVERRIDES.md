@@ -338,16 +338,17 @@ A node and a string do not give offsets.
 A step that `paragraph()` calls after the inline render controls nothing upstream of it, so handed the text alone it would have to render the children again, which §3.1 rejects as impure, or find atoms in the text, which `DESIGN.md` §2.2 tried and found wrong on `[fig.]` and on wikilinks.
 So the ask has to carry the structure as well as the step: either `paragraph()` records each node's rendering as the inline child renders and passes the span map to the step, or `paragraph()` lets the plugin supply the context its inline child renders through, so that the step records for itself.
 The second is not the `inline` slot as it stands.
-In that slot the plugin is the renderer, so its recording and its layout decision are one function whose result goes down to `_wrap` as `\n` and pinned spaces, and a second plugin that owns `inline` displaces both; under this ask the plugin owns no renderer, `paragraph()` renders its child through whatever `inline` renderer is loaded, and an `inline` owner composes with the step instead of displacing it.
+In that slot the plugin is the renderer, so its recording and its layout decision are one function whose result goes down to `_wrap` as `\n` and pinned spaces, and a second plugin that owns `inline` displaces both; under this ask the plugin owns no renderer, `paragraph()` renders its child through whatever `inline` renderer is loaded, and an `inline` owner no longer displaces the step.
+**Reasoned.** It can still starve it: §3.1's records add up to the text only because mdformat's own `inline` renderer joins its children's renders with nothing between them, so a foreign owner that does not pass the supplied context to its children, or that transforms the joined text as mdformat-mkdocs's fillers do, leaves the whole node an atom under §3.1's rule, and the step keeps its escaping and loses every break in that paragraph.
 **Reasoned.** The first is the smaller interface, and it is the one under which two plugins' steps would read the same map.
 
-**Measured**, `experiments/parahook.py`, at `--wrap no` on one paragraph with a code span, a link and emphasis.
-A `paragraph` postprocessor receives one line with no wrap point in it, after `_wrap` and line-start escaping.
-That it comes after line-start escaping was read from `paragraph()` in `renderer/_context.py` and not run, since the input has no line start to escape.
-The `inline` renderer receives the same paragraph with a wrap point at each of its eight gaps.
-A `paragraph` renderer that leaves mdformat's `paragraph()` to do the line-start escaping reaches those eight only by injecting an `inline` renderer into the context before calling it, and then produces output identical to the `inline` renderer's; that is `DESIGN.md` §2.2's contingency for a lost `inline` slot, not a placement with anything of its own.
-A `paragraph` renderer could also render its inline child itself, as `paragraph()` does, and see the same eight, but it would then have to reimplement the escaping; that variant was read and not run.
-So within 1.0.0 the `inline` renderer of a paragraph's only child is the paragraph-level hook that keeps `paragraph()`'s escaping, and this ask is for the slot that does not exist, not for a move the plugin could make today.
+**Measured**, `experiments/parahook.py`, at `--wrap no` on one paragraph with a code span, a link, emphasis and a sentence ending in `1.`, which a break puts at a line start.
+A `paragraph` postprocessor receives one line with no wrap point in it, after `_wrap` and line-start escaping; the `1.` arrives escaped.
+The `inline` renderer receives the same paragraph with a wrap point at each of its nine gaps.
+A `paragraph` renderer that leaves mdformat's `paragraph()` to do the line-start escaping reaches those nine only through the `inline` slot: it injects into the context it hands `paragraph()` either an `inline` renderer or an `inline` postprocessor, which `RenderTreeNode.render` runs inside the inline child's render and so before `_wrap`.
+Both produce output identical to the `inline` renderer's, the escaped `1\.` included; the first is `DESIGN.md` §2.2's contingency for a lost `inline` slot, and neither is a placement with anything of its own.
+**Reasoned.** A `paragraph` renderer could also render its inline child itself, as `paragraph()` does, and see the same nine, but it would then have to reimplement the escaping; that variant was not run.
+So within 1.0.0 the `inline` slot of a paragraph's only child is the paragraph-level hook that keeps `paragraph()`'s escaping, the renderer rather than the postprocessor for the load-order reason `experiments/seam.py` measures, and this ask is for the slot that does not exist, not for a move the plugin could make today.
 
 **How it relates to the other asks.**
 It builds on §5.6 rather than replacing it, since the step needs wrap points to choose among, and a plugin named as the line-breaker, as §5.5's variants would name it, is the one whose step runs.
