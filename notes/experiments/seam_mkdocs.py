@@ -7,7 +7,7 @@ The probes are seam.py's `decide` (break after [.!?] before a capital) with no w
   rr = RENDERERS["inline"], calls DEFAULT_RENDERERS["inline"], then decides
 Both pin every other gap to a literal space, so mdformat's own wrap has nothing to act on.
 
-It establishes three things:
+It establishes:
   1. mdformat-mkdocs's inline postprocessor, at an integer --wrap and inside a list item, re-wraps the
      text itself and inserts U+E000 filler *words* between the real ones, so a postprocessor loaded after
      it sees a different segmentation than at --wrap no;

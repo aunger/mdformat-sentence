@@ -30,7 +30,7 @@ def noun_use(tok):
     return sum(s.values())
 
 # "et al", not bare "al": the abbreviation only separates from "al Qaeda" and
-# "al dente" in the bigram, which is 100% numerals against the bare token's 44%.
+# "al dente" in the bigram, which is 100% numerals against the bare word's 44%.
 print(f"{'token':6s} {'numerals, top ten':>20s}   {'used as a noun':>14s}   commonest continuations")
 for tok in ["Fig","fig","No","no","Vol","Ch","Sec","sec","vs","St","Dr","et al"]:
     d, k, tot, top = digit_share(tok); time.sleep(1.2)

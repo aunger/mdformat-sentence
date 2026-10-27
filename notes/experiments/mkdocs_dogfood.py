@@ -4,7 +4,7 @@ Needs mdformat 1.0.0, mdformat-mkdocs 5.3.0 and mdformat-gfm 1.0.0, which instal
 Runs at mdformat's default --wrap keep, with compact tables, and without this plugin.
 Takes the file to check as an argument; the default is DESIGN.md beside notes/.
 
-It establishes three things:
+It establishes:
   1. mkdocs's spaced-URL fixer reaches inside a code span: `\\[x\\](y z)` becomes `[x](<y z>)`,
      the rendered HTML changes, and mdformat's CLI would refuse the file; the same text in a fenced
      block is left alone;

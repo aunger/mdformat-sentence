@@ -7,7 +7,7 @@ against the live render state; the renderer copies that state before its
 children render and re-renders against the copy. mdformat-gfm is the
 co-plugin, loaded before and after each probe.
 
-It establishes four things:
+It establishes:
   1. the order postprocessors run in is the order plugins load in, which a
      plugin cannot choose; under the API it is a set's iteration order, which
      varies with PYTHONHASHSEED;

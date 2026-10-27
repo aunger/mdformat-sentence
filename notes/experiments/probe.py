@@ -14,7 +14,7 @@ probe = types.SimpleNamespace(
     add_cli_argument_group=lambda group: None,
     update_mdit=lambda mdit: None,
 )
-P.PARSER_EXTENSIONS  # materialise
+P.PARSER_EXTENSIONS  # materialize
 P.PARSER_EXTENSIONS["probe"] = probe
 
 SRC = ("First sentence here and it is quite long. Second sentence here.\n"
