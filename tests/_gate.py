@@ -10,11 +10,11 @@ import re
 from typing import NamedTuple
 
 import mdformat
-from mdformat.renderer import DEFAULT_RENDERERS, LOGGER, WRAP_POINT
+from mdformat.renderer import DEFAULT_RENDERERS, LOGGER
 
 import mdformat_sentence
 from mdformat_sentence import _plugin
-from mdformat_sentence._segment import BACK_OFF, FALLBACK
+from mdformat_sentence._segment import _RUN, BACK_OFF, FALLBACK
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -28,8 +28,13 @@ class Fixture(NamedTuple):
     plugins: tuple[str, ...] = ()
 
 
-def _read(path: str) -> str:
-    return (ROOT / path).read_text(encoding="utf-8")
+def _read(path: str) -> str | None:
+    """A repository file, or `None` where it is absent: the sdist ships
+    `tests/` without `DESIGN.md` and `notes/`."""
+    try:
+        return (ROOT / path).read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return None
 
 
 FIXTURES = [
@@ -120,6 +125,7 @@ FIXTURES = [
     Fixture("sembr.md with gfm", _read("notes/corpus/sembr.md"), ("gfm",)),
     Fixture("DESIGN.md", _read("DESIGN.md"), ("gfm",)),
 ]
+FIXTURES = [f for f in FIXTURES if f.md is not None]
 
 
 def orders(plugins: tuple[str, ...]) -> list[tuple[str, ...]]:
@@ -201,5 +207,5 @@ def baseline(md: str, plugins: tuple[str, ...], wrap) -> str:
 def preserves(given: str, out: str) -> bool:
     """Whether `out` is `given` with each run of wrap points replaced by
     one newline or one space (§6.2's text-preservation row)."""
-    parts = re.split(f"{re.escape(WRAP_POINT)}+", given)
+    parts = _RUN.split(given)[0::2]
     return re.fullmatch("[\n ]".join(map(re.escape, parts)), out) is not None

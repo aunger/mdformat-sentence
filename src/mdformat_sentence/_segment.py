@@ -74,8 +74,13 @@ class ParagraphPart(NamedTuple):
 
 
 class State(NamedTuple):
-    """Section 3.3's cross-segment facts about one paragraph part."""
+    """Section 3.3's cross-segment facts about one paragraph part.
 
+    `starts` is the part's own, so a terminator in segment `i` can be
+    tested against the atoms by its position in the paragraph's text.
+    """
+
+    starts: list[int]
     atoms: list[Piece]
     depth: list[int]
 
@@ -159,15 +164,19 @@ def _atom_test(pieces: list[Piece]) -> Callable[[int], bool]:
 def scan(text: str, part: ParagraphPart, pieces: list[Piece]) -> State:
     """Section 3.3's facts, computed once per paragraph part: the atoms in it,
     and the bracket depth at each gap (§3.2)."""
-    first = part.starts[0]
-    last = part.starts[-1] + len(part.segments[-1])
+    first, last = _span(part)
     inside = [p for p in pieces if p.start < last and p.end > first]
     gaps = [s + len(seg) for s, seg in zip(part.starts, part.segments)][:-1]
     depth = [0] * len(gaps)
     for opened, closed in _pairs(text, [p for p in inside if not p.atom], first, last):
         for i in range(bisect_right(gaps, opened), bisect_left(gaps, closed)):
             depth[i] += 1
-    return State([p for p in inside if p.atom], depth)
+    return State(part.starts, [p for p in inside if p.atom], depth)
+
+
+def _span(part: ParagraphPart) -> tuple[int, int]:
+    """Where `part` begins and ends in the paragraph's text."""
+    return part.starts[0], part.starts[-1] + len(part.segments[-1])
 
 
 def _pairs(text: str, prose: list[Piece], first: int, last: int):
@@ -194,9 +203,15 @@ def is_sentence_break(segments: list[str], i: int, state: State) -> bool:
 def decide(text: str, pieces: list[Piece]) -> str:
     """Resolve every gap to a newline or a literal space (§3.4)."""
     out = []
+    # Pieces are in text order and do not overlap, so each part's are one
+    # slice, found without reading every piece again.
+    starts = [p.start for p in pieces]
+    ends = [p.end for p in pieces]
     for part in paragraph_parts(text, pieces):
+        first, last = _span(part)
+        own = pieces[bisect_right(ends, first) : bisect_left(starts, last)]
         segments = part.segments
-        state = scan(text, part, pieces)
+        state = scan(text, part, own)
         emit = [segments[0]]
         for i in range(len(segments) - 1):
             emit.append("\n" if is_sentence_break(segments, i, state) else " ")
