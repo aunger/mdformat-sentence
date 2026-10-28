@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 
 from mdformat.renderer import DEFAULT_RENDERERS, LOGGER, WRAP_POINT
 
+from mdformat_sentence._segment import Recording, back_off, decide, locate
+
 if TYPE_CHECKING:
     import argparse
 
@@ -39,12 +41,24 @@ def _render_inline(node: RenderTreeNode, context: RenderContext) -> str:
     if node.parent is None or node.parent.type != "paragraph":
         return DEFAULT_RENDERERS["inline"](node, context)
     context.env[_RAN] = True
-    text = DEFAULT_RENDERERS["inline"](node, context)
+    if not context.do_wrap:
+        # Inert under `--wrap keep`, with no recorder installed (§2.2).
+        return DEFAULT_RENDERERS["inline"](node, context)
+    # The node is rendered once, and recorded as it renders (§3.1).
+    records: dict[int, str] = {}
+
+    def record(rendered: str, child: RenderTreeNode, _: RenderContext) -> str:
+        records[id(child)] = rendered
+        return rendered
+
+    recording = Recording(context.postprocessors, record)
+    text = DEFAULT_RENDERERS["inline"](node, context._replace(postprocessors=recording))
     if WRAP_POINT not in text:
         return text
-    # Segmentation (§3.1) and emission (§3.4) decide the gaps here; until
-    # they are built, the text goes back as mdformat rendered it.
-    return text
+    pieces = locate(node, records, text)
+    if pieces is None:
+        return back_off(text)
+    return decide(text, pieces)
 
 
 def _canary(text: str, node: RenderTreeNode, context: RenderContext) -> str:
