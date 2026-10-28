@@ -10,8 +10,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # The gate (section 6) against the pinned mdformat range.
-  pinned:
+  # The gate (section 6) against the declared mdformat range.
+  declared-range:
     strategy:
       fail-fast: false
       matrix:
@@ -27,7 +27,7 @@ jobs:
       - run: python -m pip install ".[test]"
       - run: python -m pytest
 
-  # The same gate against mdformat's newest release, outside the pinned
+  # The same gate against mdformat's newest release, outside the declared
   # range, so an upstream change is seen before the bound moves (section 2).
   # It does not block a merge.
   newest-mdformat:
@@ -39,7 +39,7 @@ jobs:
         with:
           python-version: "3.13"
       - run: python -m pip install ".[test]"
-      # pip reports the conflict with the pinned range and installs anyway.
+      # pip reports the conflict with the declared range and installs anyway.
       - run: python -m pip install --upgrade mdformat
       - run: python -m pip list
       - run: python -m pytest

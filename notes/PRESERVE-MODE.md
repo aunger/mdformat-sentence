@@ -258,7 +258,7 @@ ______________________________________________________________________
 
 ## 11. What this says about `DESIGN.md` section 6.2
 
-Every variant on this ladder was run end to end, and **all of them pass idempotency and all of them pass section 6.1's width-independence invariant**, including the one that silently deletes 45% of an author's line breaks.
+Every variant on this ladder was run end to end, and **all of them pass idempotency and all of them pass `DESIGN.md` section 6.1's width-independence invariant**, including the one that silently deletes 45% of an author's line breaks.
 
 Idempotency is necessary and nowhere near sufficient.
 Two invariants would catch what the current gate cannot:

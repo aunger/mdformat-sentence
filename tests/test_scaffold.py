@@ -1,4 +1,5 @@
-"""Packaging, the module surface and the inline renderer's guards (sections 2 and 2.2)."""
+"""Packaging, the module surface and the inline renderer's guards
+(sections 2 and 2.2)."""
 
 import mdformat
 import mdformat.plugins

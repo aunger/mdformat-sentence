@@ -335,7 +335,7 @@ It cannot be a function of two adjacent segments, for the reasons in section 3.3
 
 An *atom* is an inline node that section 3.1 records whole: a link, an image, a code span, raw inline HTML, any leaf of a type this plugin does not know, such as one a math plugin adds, and any node whose children were not rendered or cannot be located exactly once in its rendering.
 Autolinks are links, so `<https://x.y/a)b>` is one atom.
-Only `text` leaves are prose; every other node with children, emphasis, strong emphasis, strikethrough, is a container whose children section 3.1 locates, unless that last clause makes it an atom.
+Only `text` leaves are prose; every other node with children, emphasis, strong emphasis, strikethrough, is a container whose children are located by section 3.1, unless that last clause makes it an atom.
 Verified against mdformat 1.0.0, with links and code spans inside emphasis and strong emphasis, strikethrough from `mdformat-gfm`, a badge `[![b](i)](t)`, raw HTML, and an autolink containing `)`: the pieces' lengths add up exactly, and every bracket in link syntax, a URL or code lands inside an atom.
 
 Atoms are consumed by bracket depth and by the sentence-end test.
@@ -845,7 +845,7 @@ Neither mdformat nor these plugins escape their own definitions at a line start:
 
 The plugin backs off from a paragraph it cannot trust, which is one whose top-level records do not concatenate to the text it decides (section 3.1), because then no recorded offset can be believed.
 On mdformat 1.0.0 that cannot happen; the check is a tripwire for upstream drift, such as `RenderTreeNode.render` no longer consulting the postprocessor map, which would leave every child unrecorded and back off every paragraph.
-A container section 3.1 could not locate is an atom, not a back-off.
+A container that section 3.1 could not locate is an atom, not a back-off.
 Backing off emits no break at all: every run of wrap points becomes one space, so the paragraph is one line in every wrap mode, exactly as if it held no sentence end.
 A back-off is silent in the output, so it is logged at `DEBUG` through `mdformat.renderer.LOGGER`, where section 6.2's harness counts it and requires none; atoms made by section 3.1's fallback are counted at `DEBUG` too.
 Handing the text back untouched would not be the same thing, because it would leave mdformat's wrap points in place, and at `--wrap 80` mdformat would then width-wrap that one paragraph, against section 3.4's guarantee that no `WRAP_POINT` survives and section 1's promise that no output depends on a width.

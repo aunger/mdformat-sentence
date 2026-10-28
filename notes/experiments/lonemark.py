@@ -216,4 +216,4 @@ print("4. The rejected option: reading „ and ‚ by glyph\n")
 t = "degli “ umiliati del villaggio. „ Quegli era un avvocato"
 for label, got in (("older rule (section 3.3)", run(t)),
                    ("by glyph", run(t, shape_open=SHAPE_OPEN | set("„‚")))):
-    print(f"   {label:18} {got!r}")
+    print(f"   {label:24} {got!r}")

@@ -83,13 +83,13 @@ That is the condition `DESIGN.md` section 2.5's warning keys off, and it is the 
 **It is not a signal on the Python API path at all**, and an earlier draft of this note and of `wrapkeep.py` said it was.
 `mdformat.text(src, extensions={"probe"})` passes the set as its own argument to `build_mdit` (`_util.py:32-42`); it never reaches `options["mdformat"]`, so the key is absent and `.get("extensions")` is `None`.
 Measured, `wrapkeep.py`: `'<absent>'` on both API rows, `['probe']` on the CLI row.
-The consequence for `DESIGN.md` section 2.5 is that its warning can never fire for a library caller, whichever wrap mode they chose, so section 2.5's account of where a library caller's warning lands describes an unreachable case.
+The consequence for `DESIGN.md` section 2.5 is that its warning can never fire for a library caller, whichever wrap mode they chose, so `DESIGN.md` section 2.5's account of where a library caller's warning lands describes an unreachable case.
 
 ______________________________________________________________________
 
 ## 3. Overriding `wrap` from a plugin
 
-The question this section answers is narrow: *can* a plugin make itself work under `--wrap keep`, where section 2.5's table says it is inert.
+The question this section answers is narrow: *can* a plugin make itself work under `--wrap keep`, where `DESIGN.md` section 2.5's table says it is inert.
 It can.
 `DESIGN.md` declines to, and this note's section 3.1 shows why.
 
@@ -335,7 +335,7 @@ Given the inline node as well as the text, the step could treat an authored `sof
 **What the step would still lack, and what the ask has to carry.**
 A node and a string do not give offsets.
 `DESIGN.md` section 3.2's atoms, a link, a code span, a footnote reference, are placed by the recorder of `DESIGN.md` section 3.1, and the recorder works only because the `inline` renderer controls the context its children render through.
-A step that `paragraph()` calls after the inline render controls nothing upstream of it, so handed the text alone it would have to render the children again, which section 3.1 rejects as impure, or find atoms in the text, which `DESIGN.md` section 2.2 tried and found wrong on `[fig.]` and on wikilinks.
+A step that `paragraph()` calls after the inline render controls nothing upstream of it, so handed the text alone it would have to render the children again, which `DESIGN.md` section 3.1 rejects as impure, or find atoms in the text, which `DESIGN.md` section 2.2 tried and found wrong on `[fig.]` and on wikilinks.
 So the ask has to carry the structure as well as the step: either `paragraph()` records each node's rendering as the inline child renders and passes the span map to the step, or `paragraph()` lets the plugin supply the context its inline child renders through, so that the step records for itself.
 The second is not the `inline` slot as it stands.
 In that slot the plugin is the renderer, so its recording and its layout decision are one function whose result goes down to `_wrap` as `\n` and pinned spaces, and a second plugin that owns `inline` displaces both; under this ask the plugin owns no renderer, `paragraph()` renders its child through whatever `inline` renderer is loaded, and an `inline` owner no longer displaces the step.
@@ -362,7 +362,7 @@ ______________________________________________________________________
 ## 6. The plugin interface
 
 `ParserExtensionInterface` is a `Protocol` at `plugins.py:34-71`, with five members: `CHANGES_AST`, `RENDERERS`, `POSTPROCESSORS`, `add_cli_argument_group` and `update_mdit`.
-Plugins are loaded by entry point into a plain dict at `plugins.py:25`, which is section 2.1's silent-collision fact.
+Plugins are loaded by entry point into a plain dict at `plugins.py:25`, which is `DESIGN.md` section 2.1's silent-collision fact.
 
 `update_mdit`'s entire docstring, verbatim (`plugins.py:69-71`):
 
@@ -418,10 +418,10 @@ What the CLI adds is the `Warning: ` prefix and only on the first pass.
 Section 9 records this as the one place this note and `DESIGN.md` disagree.
 
 **Volume.** The warning that `DESIGN.md` section 2.5 specifies is raised from the inline postprocessor, so it fires once per paragraph, not once per document: three paragraphs give three lines on stderr.
-Whoever implements section 2.5 needs a once-per-render latch; the option mapping is shared and mutable, so there is somewhere to put one.
+Whoever implements `DESIGN.md` section 2.5 needs a once-per-render latch; the option mapping is shared and mutable, so there is somewhere to put one.
 
 The second pass does *not* double it, although `wraparg.py` check 4 measures three lines under `--wrap keep` and six under `--wrap no`.
-That experiment warns unconditionally; section 2.5's warning is guarded by `not context.do_wrap`, which is true only under `keep`, and `_api.py:39` re-renders only when `wrap != "keep"`.
+That experiment warns unconditionally; `DESIGN.md` section 2.5's warning is guarded by `not context.do_wrap`, which is true only under `keep`, and `_api.py:39` re-renders only when `wrap != "keep"`.
 The two conditions are complementary, so the pass that doubles a warning is never the pass that raises this one.
 The latch is needed per paragraph, not across passes.
 

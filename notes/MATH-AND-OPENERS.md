@@ -35,7 +35,7 @@ It cannot force a break, it never sees a node's type, and it is not consulted af
 An opening atom is a property of the word after any terminator, so it is the wrong shape for the decision list.
 
 **As a key of a rules file, yes, the way `lowercase_names` already is.**
-`lowercase_names` lets a named lowercase word pass the capital test, and it is a file key rather than a rule for the same reasons (section 4).
+`lowercase_names` lets a named lowercase word pass the capital test, and it is a file key rather than a rule for the same reasons (`DESIGN.md` section 4).
 A second key could name node types that open a sentence:
 
 ```toml
