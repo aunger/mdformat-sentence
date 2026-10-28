@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 from mdformat.renderer import DEFAULT_RENDERERS, LOGGER, WRAP_POINT
 
+from mdformat_sentence._rules import STUB
 from mdformat_sentence._segment import Recording, back_off, decide, locate
 
 if TYPE_CHECKING:
@@ -58,7 +59,8 @@ def _render_inline(node: RenderTreeNode, context: RenderContext) -> str:
     pieces = locate(node, records, text)
     if pieces is None:
         return back_off(text)
-    return decide(text, pieces)
+    # A stub stands in for the shipped rules until they are loaded (§4).
+    return decide(text, pieces, STUB)
 
 
 def _canary(text: str, node: RenderTreeNode, context: RenderContext) -> str:

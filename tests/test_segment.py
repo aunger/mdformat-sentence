@@ -21,9 +21,9 @@ def decided(monkeypatch):
     seen = []
     decide = _plugin.decide
 
-    def spy(text, pieces):
+    def spy(text, pieces, *rules):
         seen.append((text, pieces))
-        return decide(text, pieces)
+        return decide(text, pieces, *rules)
 
     monkeypatch.setattr(_plugin, "decide", spy)
 
@@ -124,9 +124,10 @@ def test_each_paragraph_part_gets_its_own_pieces(decided):
 
 def test_every_gap_is_pinned():
     md = "One long sentence that runs well past twenty columns. Then another.\n"
+    expected = "One long sentence that runs well past twenty columns.\nThen another.\n"
     for wrap in WIDTHS:
         out = mdformat.text(md, options={"wrap": wrap}, extensions={"sentence"})
-        assert out == md
+        assert out == expected
 
 
 def test_plain_mdformat_fails_width_independence():

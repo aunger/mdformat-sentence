@@ -1,5 +1,5 @@
 """Segmentation (§3.1), inline atoms (§3.2), emission (§3.4) and the
-failure policy (§3.6).
+failure policy (§3.6); sentence detection is `_detect`'s.
 
 Section numbers refer to `DESIGN.md`.
 """
@@ -14,9 +14,14 @@ from typing import TYPE_CHECKING, NamedTuple
 
 from mdformat.renderer import LOGGER, WRAP_POINT
 
+from mdformat_sentence._detect import is_lone, is_sentence_break
+from mdformat_sentence._rules import STUB
+
 if TYPE_CHECKING:
     from mdformat.renderer import RenderTreeNode
     from mdformat.renderer.typing import Postprocess
+
+    from mdformat_sentence._rules import Rules
 
 BACK_OFF = "mdformat-sentence backed off a paragraph"
 FALLBACK = "mdformat-sentence made an atom by fallback"
@@ -84,12 +89,20 @@ class State(NamedTuple):
     """Section 3.3's cross-segment facts about one paragraph part.
 
     It carries the part, so a terminator in a segment can be tested
-    against the atoms by its position in the paragraph's text.
+    against the atoms by its position in the paragraph's text, and the
+    rules sentence detection consults.
     """
 
     part: ParagraphPart
     atoms: list[Piece]
     depth: list[int]
+    # The pieces' start offsets, for finding the piece at an offset
+    piece_starts: list[int]
+    # The indices of the segments that are words rather than lone marks
+    words: list[int]
+    rules: Rules
+    # Where each decided run's newline lands, by its left word (`_detect`)
+    landings: dict[int, int | None]
 
 
 def locate(
@@ -177,9 +190,9 @@ def _atom_test(pieces: list[Piece]) -> Callable[[int], bool]:
     return inside
 
 
-def scan(text: str, part: ParagraphPart) -> State:
+def scan(text: str, part: ParagraphPart, rules: Rules = STUB) -> State:
     """Section 3.3's facts, computed once per paragraph part: the atoms in it,
-    and the bracket depth at each gap (§3.2)."""
+    the bracket depth at each gap (§3.2), and which segments are words."""
     first, last = part.span
     gaps = [s + len(seg) for s, seg in zip(part.starts, part.segments)][:-1]
     depth = [0] * len(gaps)
@@ -187,7 +200,10 @@ def scan(text: str, part: ParagraphPart) -> State:
     for opened, closed in _pairs(text, prose, first, last):
         for i in range(bisect_right(gaps, opened), bisect_left(gaps, closed)):
             depth[i] += 1
-    return State(part, [p for p in part.pieces if p.atom], depth)
+    atoms = [p for p in part.pieces if p.atom]
+    starts = [p.start for p in part.pieces]
+    words = [i for i, segment in enumerate(part.segments) if not is_lone(segment)]
+    return State(part, atoms, depth, starts, words, rules, {})
 
 
 def _pairs(text: str, prose: list[Piece], first: int, last: int):
@@ -203,20 +219,12 @@ def _pairs(text: str, prose: list[Piece], first: int, last: int):
                 yield stacks[_OPENERS[char]].pop(), at
 
 
-def is_sentence_break(segments: list[str], i: int, state: State) -> bool:
-    """Whether the gap after `segments[i]` breaks (§3.3, §3.5).
-
-    Until sentence detection lands, no gap breaks.
-    """
-    return False
-
-
-def decide(text: str, pieces: list[Piece]) -> str:
+def decide(text: str, pieces: list[Piece], rules: Rules = STUB) -> str:
     """Resolve every gap to a newline or a literal space (§3.4)."""
     out = []
     for part in paragraph_parts(text, pieces):
         segments = part.segments
-        state = scan(text, part)
+        state = scan(text, part, rules)
         emit = [segments[0]]
         for i in range(len(segments) - 1):
             emit.append("\n" if is_sentence_break(segments, i, state) else " ")

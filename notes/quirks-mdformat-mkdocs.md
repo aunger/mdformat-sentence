@@ -25,6 +25,15 @@ The cause is *read* from source: `_fix_links_with_spaced_urls` in `mdformat_mkdo
 `Sentence one here. *[HTML]: Hyper Text Markup Language is the term.` at `--wrap 18` or `20` comes back with `*[HTML]:` at a line start, unescaped, split into separate paragraphs, and not render-equal; at `--wrap 10` and `15` mdformat escapes it to `\*\[HTML\]:`.
 Section 3.5 refuses a break that would put `*[label]:` at a line start.
 
+## A definition-list marker at a line start is escaped
+
+**Compatibility risk.**
+*Verified* 2026-10-28, mkdocs alone (`experiments/edgeescape.py`).
+mdformat-mkdocs's `paragraph` postprocessor escapes `~` or `:` followed by a space at the start of any line of a paragraph, so `It ended. " ~ Then more.` at `--wrap 12` comes back with `\~` opening its second line, where plain mdformat leaves it alone.
+The render is the same, so only the source changes.
+The cause is *read* from source: `escape_deflist` in `mdformat_mkdocs/mdit_plugins/_material_deflist.py` matches `^[:~] ` on each line.
+A lone `~` can open a line this plugin creates (§3.3), so §3.5's line-start check refuses a break before either marker, with or without mkdocs.
+
 ## Filler words in re-wrapped list items
 
 **Compatibility risk.** *Verified* (`experiments/seam_mkdocs.py`).

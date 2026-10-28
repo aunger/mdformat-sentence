@@ -12,6 +12,7 @@ from typing import NamedTuple
 import mdformat
 from mdformat.renderer import DEFAULT_RENDERERS, LOGGER, WRAP_POINT
 
+from _detection import DETECTION
 import mdformat_sentence
 from mdformat_sentence import _plugin, _segment
 from mdformat_sentence._segment import BACK_OFF, FALLBACK, Piece
@@ -125,6 +126,8 @@ FIXTURES = [
     Fixture("sembr.md", _read("notes/corpus/sembr.md")),
     Fixture("sembr.md with gfm", _read("notes/corpus/sembr.md"), ("gfm",)),
     Fixture("DESIGN.md", _read("DESIGN.md"), ("gfm",)),
+    # Section 6.4's sentence-detection fixtures.
+    *(Fixture(case.name, case.md, case.plugins) for case in DETECTION),
 ]
 
 
