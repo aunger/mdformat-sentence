@@ -102,6 +102,12 @@ DETECTION = [
         "It ended. [the docs](u) explain it.\nIt ended.\n[The docs](u) explain it.\n"
         "It ended.\n*Then* it went.\nIt ended. **so** it went.",
     ),
+    _case(
+        "a bare URL gfm links opens nothing, one it leaves as text is read",
+        "Visit it. https://Example.com is up. Visit it. WWW.EXAMPLE.COM is up.",
+        "Visit it. https://Example.com is up.\nVisit it.\nWWW.EXAMPLE.COM is up.",
+        ("gfm",),
+    ),
     # Quotation marks.
     _case(
         "CJK marks spaced off their words",
@@ -258,6 +264,23 @@ DETECTION = [
         "task boxes",
         "It is done. [X] marks a finished task. It is open. [ ] Then it is not.",
         "It is done. [X] marks a finished task.\nIt is open. [ ] Then it is not.",
+    ),
+    _case(
+        "co-plugin definitions at a line start",
+        "Sentence one. [^x]: not a definition, just text. It ended. (Label)= Then more.",
+        "Sentence one. \\[^x\\]: not a definition, just text.\nIt ended. (Label)= Then more.",
+    ),
+    *(
+        _case(
+            f"an mkdocs abbreviation definition, {label}",
+            f"Sentence one. *[{label}]: {rest}",
+            f"Sentence one. \\*\\[{label}\\]: {rest}",
+            ("mkdocs",),
+        )
+        for label, rest in (
+            ("HTML", "Hyper Text Markup Language is the term."),
+            ("Hyper Text", "is a phrase defined here."),
+        )
     ),
     # Section 6.4's hook-point fixtures that M3 decides.
     _case(

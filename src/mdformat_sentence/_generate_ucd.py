@@ -39,20 +39,22 @@ def generate(source: str) -> str:
     version = _VERSION.match(source)
     if version is None:
         raise ValueError("not a SentenceBreakProperty file")
-    ranges: dict[str, list[list[int]]] = {value: [] for value in VALUES}
+    listed: dict[str, list[tuple[int, int]]] = {value: [] for value in VALUES}
     for line in source.splitlines():
         match = _LINE.match(line)
-        if match is None or match[3] not in ranges:
-            continue
-        first = int(match[1], 16)
-        last = int(match[2] or match[1], 16)
-        merged = ranges[match[3]]
-        # The file lists a value's ranges in order, split by general
-        # category, so adjacent ones are merged.
-        if merged and merged[-1][1] + 1 == first:
-            merged[-1][1] = last
-        else:
-            merged.append([first, last])
+        if match is not None and match[3] in listed:
+            first = int(match[1], 16)
+            listed[match[3]].append((first, int(match[2] or match[1], 16)))
+    ranges: dict[str, list[list[int]]] = {value: [] for value in VALUES}
+    for value, pairs in listed.items():
+        merged = ranges[value]
+        # The file splits a value's ranges by general category, so adjacent
+        # ones are merged, in code point order whatever order it lists them.
+        for first, last in sorted(pairs):
+            if merged and merged[-1][1] + 1 == first:
+                merged[-1][1] = last
+            else:
+                merged.append([first, last])
     out = [
         f'"""Sentence_Break ranges from UCD {version[1]}, generated from',
         "`unicode/SentenceBreakProperty.txt` by `_generate_ucd.py`; do not edit.",

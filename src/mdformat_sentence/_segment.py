@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, NamedTuple
 
 from mdformat.renderer import LOGGER, WRAP_POINT
 
-from mdformat_sentence._detect import is_lone, is_sentence_break
+from mdformat_sentence._detect import holding, is_lone, is_sentence_break
 from mdformat_sentence._rules import STUB
 
 if TYPE_CHECKING:
@@ -96,7 +96,6 @@ class State(NamedTuple):
     """
 
     part: ParagraphPart
-    atoms: list[Piece]
     depth: list[int]
     # The pieces' start offsets, for finding the piece at an offset
     piece_starts: list[int]
@@ -184,18 +183,13 @@ def paragraph_parts(text: str, pieces: list[Piece]) -> Iterator[ParagraphPart]:
 def _atom_test(pieces: list[Piece]) -> Callable[[int], bool]:
     atoms = [p for p in pieces if p.atom]
     starts = [p.start for p in atoms]
-
-    def inside(at: int) -> bool:
-        i = bisect_right(starts, at) - 1
-        return i >= 0 and at < atoms[i].end
-
-    return inside
+    return lambda at: holding(atoms, starts, at) is not None
 
 
 def scan(text: str, part: ParagraphPart, rules: Rules = STUB) -> State:
-    """Section 3.3's facts, computed once per paragraph part: the atoms in it,
-    the bracket depth at each gap (section 3.2), and which segments are
-    words."""
+    """Section 3.3's facts, computed once per paragraph part: where its
+    pieces start, the bracket depth at each gap (section 3.2), and which
+    segments are words."""
     first, last = part.span
     gaps = [s + len(seg) for s, seg in zip(part.starts, part.segments)][:-1]
     depth = [0] * len(gaps)
@@ -203,10 +197,9 @@ def scan(text: str, part: ParagraphPart, rules: Rules = STUB) -> State:
     for opened, closed in _pairs(text, prose, first, last):
         for i in range(bisect_right(gaps, opened), bisect_left(gaps, closed)):
             depth[i] += 1
-    atoms = [p for p in part.pieces if p.atom]
     starts = [p.start for p in part.pieces]
     words = [i for i, segment in enumerate(part.segments) if not is_lone(segment)]
-    return State(part, atoms, depth, starts, words, rules, {})
+    return State(part, depth, starts, words, rules, {})
 
 
 def _pairs(text: str, prose: list[Piece], first: int, last: int):

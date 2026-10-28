@@ -5,6 +5,8 @@ checks in code."""
 
 from __future__ import annotations
 
+import re
+
 import mdformat
 import pytest
 
@@ -144,6 +146,24 @@ def test_line_start_safety(rules, monkeypatch, md):
     assert out.replace("\n", " ")[:-1] + "\n" == plain(md)
     monkeypatch.setattr(_detect, "_escaped_at_line_start", lambda *_: False)
     assert rules(everything, md) != out
+
+
+@pytest.mark.parametrize(
+    "md, extensions",
+    [
+        ("Sentence one. *[HTML]: Hyper Text Markup Language is the term.", ("mkdocs",)),
+        ("Sentence one. *[Hyper Text]: is a phrase defined here.", ("mkdocs",)),
+        ("Sentence one. [Foo]: Not a definition either.", ()),
+        ("It ended. (Label)= Then more.", ()),
+    ],
+)
+def test_co_plugin_definitions_are_refused_at_a_line_start(md, extensions, monkeypatch):
+    """Only the definition veto refuses these; without it, mkdocs reads an
+    abbreviation definition where the source had text (section 3.5)."""
+    md += "\n"
+    assert plugin(md, extensions) == plain(md, extensions)
+    monkeypatch.setattr(_detect, "_DEFINITION", re.compile("(?!)"))
+    assert plugin(md, extensions) != plain(md, extensions)
 
 
 @pytest.mark.parametrize("extensions", [(), ("gfm",)])

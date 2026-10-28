@@ -809,7 +809,7 @@ A gap is ineligible when the last character of the segment the newline would fol
 Test with `.strip()`, not with a character list.
 mdformat's `paragraph()` strips each line after wrapping, so a break at such a gap silently deletes the character, and `is_md_equal` cannot see it (above).
 It is ineligible too when that character is a literal `*` or `_`, one a text leaf holds, which a lone `*` or `_` always is (section 3.3).
-mdformat's `text()` escapes a literal `*` unless whitespace stands on both sides of it, and a literal `_` unless whitespace does or neither side is whitespace or punctuation, and it counts the end of its text leaf as neither.
+mdformat's `text()` escapes a literal `*` unless whitespace stands on both sides of it, and a literal `_` unless whitespace does or a character that is neither whitespace nor punctuation does, and it counts the end of a text leaf as neither kind of neighbor.
 A newline ends a text leaf on the second pass of section 2.3, so the mark beside it is escaped there, and `It ended. * Then more.` broken after `ended.` would come back with `\*` opening its second line, a backslash `is_md_equal` cannot see either.
 Emphasis markup is not held by a text leaf, so `*Then* it went.` after a sentence end breaks as usual.
 Verified against mdformat 1.0.0, and `notes/experiments/edgeescape.py` reproduces it.

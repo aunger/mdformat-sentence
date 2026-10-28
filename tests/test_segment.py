@@ -118,9 +118,6 @@ def test_each_paragraph_part_gets_its_own_pieces(decided):
         [("link", "[l](u)"), ("text", "\x00(b")],
         [("text", "c)\x00"), ("code_inline", "`d`"), ("text", "\x00e.")],
     ]
-    assert [scan(text, part).atoms for part in parts] == [
-        [p for p in part.pieces if p.atom] for part in parts
-    ]
 
 
 def test_every_gap_is_pinned():

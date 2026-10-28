@@ -7,8 +7,10 @@ moves no line break.
 It establishes:
   1. mdformat's `text()` leaves a lone `*` or `_` unescaped between
      spaces and escapes it beside a line break, at the end of a line or at
-     the start of one, because the edge of a text leaf is not whitespace to
-     it; the render is the same, so only the source changes. Emphasis
+     the start of one, because it counts the edge of a text leaf as neither
+     whitespace nor a character that is neither whitespace nor punctuation;
+     `a_` at a leaf's end is escaped too. The render is the same, so only
+     the source changes. Emphasis
      markup is not escaped beside a line break. This is edge safety's
      second entry.
   2. mdformat-mkdocs's `paragraph` postprocessor escapes `~` or `:` and a
@@ -39,6 +41,7 @@ show("* ending a line", "It ended. *\nThen more.\n")
 show("_ mid-line", "It ended. _ Then more.\n")
 show("_ ending a line", "It ended. _\nThen more.\n")
 show("_ opening a line", 'It ended. "\n_ Then more.\n')
+show("_ ending a word ending a line", "It a_\nb\n")
 show("emphasis ending a line", "It *ended.*\nThen more.\n")
 show("emphasis opening a line", "It ended.\n*Then* more.\n")
 

@@ -81,6 +81,9 @@ _LINE_START = re.compile(
 # whitespace when it stands alone (section 3.5).
 _NEIGHBORED = frozenset("*_")
 _HTML_OPENERS = [opener for opener, _, interrupts in HTML_SEQUENCES if interrupts]
+# The definitions of mdformat-footnote, mdformat-mkdocs and mdformat-myst,
+# escaped or not (section 3.5).
+_DEFINITION = re.compile(r"\\?\*?\\?\[[^\]\n]*?\\?\]:|\\?\([^\s)]+\)=")
 
 
 def sentence_break_value(char: str) -> str | None:
@@ -236,11 +239,12 @@ def is_safe(segments: list[str], at: int, state: State) -> bool:
 
 def _escaped_at_line_start(segments: list[str], at: int) -> bool:
     """Whether some line a newline before `segments[at]` could open is one
-    `paragraph()` escapes or indents, or one that opens a block unescaped.
+    `paragraph()` escapes or indents, one that opens a block unescaped, or
+    one that opens with a co-plugin's definition.
 
     The line ends at a later break or at the paragraph part's end, which
     is not decided yet, so every place it could end is tested. Every
-    pattern but the thematic break reads across one gap at most.
+    pattern but a definition reads across one gap at most.
     """
     first = segments[at].split("\n", 1)[0]
     longer = " ".join(segments[at : at + 2]).split("\n", 1)[0]
@@ -249,32 +253,30 @@ def _escaped_at_line_start(segments: list[str], at: int) -> bool:
             return True
         if any(opener.search(line) for opener in _HTML_OPENERS):
             return True
-    mark = first[:1]
-    if not mark or first != mark * len(first):
-        return False
-    if mark in "-=":
-        # A setext underline.
+    if first and first == first[0] * len(first) and first[0] in "-=":
+        # A setext underline. A thematic break needs three of `*`, `-` or
+        # `_`: edge safety refuses a literal `*` or `_` at a line start, and
+        # `-` followed by anything is a list marker.
         return True
-    if mark not in "*_":
-        return False
-    # A thematic break: three or more of one mark, spaced or not.
-    count = 0
-    for segment in segments[at:]:
-        if segment != mark * len(segment) or not segment:
-            break
-        count += len(segment)
-        if count >= 3:
-            return True
+    if first[:1] in "\\*[(":
+        # A label can hold spaces, so the line is read as it would come out.
+        line = " ".join(segments[at:]).split("\n", 1)[0]
+        return _DEFINITION.match(line) is not None
     return False
+
+
+def holding(pieces: list[Piece], starts: list[int], at: int) -> Piece | None:
+    """The piece holding offset `at`, among `pieces` in text order with
+    `starts` their start offsets."""
+    i = bisect_right(starts, at) - 1
+    if i >= 0 and at < pieces[i].end:
+        return pieces[i]
+    return None
 
 
 def piece_at(state: State, at: int) -> Piece | None:
     """The piece holding offset `at` of the paragraph's text, if one does."""
-    pieces = state.part.pieces
-    i = bisect_right(state.piece_starts, at) - 1
-    if i >= 0 and at < pieces[i].end:
-        return pieces[i]
-    return None
+    return holding(state.part.pieces, state.piece_starts, at)
 
 
 def atom_at(state: State, at: int) -> Piece | None:
