@@ -97,3 +97,15 @@ Nothing has been filed, and the design does not wait on it.
 
 **Intention.** Consider an issue for each entry marked as a filing candidate in the `quirks-*.md` files.
 None has been filed.
+
+## Repository tooling
+
+### An mdformat plugin that checks local links
+
+**Observed.** Issue #27 plans links from section mentions and from `sembr#N` to the headings of `DESIGN.md` and the rows of the table in its section 5, and a renamed heading would break every link to it without a warning.
+No mdformat plugin checks links, going by mdformat's plugin list and a web search on 2026-10-28; that was read, not run.
+Standalone checkers exist, among them linklint and a markdownlint rule for GitHub's anchors, but each is another tool beside mdformat with its own idea of what an anchor is.
+
+**Intention.** Build a small plugin, separate from this one, that makes `mdformat --check` fail when a relative link names no file, or a fragment names no heading or `<a id>` anchor, in the same file or another, using GitHub's rules for heading anchors.
+It would leave the text unchanged, so it would compose with this plugin and any other.
+How a plugin can report a failure is not settled: mdformat 1.0.0's plugin interface is for rendering, and how mdformat treats a plugin that raises has been neither read nor run.
