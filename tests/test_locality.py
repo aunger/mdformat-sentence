@@ -4,7 +4,7 @@ A neutral word, plain and lowercase with no terminator, goes between two
 words of one line of a paragraph, where neither neighbor carries a
 terminator or is a lone mark, so it is never beside a gap a sentence end
 could stand at and never directly before a word carrying a terminator
-(§1), and neither carries markup the word could change the meaning of.
+(section 1), and neither carries markup the word could change the meaning of.
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ NEUTRAL = "quietly"
 MARKUP = frozenset("[]()<>`\\*_~|$&!#")
 
 # Paragraphs tried per fixture, spread over it, so the two long documents
-# stay quick; §6.2 leaves the sample size open.
+# stay quick; section 6.2 leaves the sample size open.
 SAMPLE = 10
 
 _PARSER = MarkdownIt("commonmark").enable("table")

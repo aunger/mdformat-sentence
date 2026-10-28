@@ -1,7 +1,7 @@
-"""Escapes a newline causes beside a mark: DESIGN.md §3.5, run.
+"""Escapes a newline causes beside a mark: DESIGN.md section 3.5, run.
 
 Each input in 1 is what a break at a sentence end would hand mdformat's
-second pass (§2.3), formatted at --wrap keep so that mdformat itself
+second pass (section 2.3), formatted at --wrap keep so that mdformat itself
 moves no line break.
 
 It establishes:

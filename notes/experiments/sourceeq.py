@@ -1,4 +1,4 @@
-"""Source equality: DESIGN.md §6.2's document-level row, run.
+"""Source equality: DESIGN.md section 6.2's document-level row, run.
 
 A plugin that only turns wrap points into newlines leaves a document that,
 with each added break undone, is byte-identical to plain mdformat's at
@@ -8,10 +8,10 @@ the paragraph's containers: "> " for a blockquote, and for a list item as
 many spaces as its marker is wide. Nothing else is undone.
 
 The postprocessor here breaks after every [.!?] with no line-start check, so
-§3.5's hazards happen. It establishes:
+section 3.5's hazards happen. It establishes:
   1. the prefix removal is exact: every container case passes, nested too, and
      so does a numbered list, whose markers mdformat pads to one width;
-  2. the row fails where §3.5's line-start check is the only guard, the
+  2. the row fails where section 3.5's line-start check is the only guard, the
      four-space HTML indent and the backslash escape, and render equality
      passes both; a break before ~~~ fails both, because mdformat's second
      render turns the damaged render into damaged source;

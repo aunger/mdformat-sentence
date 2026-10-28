@@ -2,7 +2,7 @@
 
 Needs mdformat 1.0.0 and mdformat-space-control 0.5.0, which install together.
 
-The probe is a stand-in `inline` renderer, as DESIGN.md §2.2 places the plugin: it calls
+The probe is a stand-in `inline` renderer, as DESIGN.md section 2.2 places the plugin: it calls
 DEFAULT_RENDERERS["inline"], breaks at a wrap point after [.!?] before a capital, and pins every
 other wrap point to a space. It runs alone and beside space-control, in both load orders.
 

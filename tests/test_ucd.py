@@ -1,10 +1,12 @@
-"""The vendored Unicode data and the module generated from it (§2, §3.3)."""
+"""The vendored Unicode data and the module generated from it
+(sections 2 and 3.3)."""
 
 from mdformat_sentence import _detect, _generate_ucd, _ucd
 
 
 def test_the_generated_module_is_regenerated_exactly():
-    """A Unicode upgrade is one replaced file and a reviewable diff (§3.3)."""
+    """A Unicode upgrade is one replaced file and a reviewable diff
+    (section 3.3)."""
     source = _generate_ucd.SOURCE.read_text(encoding="utf-8")
     assert _generate_ucd.TARGET.read_text(encoding="utf-8") == _generate_ucd.generate(source)
 

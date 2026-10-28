@@ -1,5 +1,6 @@
-"""Segmentation (§3.1), inline atoms and bracket pairing (§3.2), pinning
-(§3.4) and the failure policy (§3.6), unit by unit."""
+"""Segmentation (section 3.1), inline atoms and bracket pairing
+(section 3.2), pinning (section 3.4) and the failure policy
+(section 3.6), unit by unit."""
 
 from __future__ import annotations
 
@@ -88,7 +89,7 @@ def test_paragraph_parts_end_at_hard_breaks_only(decided):
 @pytest.mark.parametrize(
     "md, expected",
     [
-        # An unclosed opener adopted across a sentence end (§3.2).
+        # An unclosed opener adopted across a sentence end (section 3.2).
         ("It failed :(. Then came a) and b).", [0, 0, 1, 1, 1, 0, 0]),
         # Unpaired brackets count nothing.
         ("Step 1) first. Label 1(a is open.", [0, 0, 0, 0, 0, 0]),
@@ -131,7 +132,8 @@ def test_every_gap_is_pinned():
 
 
 def test_plain_mdformat_fails_width_independence():
-    """Section 6.1 is the first row that fails without the plugin (§6.4)."""
+    """Section 6.1 is the first row that fails without the plugin
+    (section 6.4)."""
     md = "One long sentence that runs well past twenty columns. Then another.\n"
     plain = [mdformat.text(md, options={"wrap": w}, extensions=set()) for w in WIDTHS]
     assert len(set(plain)) > 1
@@ -184,7 +186,7 @@ def test_a_container_located_more_than_once_is_an_atom(caplog):
 
 
 def test_backs_off_when_records_do_not_add_up(monkeypatch, caplog):
-    """The tripwire of §3.6: a render that stops consulting the
+    """The tripwire of section 3.6: a render that stops consulting the
     postprocessor map leaves every child unrecorded."""
 
     def render(self, context):

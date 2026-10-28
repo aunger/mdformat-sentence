@@ -1,5 +1,5 @@
 """Generate `_ucd.py` from the vendored `unicode/SentenceBreakProperty.txt`
-(§3.3).
+(section 3.3).
 
 Run `python -m mdformat_sentence._generate_ucd` after replacing the
 vendored file; a test regenerates and diffs, so the two cannot drift.
@@ -16,7 +16,8 @@ HERE = Path(__file__).resolve().parent
 SOURCE = HERE / "unicode" / "SentenceBreakProperty.txt"
 TARGET = HERE / "_ucd.py"
 
-# The Sentence_Break values §3.3 names as `$` classes, in its order.
+# The Sentence_Break values that section 3.3 names as `$` classes, in its
+# order.
 VALUES = (
     "Upper",
     "Lower",

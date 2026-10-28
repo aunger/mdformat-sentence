@@ -11,7 +11,7 @@ ______________________________________________________________________
 **Compatibility risk.** *Verified.*
 `str.islower`, `str.isupper` and `str.isalpha` use the interpreter's own Unicode data, UCD 14.0.0 on Python 3.11, and its case properties rather than UAX #29's Sentence_Break.
 `'ა'.islower()` is `True`, so a capital test written with them would never break ordinary Georgian prose.
-`DESIGN.md` §3.3 reads vendored Sentence_Break data instead.
+`DESIGN.md` section 3.3 reads vendored Sentence_Break data instead.
 
 ## `re`, `str.casefold` and `str.lower` fold case three different ways
 
@@ -19,17 +19,17 @@ ______________________________________________________________________
 `re`'s `(?i:…)` is simple case folding, so `Straße` does not match a `strasse` pattern and `ﬁ` does not match `fi`, where `str.casefold` would join both.
 In the other direction `re` equates Turkish `I` with `ı` and `İ` with `i`, which `casefold` keeps apart and which no language-blind choice gets right.
 `str.lower` is the only one of the three that separates Greek `ς` from `σ`.
-`DESIGN.md` §3.3 matches case-insensitively only through `re`'s scoped flag and never calls the other two.
+`DESIGN.md` section 3.3 matches case-insensitively only through `re`'s scoped flag and never calls the other two.
 
 ## `unicodedata` has no Sentence_Break
 
 **Compatibility risk.** *Read.*
-The property is not exposed at all, so the Unicode data is generated from a vendored `SentenceBreakProperty.txt` (§3.3).
+The property is not exposed at all, so the Unicode data is generated from a vendored `SentenceBreakProperty.txt` (section 3.3).
 
 ## `tomllib` arrived in 3.11
 
 **Compatibility risk.**
-The plugin parses rules files itself, so it depends on `tomli` on Python 3.10 (§2).
+The plugin parses rules files itself, so it depends on `tomli` on Python 3.10 (section 2).
 
 ## `str.strip()` and `str.splitlines()` act on far more than ASCII whitespace
 
@@ -37,7 +37,7 @@ The plugin parses rules files itself, so it depends on `tomli` on Python 3.10 (�
 `str.strip()` deletes 29 codepoints.
 Space, tab and line feed are the three that mdformat turns into wrap points.
 The other 26 are not, and 8 of those are missing from `mdformat.codepoints.UNICODE_WHITESPACE`: U+000B, U+001C through U+001F, U+0085, U+2028 and U+2029.
-A character list copied from `UNICODE_WHITESPACE` would therefore miss eight of the 26, which supports §3.5's instruction to test with `.strip()` itself.
+A character list copied from `UNICODE_WHITESPACE` would therefore miss eight of the 26, which supports section 3.5's instruction to test with `.strip()` itself.
 
 `str.splitlines()` splits on 10 codepoints: U+000A, U+000B, U+000C, U+000D, U+001C through U+001E, U+0085, U+2028 and U+2029.
 Code that splits Markdown source into lines should read it in text mode, which already turns `\r\n` and a lone `\r` into `\n`, and then use `split("\n")`.

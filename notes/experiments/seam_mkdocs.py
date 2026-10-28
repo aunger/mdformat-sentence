@@ -1,6 +1,6 @@
 """Does a text-only inline postprocessor, with no walk and no re-render, survive mdformat-mkdocs?
 
-DESIGN.md §2.2. Needs mdformat 1.0.0 and mdformat-mkdocs 5.3.0, which install together.
+DESIGN.md section 2.2. Needs mdformat 1.0.0 and mdformat-mkdocs 5.3.0, which install together.
 
 The probes are seam.py's `decide` (break after [.!?] before a capital) with no walk at all:
   pp = POSTPROCESSORS["inline"], reads only the text it is handed

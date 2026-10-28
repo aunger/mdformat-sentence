@@ -1,4 +1,4 @@
-"""The harness behind the rows of §6.2: fixtures, load orders and one
+"""The harness behind the rows of section 6.2: fixtures, load orders and one
 instrumented render per input, order and width."""
 
 from __future__ import annotations
@@ -122,7 +122,7 @@ FIXTURES = [
         "This one sentence runs on for eighty-eight columns without any interior terminator in it\n",
     ),
     Fixture("a trailing newline", "Only one sentence.\n"),
-    # The corpus, and the dogfood as §6.2 loads it.
+    # The corpus, and the dogfood as section 6.2 loads it.
     Fixture("sembr.md", _read("notes/corpus/sembr.md")),
     Fixture("sembr.md with gfm", _read("notes/corpus/sembr.md"), ("gfm",)),
     Fixture("DESIGN.md", _read("DESIGN.md"), ("gfm",)),
@@ -132,7 +132,7 @@ FIXTURES = [
 
 
 def orders(plugins: tuple[str, ...]) -> list[tuple[str, ...]]:
-    """The co-plugins loaded before the plugin and after it (§6.2)."""
+    """The co-plugins loaded before the plugin and after it (section 6.2)."""
     if not plugins:
         return [("sentence",)]
     return [(*plugins, "sentence"), ("sentence", *plugins)]
@@ -146,8 +146,8 @@ class Run(NamedTuple):
     located: list[tuple[str, list[Piece]]]
     back_offs: int
     fallbacks: list[str]
-    # How often anything listed the recording map's keys or length (§3.1),
-    # as a copy of it would
+    # How often anything listed the recording map's keys or length
+    # (section 3.1), as a copy of it would
     listed: int
 
 
@@ -233,13 +233,14 @@ def run(md: str, extensions: tuple[str, ...], wrap) -> Run:
 
 @lru_cache(maxsize=None)
 def baseline(md: str, plugins: tuple[str, ...], wrap) -> str:
-    """Plain mdformat with the same co-plugins, named explicitly (§6.2)."""
+    """Plain mdformat with the same co-plugins, named explicitly
+    (section 6.2)."""
     return mdformat.text(md, options={"wrap": wrap}, extensions=set(plugins))
 
 
 def preserves(given: str, out: str) -> bool:
     """Whether `out` is `given` with each run of wrap points replaced by
-    one newline or one space (§6.2's text-preservation row)."""
+    one newline or one space (section 6.2's text-preservation row)."""
     # Independent of `_segment._RUN`, so the row can catch a fault in it.
     parts = re.split(f"{re.escape(WRAP_POINT)}+", given)
     return re.fullmatch("[\n ]".join(map(re.escape, parts)), out) is not None

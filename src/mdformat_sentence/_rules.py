@@ -1,5 +1,5 @@
-"""The interface sentence detection consults for rules (§3.3, §4), and a
-stub of it until the rules files are loaded.
+"""The interface sentence detection consults for rules (sections 3.3
+and 4), and a stub of it until the rules files are loaded.
 
 Section numbers refer to `DESIGN.md`.
 """
@@ -21,7 +21,7 @@ class Rules(Protocol):
         """The decision list's verdict, `NO` or `ALLOW`, at a candidate gap
         after ATerm.
 
-        It receives the raw words the keys of §3.3 read: the word
+        It receives the raw words the keys of section 3.3 read: the word
         carrying the terminator, the word before it, or `""` where that
         word opens its paragraph part, and the word after the gap, each
         counted past any run of lone marks. Stripping is its own.

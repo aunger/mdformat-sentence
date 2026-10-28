@@ -3,7 +3,7 @@ at `--wrap no`.
 
 The fixtures that need a shipped rule, abbreviations, initials, an index
 abbreviation before a punctuated number and the ellipsis, wait for the
-rules files (§4).
+rules files (section 4).
 """
 
 from __future__ import annotations
@@ -149,7 +149,7 @@ DETECTION = [
     _case(
         "nested quotations spaced English-style",
         "He said: “ ‘ Yes. ’ ” Then he left. He said. “ ‘ Yes. ’ ” Then he left.",
-        # After a sentence end the leading “ reads as closing (§3.3).
+        # After a sentence end the leading “ reads as closing (section 3.3).
         "He said: “ ‘ Yes. ’ ”\nThen he left.\nHe said. “\n‘ Yes. ’ ”\nThen he left.",
     ),
     _case(

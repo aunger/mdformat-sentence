@@ -1,4 +1,4 @@
-"""Sentence detection (§3.3) and the safety checks (§3.5).
+"""Sentence detection (section 3.3) and the safety checks (section 3.5).
 
 Section numbers refer to `DESIGN.md`.
 """
@@ -67,18 +67,18 @@ _OPENS = frozenset({UPPER, OLETTER, NUMERIC})
 _WORD = frozenset({UPPER, LOWER, OLETTER, NUMERIC, EXTEND})
 
 # The atoms that open a sentence whatever they hold, besides an autolink
-# and raw inline HTML tags (§3.3).
+# and raw inline HTML tags (section 3.3).
 _OPAQUE = frozenset({"code_inline", "image"})
 
 # Lines mdformat 1.0.0's `paragraph()` escapes or indents by their start,
 # and the three that do damage unescaped: a tilde fence, and a task box and
-# a definition-list marker, which co-plugins escape (§3.5).
+# a definition-list marker, which co-plugins escape (section 3.5).
 _LINE_START = re.compile(
     r"#{1,6}(?:[ \t]|\Z)|>|[-*+](?:[ \t]|\Z)|[0-9]+[.)](?:[ \t]|\Z)"
     r"|~~~|\[[ xX]\]|[:~] "
 )
 # What mdformat's `text()` escapes by its neighbors, unescaped only between
-# whitespace when it stands alone (§3.5).
+# whitespace when it stands alone (section 3.5).
 _NEIGHBORED = frozenset("*_")
 _HTML_OPENERS = [opener for opener, _, interrupts in HTML_SEQUENCES if interrupts]
 
@@ -93,12 +93,12 @@ def sentence_break_value(char: str) -> str | None:
 
 
 def is_lone(segment: str) -> bool:
-    """Whether `segment` is a lone mark (§3.3)."""
+    """Whether `segment` is a lone mark (section 3.3)."""
     return bool(segment) and all(char in LONE for char in segment)
 
 
 def is_sentence_break(segments: list[str], i: int, state: State) -> bool:
-    """Whether the gap after `segments[i]` breaks (§3.3, §3.5).
+    """Whether the gap after `segments[i]` breaks (sections 3.3 and 3.5).
 
     A run of lone marks is one gap, decided once for its two words, and
     the newline lands at one of its gaps or none.
@@ -137,7 +137,7 @@ def _landing(segments: list[str], w: int, state: State) -> int | None:
 def sentence_end(segment: str, start: int, state: State) -> str | None:
     """The terminator `segment` ends a sentence with, if it does: after the
     footnote strip, a terminator followed by closers and no-break spaces,
-    standing outside every atom (§3.2, §3.3).
+    standing outside every atom (sections 3.2 and 3.3).
 
     `start` is the segment's offset in the paragraph's text.
     """
@@ -156,7 +156,7 @@ def sentence_end(segment: str, start: int, state: State) -> str | None:
 
 def opens_sentence(segment: str, start: int, state: State) -> bool:
     """The capital test, its two exemptions, and the opaque atoms that open
-    a sentence whatever they hold (§3.3)."""
+    a sentence whatever they hold (section 3.3)."""
     j = 0
     tags = False
     while j < len(segment):
@@ -201,7 +201,7 @@ def _camel(segment: str, j: int) -> bool:
 
 
 def _opens(segments: list[str], k: int, state: State) -> bool:
-    """A lone mark's role, read from its first character (§3.3)."""
+    """A lone mark's role, read from its first character (section 3.3)."""
     char = segments[k][0]
     if char in _SHAPE_OPENS:
         return True
@@ -215,7 +215,7 @@ def _opens(segments: list[str], k: int, state: State) -> bool:
 
 
 def is_safe(segments: list[str], at: int, state: State) -> bool:
-    """Edge safety and line-start safety (§3.5), for a newline before
+    """Edge safety and line-start safety (section 3.5), for a newline before
     `segments[at]`."""
     before, after = segments[at - 1], segments[at]
     if not before[-1:].strip() or not after[:1].strip():

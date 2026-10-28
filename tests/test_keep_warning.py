@@ -1,4 +1,4 @@
-"""The `--wrap keep` warning of §2.5."""
+"""The `--wrap keep` warning of section 2.5."""
 
 import logging
 
@@ -46,7 +46,7 @@ def test_silent_when_the_plugin_can_act(tmp_path, capsys, wrap):
 
 def test_silent_when_no_paragraph_was_rendered(tmp_path, capsys):
     # Headings and table cells hold inline nodes too; the paragraph-parent
-    # guard (§2.2) is what keeps them from reaching the warning.
+    # guard (section 2.2) is what keeps them from reaching the warning.
     md = "# It ended. Then it began.\n\n| It ended. Then it began. |\n| -- |\n| a |\n"
     named = ["--extensions", "sentence", "--extensions", "gfm"]
     assert cli(tmp_path, capsys, *named, md=md) == 0

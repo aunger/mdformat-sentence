@@ -12,7 +12,7 @@ ______________________________________________________________________
 **Filing candidate.** *Verified* 2026-10-06.
 Its metadata requires `mdformat<0.8.0,>=0.7.0`, so pip downgrades mdformat to 0.7.22 when it is installed next to mdformat 1.0.0, or refuses the combination.
 Installed with `--no-deps`, it loads and runs under mdformat 1.0.0.
-`DESIGN.md` §6.2 records this as a cost of the gate's environment.
+`DESIGN.md` section 6.2 records this as a cost of the gate's environment.
 
 ## Escaped dollar signs lose their backslash
 

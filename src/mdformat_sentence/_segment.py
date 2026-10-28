@@ -1,5 +1,6 @@
-"""Segmentation (§3.1), inline atoms (§3.2), emission (§3.4) and the
-failure policy (§3.6); sentence detection is `_detect`'s.
+"""Segmentation (section 3.1), inline atoms (section 3.2), emission
+(section 3.4) and the failure policy (section 3.6); sentence detection
+is `_detect`'s.
 
 Section numbers refer to `DESIGN.md`.
 """
@@ -26,7 +27,7 @@ if TYPE_CHECKING:
 BACK_OFF = "mdformat-sentence backed off a paragraph"
 FALLBACK = "mdformat-sentence made an atom by fallback"
 
-# Recorded whole, children and all (§3.2). Autolinks are links.
+# Recorded whole, children and all (section 3.2). Autolinks are links.
 ATOMS = frozenset({"link", "image"})
 # Leaves that are neither prose nor atoms: a soft break is a gap, and a
 # hard break's newline ends a paragraph part.
@@ -38,7 +39,7 @@ _OPENERS = {")": "(", "]": "["}
 
 class Recording(Mapping):
     """A postprocessor map that appends one recorder, last, to the chain
-    of every node type (§3.1)."""
+    of every node type (section 3.1)."""
 
     def __init__(self, inner: Mapping[str, tuple[Postprocess, ...]], record):
         self._inner = inner
@@ -68,7 +69,8 @@ class Piece(NamedTuple):
 
 
 class ParagraphPart(NamedTuple):
-    """The inline text between hard breaks (§3.1), split at its wrap points.
+    """The inline text between hard breaks (section 3.1), split at its wrap
+    points.
 
     `starts[i]` is the offset of `segments[i]` in the paragraph's text,
     so the gap after segment `i` begins at `starts[i] + len(segments[i])`,
@@ -109,7 +111,7 @@ def locate(
     node: RenderTreeNode, records: dict[int, str], text: str
 ) -> list[Piece] | None:
     """The pieces under `node`, or `None` when its top-level records do
-    not concatenate to `text` (§3.6)."""
+    not concatenate to `text` (section 3.6)."""
     if _joined(node, records) != text:
         return None
     pieces: list[Piece] = []
@@ -157,8 +159,8 @@ def _joined(node, records) -> str | None:
 
 
 def paragraph_parts(text: str, pieces: list[Piece]) -> Iterator[ParagraphPart]:
-    """Split at every newline outside an atom (§3.1), then at wrap points,
-    keeping each run's length in the offsets (§2.3).
+    """Split at every newline outside an atom (section 3.1), then at wrap
+    points, keeping each run's length in the offsets (section 2.3).
 
     `pieces` must be in text order and must not overlap, as `locate`
     returns them, so one walk hands each part its own.
@@ -192,7 +194,8 @@ def _atom_test(pieces: list[Piece]) -> Callable[[int], bool]:
 
 def scan(text: str, part: ParagraphPart, rules: Rules = STUB) -> State:
     """Section 3.3's facts, computed once per paragraph part: the atoms in it,
-    the bracket depth at each gap (§3.2), and which segments are words."""
+    the bracket depth at each gap (section 3.2), and which segments are
+    words."""
     first, last = part.span
     gaps = [s + len(seg) for s, seg in zip(part.starts, part.segments)][:-1]
     depth = [0] * len(gaps)
@@ -208,7 +211,7 @@ def scan(text: str, part: ParagraphPart, rules: Rules = STUB) -> State:
 
 def _pairs(text: str, prose: list[Piece], first: int, last: int):
     """Pair prose brackets, each closer with the nearest earlier unpaired
-    opener of its kind; a bracket left unpaired counts nothing (§3.2)."""
+    opener of its kind; a bracket left unpaired counts nothing (section 3.2)."""
     stacks: dict[str, list[int]] = {"(": [], "[": []}
     for piece in prose:
         for at in range(max(piece.start, first), min(piece.end, last)):
@@ -220,7 +223,7 @@ def _pairs(text: str, prose: list[Piece], first: int, last: int):
 
 
 def decide(text: str, pieces: list[Piece], rules: Rules = STUB) -> str:
-    """Resolve every gap to a newline or a literal space (§3.4)."""
+    """Resolve every gap to a newline or a literal space (section 3.4)."""
     out = []
     for part in paragraph_parts(text, pieces):
         segments = part.segments
@@ -235,6 +238,6 @@ def decide(text: str, pieces: list[Piece], rules: Rules = STUB) -> str:
 
 def back_off(text: str) -> str:
     """Emit no break at all: every run of wrap points becomes one space
-    (§3.6)."""
+    (section 3.6)."""
     LOGGER.debug(BACK_OFF)
     return _RUN.sub(" ", text)

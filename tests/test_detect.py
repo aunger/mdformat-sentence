@@ -1,6 +1,7 @@
-"""Sentence detection (§3.3) and the safety checks (§3.5): §6.4's
-fixtures, the interface the rules files implement, and the hand-written
-fixture pairs §6.2's minimality row asks of the checks in code."""
+"""Sentence detection (section 3.3) and the safety checks (section 3.5):
+section 6.4's fixtures, the interface the rules files implement, and the
+hand-written fixture pairs that section 6.2's minimality row asks of the
+checks in code."""
 
 from __future__ import annotations
 
@@ -62,7 +63,8 @@ def rules(monkeypatch):
     return format_with
 
 
-# `mdformat.text` renders twice (§2.3), so every question is asked twice.
+# `mdformat.text` renders twice (section 2.3), so every question is asked
+# twice.
 
 
 def test_the_verdict_is_asked_at_every_candidate_gap_after_aterm(rules):
@@ -112,7 +114,7 @@ def test_the_stub():
 
 
 # Openings that only a broad `lowercase_names` pattern lets through the
-# capital test, and those §3.5's line-start check alone refuses.
+# capital test, and those that section 3.5's line-start check alone refuses.
 LINE_STARTS = [
     "It ended. # Then more.",
     "It ended. ###### Then more.",
@@ -161,7 +163,7 @@ def test_the_task_box_is_refused_with_or_without_gfm(extensions):
 )
 def test_a_lone_star_or_underscore_stays_off_a_line_edge(md, monkeypatch):
     """mdformat's `text()` escapes a literal `*` or `_` at a line edge on the
-    second pass, which renders the same (§3.5)."""
+    second pass, which renders the same (section 3.5)."""
     md += "\n"
     assert plugin(md) == plain(md)
     monkeypatch.setattr(_detect, "_NEIGHBORED", frozenset())
@@ -224,7 +226,8 @@ def test_checks_in_code_have_fixture_pairs(check):
 
 
 def test_sentence_break_values_come_from_the_vendored_data():
-    """Python files Mkhedruli as lowercase; UAX #29 as `OLetter` (§3.3)."""
+    """Python files Mkhedruli as lowercase; UAX #29 as `OLetter`
+    (section 3.3)."""
     assert "ა".islower()
     assert _detect.sentence_break_value("ა") == _detect.OLETTER
     assert _detect.sentence_break_value("ǅ") == _detect.UPPER

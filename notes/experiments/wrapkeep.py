@@ -65,7 +65,7 @@ finally:
     C.RenderContext.do_wrap = orig
 print("   DEFAULT_RENDERERS is a", type(C.DEFAULT_RENDERERS).__name__,
       "- not assignable, so the renderer must be replaced via a plugin's own")
-print("   RENDERERS mapping, which is the paragraph hook DESIGN.md 2.2 rejects.\n")
+print("   RENDERERS mapping, which is the paragraph hook DESIGN.md section 2.2 rejects.\n")
 
 print("WHAT THE PLUGIN CAN AND CANNOT SEE ABOUT wrap\n")
 import io, contextlib
@@ -110,14 +110,14 @@ print("""
   DEFAULT_OPTS['extensions'] is None, so a non-None value means someone typed
   --extensions. Through mdformat.text() the argument goes straight to
   build_mdit and never lands in options['mdformat'] at all -- the rows above
-  show '<absent>' -- so DESIGN.md 2.5's warning can never fire for a library
+  show '<absent>' -- so DESIGN.md section 2.5's warning can never fire for a library
   caller, however explicitly they named the plugin.
 """)
 
 print("CONSEQUENCES of route B, all measured above or in _api.py:")
 print("  1. The double render does not fire. _api.text decides on the CALLER's")
 print("     options (_api.py:38), which still say 'keep', so the second pass that")
-print("     DESIGN.md 2.3 relies on for idempotency is skipped.")
+print("     DESIGN.md section 2.3 relies on for idempotency is skipped.")
 print("  2. Options are global to the render, so every other enabled plugin sees")
 print("     wrap='no' too.")
 print("  3. It silently overrides an explicit user instruction, and --check will")
