@@ -143,8 +143,8 @@ class Run(NamedTuple):
     located: list[tuple[str, list[Piece]]]
     back_offs: int
     fallbacks: list[str]
-    # How often anything listed the recording map's keys or length (section 3.1),
-    # as a copy of it would
+    # How often anything listed the recording map's keys or length
+    # (section 3.1), as a copy of it would
     listed: int
 
 
@@ -230,7 +230,8 @@ def run(md: str, extensions: tuple[str, ...], wrap) -> Run:
 
 @lru_cache(maxsize=None)
 def baseline(md: str, plugins: tuple[str, ...], wrap) -> str:
-    """Plain mdformat with the same co-plugins, named explicitly (section 6.2)."""
+    """Plain mdformat with the same co-plugins, named explicitly
+    (section 6.2)."""
     return mdformat.text(md, options={"wrap": wrap}, extensions=set(plugins))
 
 

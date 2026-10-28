@@ -131,7 +131,8 @@ def test_every_gap_is_pinned():
 
 
 def test_plain_mdformat_fails_width_independence():
-    """Section 6.1 is the first row that fails without the plugin (section 6.4)."""
+    """Section 6.1 is the first row that fails without the plugin
+    (section 6.4)."""
     md = "One long sentence that runs well past twenty columns. Then another.\n"
     plain = [mdformat.text(md, options={"wrap": w}, extensions=set()) for w in WIDTHS]
     assert len(set(plain)) > 1

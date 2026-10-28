@@ -63,7 +63,8 @@ class Piece(NamedTuple):
 
 
 class ParagraphPart(NamedTuple):
-    """The inline text between hard breaks (section 3.1), split at its wrap points.
+    """The inline text between hard breaks (section 3.1), split at its wrap
+    points.
 
     `starts[i]` is the offset of `segments[i]` in the paragraph's text,
     so the gap after segment `i` begins at `starts[i] + len(segments[i])`,
@@ -144,8 +145,8 @@ def _joined(node, records) -> str | None:
 
 
 def paragraph_parts(text: str, pieces: list[Piece]) -> Iterator[ParagraphPart]:
-    """Split at every newline outside an atom (section 3.1), then at wrap points,
-    keeping each run's length in the offsets (section 2.3).
+    """Split at every newline outside an atom (section 3.1), then at wrap
+    points, keeping each run's length in the offsets (section 2.3).
 
     `pieces` must be in text order and must not overlap, as `locate`
     returns them, so one walk hands each part its own.

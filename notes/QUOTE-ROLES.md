@@ -92,7 +92,7 @@ A regular-expression search of Italian Wikisource for a letter, optional punctua
 The print spaces the mark off; the transcriptions do not.
 All three Italian pages above store it attached on Wikisource, `villaggio.„ Quegli`, `“Viènghi puro.„` and `torri!„`, checked for this note.
 So the spaced form that the lone-mark criterion reads correctly is the printed one, and the form a reader would actually import is the attached one.
-Section 3.3 therefore puts `„` in the closer set as well as the opener set, which finds `villaggio.„` as a sentence end.
+`DESIGN.md` section 3.3 therefore puts `„` in the closer set as well as the opener set, which finds `villaggio.„` as a sentence end.
 It costs nothing in modern text, where `„` touches the word it opens and follows a terminator in the same segment only by typo, `sagte.„ Hallo`, which then breaks with the mark at the end of the line where before it did not break at all.
 `‚` stays an opener only, although it closed in one edition (below), because it is nearly indistinguishable from a comma and the closer set must not contain anything a comma could be mistaken for; how often it stands in for one was not measured.
 
@@ -145,9 +145,9 @@ ______________________________________________________________________
 
 ## 5. What a lone mark's role decides
 
-`lonemark.py` runs section 3.3's lone-mark handling over plain strings.
+`lonemark.py` runs `DESIGN.md` section 3.3's lone-mark handling over plain strings.
 
-Section 3.3 treats a run of lone marks between two words as one gap: the words on either side decide whether it breaks, and the marks' roles decide only where in the run the newline goes.
+`DESIGN.md` section 3.3 treats a run of lone marks between two words as one gap: the words on either side decide whether it breaks, and the marks' roles decide only where in the run the newline goes.
 A wrong role can then strand a mark at the wrong end of a line, and can never add or remove a break.
 Over twenty-two texts, with marks alone and side by side, every combination of readings, 120 in all, puts the same words on each line.
 

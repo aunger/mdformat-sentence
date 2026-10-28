@@ -35,8 +35,8 @@ def _cases(orders_of):
 
 CASES = _cases(orders)
 
-# Every fixture with the three co-plugins that section 6.2 loads under every row,
-# before the plugin and after it.
+# Every fixture with the three co-plugins that section 6.2 loads under every
+# row, before the plugin and after it.
 ALONGSIDE = ("gfm", "mkdocs", "footnote")
 CASES_ALONGSIDE = _cases(lambda _: [(*ALONGSIDE, "sentence"), ("sentence", *ALONGSIDE)])
 
