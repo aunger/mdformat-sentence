@@ -5,7 +5,7 @@ locale's delimiters.json, and prints each quotation character with the roles
 CLDR gives it. The JSON is resolved, so a locale that sets nothing inherits
 root's “…” and ‘…’; that inflates the counts but cannot change a role.
 
-Stdlib only. Establishes the CLDR half of DESIGN.md §3.3's claim about the
+Stdlib only. Establishes the CLDR half of DESIGN.md section 3.3's claim about the
 corner brackets, and that CLDR gives 《 》 〈 〉 ‟ ‛ no quotation role at all.
 """
 import io

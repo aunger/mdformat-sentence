@@ -1,4 +1,4 @@
-"""How `[plugin.sentence]` reaches the plugin: two claims from DESIGN.md §4, run.
+"""How `[plugin.sentence]` reaches the plugin: two claims from DESIGN.md section 4, run.
 
 1. mdformat validates only that `plugin` is a table of tables, so the nested
    `[[plugin.sentence.rule]]` and `[[plugin.sentence.rule.example]]` arrays
@@ -34,7 +34,7 @@ def pp(text, node, context):
 def add_cli_argument_group(group):
     group.add_argument("--sentence-include", dest="cli_include",
                        action="append", default=None)
-    # The shape DESIGN.md §4 declines, kept here only to show why.
+    # The shape DESIGN.md section 4 declines, kept here only to show why.
     group.add_argument("--sentence-include-replacing", dest="include",
                        action="append", default=None)
 
@@ -102,4 +102,4 @@ print(f"   --sentence-include lab, dest cli_include: {opts}")
 code, err, opts = cli(NESTED, "--sentence-include-replacing", "lab")
 print(f"   --sentence-include-replacing lab, dest include: {opts}")
 print("\n   Under its own key both lists survive; writing to `include` replaces the"
-      "\n   config's list outright. That is why DESIGN.md §4's flag uses `cli_include`.")
+      "\n   config's list outright. That is why DESIGN.md section 4's flag uses `cli_include`.")

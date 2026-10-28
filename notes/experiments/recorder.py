@@ -1,6 +1,6 @@
-"""The recorder: DESIGN.md §3.1's single-render atom map, against the re-render walk it replaced.
+"""The recorder: DESIGN.md section 3.1's single-render atom map, against the re-render walk it replaced.
 
-The plugin is the `inline` renderer (§2.2). Instead of rendering the children a second time to
+The plugin is the `inline` renderer (section 2.2). Instead of rendering the children a second time to
 learn where each piece sits, it renders them once, through a context whose postprocessor map ends
 every node type's chain with a recorder that notes the node's final rendering and returns it
 unchanged. Offsets come from the records: the top-level records concatenate to the text, and a

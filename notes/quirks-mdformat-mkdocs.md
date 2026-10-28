@@ -30,7 +30,7 @@ Section 3.5 refuses a break that would put `*[label]:` at a line start.
 **Compatibility risk.** *Verified* (`experiments/seam_mkdocs.py`).
 At an integer `--wrap`, mkdocs's `inline` postprocessor re-wraps list-item text itself and inserts U+E000 filler words between real ones, at width-dependent positions.
 An `inline` postprocessor loaded after it sees a different segmentation at each width, so it is width-dependent wherever the re-wrapped item holds a sentence end.
-`DESIGN.md` §2.2 hooks a renderer, which runs before it.
+`DESIGN.md` section 2.2 hooks a renderer, which runs before it.
 
 ## An attribute list is a container that does not render its children
 
@@ -42,12 +42,12 @@ Section 3.1 makes such a node an atom.
 
 **Compatibility risk.** *Verified* 2026-10-18 (`experiments/mkdocs_dogfood.py`), with mdformat-gfm 1.0.0 and `--compact-tables`, at mdformat's default `--wrap keep` and without this plugin.
 With mkdocs loaded, alone or with gfm, mdformat refuses to format `DESIGN.md` because the rendered HTML would change.
-The one line that changes it is the §6.4 fixture row quoting `` `The term \[x\](see the y note) is escaped. Then more.` ``, which the spaced-URL fixer above rewrites inside its code span.
+The one line that changes it is the section 6.4 fixture row quoting `` `The term \[x\](see the y note) is escaped. Then more.` ``, which the spaced-URL fixer above rewrites inside its code span.
 Separately, mkdocs reindents list continuation lines from the marker's width to four spaces, 117 lines of `DESIGN.md` on 2026-10-18 with that row among them, which renders the same once the row's escapes are removed and which its README lists as intended ("Indents are converted to four-spaces instead of two").
 Plain mdformat writes them back at the marker's width, so no list style satisfies both; with `--align-semantic-breaks-in-lists`, 31 lines still change, since nested items stay at multiples of four.
 The reindent is `_format_new_indent` in `mdformat_mkdocs/_normalize_list.py`, with `MKDOCS_INDENT_COUNT = 4` in `_helpers.py` (*read*).
 With gfm alone, or gfm and mdformat-footnote 0.1.3, the file comes back unchanged.
-`DESIGN.md` §6.2 runs the dogfood row with gfm alone for this reason.
+`DESIGN.md` section 6.2 runs the dogfood row with gfm alone for this reason.
 
 ## `%20` is rewritten after the inline render
 

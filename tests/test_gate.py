@@ -1,5 +1,5 @@
-"""The rows of §6.2 that segmentation and pinning (§3.1 to §3.6) must
-pass, over the fixtures and `notes/corpus/`."""
+"""The rows of section 6.2 that segmentation and pinning
+(sections 3.1 to 3.6) must pass, over the fixtures and `notes/corpus/`."""
 
 from __future__ import annotations
 
@@ -35,12 +35,12 @@ def _cases(orders_of):
 
 CASES = _cases(orders)
 
-# Every fixture with the three co-plugins §6.2 loads under every row,
-# before the plugin and after it.
+# Every fixture with the three co-plugins that section 6.2 loads under every
+# row, before the plugin and after it.
 ALONGSIDE = ("gfm", "mkdocs", "footnote")
 CASES_ALONGSIDE = _cases(lambda _: [(*ALONGSIDE, "sentence"), ("sentence", *ALONGSIDE)])
 
-# Atoms §3.1's fallback may make: mdformat-gfm's bare URL and
+# Atoms that section 3.1's fallback may make: mdformat-gfm's bare URL and
 # mdformat-mkdocs's attribute list.
 NAMED_FALLBACKS = {"gfm_autolink", "python_markdown_attr_list"}
 

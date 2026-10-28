@@ -4,7 +4,7 @@ An mdformat plugin that puts one sentence on each line, specified in `DESIGN.md`
 
 ## What is authoritative
 
-`DESIGN.md` is normative, except where a passage says it reports a measurement or a verification; §3's preamble states this for §3, and it holds for the whole document.
+`DESIGN.md` is normative, except where a passage says it reports a measurement or a verification; section 3's preamble states this for section 3, and it holds for the whole document.
 Code follows it.
 When code cannot be built as `DESIGN.md` says, change `DESIGN.md` in the same pull request, and anchor a PR comment at each place the two would otherwise differ.
 Never let them drift apart silently.
@@ -19,16 +19,16 @@ Record each kind of finding where the notes say it goes:
 
 ## Building
 
-Build in the order of the milestones in [issue #7](https://github.com/aunger/mdformat-sentence/issues/7), which follow §6.4's order for tests and start with the positive control.
-The dependency range is §2's: mdformat `>=1.0.0,<1.1` on Python 3.10 or later, and the range moves only after §6's gate passes against the new version.
+Build in the order of the milestones in [issue #7](https://github.com/aunger/mdformat-sentence/issues/7), which follow section 6.4's order for tests and start with the positive control.
+The dependency range is section 2's: mdformat `>=1.0.0,<1.1` on Python 3.10 or later, and the range moves only after section 6's gate passes against the new version.
 Check any claim about mdformat by running it against 1.0.0, and say whether a claim was run or only read.
 
 ## Writing
 
-Prose in `DESIGN.md` is one sentence per line, because `DESIGN.md` is also a fixture (§6.2, the dogfood row), and new prose in `notes/` follows the same convention.
+Prose in `DESIGN.md` is one sentence per line, because `DESIGN.md` is also a fixture (section 6.2, the dogfood row), and new prose in `notes/` follows the same convention.
 So every line break must be one the shipped default would make, and no gap inside a line may be one it would make.
-The common traps are a line ending in an abbreviation or initial the default holds, a break inside brackets, and a next line opening with something §3.5 refuses at a line start, such as `1.` or `-`.
-Write "Section 6.2", not "§6.2", at the start of a sentence.
+The common traps are a line ending in an abbreviation or initial the default holds, a break inside brackets, and a next line opening with something that section 3.5 refuses at a line start, such as `1.` or `-`.
+Refer to sections as "section 6.2" or "sections 6.2 and 6.4", never with the section sign, and as "Section 6.2" at the start of a sentence, since a lowercase opening fails the capital test.
 Cite the Semantic Line Breaks specification's rules as "sembr#5" within a sentence and "Sembr#5" at its start, since a lowercase opening fails the capital test.
 Run `mdformat --check DESIGN.md` with plain mdformat 1.0.0, and `mdformat --compact-tables --check DESIGN.md` with mdformat-gfm 1.0.0 added, before committing.
 

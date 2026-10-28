@@ -1,4 +1,4 @@
-"""A rough stand-in for DESIGN.md §6.2's dogfood row, until the plugin exists.
+"""A rough stand-in for DESIGN.md section 6.2's dogfood row, until the plugin exists.
 
 Needs markdown-it-py only, which mdformat installs.
 Takes one or more Markdown files as arguments.
@@ -13,9 +13,9 @@ the shipped default would join, before the plugin is there to run:
   - the line after must open, after any opening quotes, brackets and emphasis markers, with a
     capital, a digit, a camelCase word, a code span, an image or a tag, or with a word that matches
     the shipped `lowercase_names = 'mdformat\\S*'`.
-It knows no abbreviation, initial or line-start check, so it misses joins that §3.3 and §3.5 would
-make, and it looks only at breaks the author made, so it reports joins only, never a sentence end
-inside a line that the plugin would split.
+It knows no abbreviation, initial or line-start check, so it misses joins that sections 3.3 and 3.5
+would make, and it looks only at breaks the author made, so it reports joins only, never a sentence
+end inside a line that the plugin would split.
 
 It prints, per file, one tuple for each break that would be joined: the line number, `no-end` or
 `no-cap`, the end of the line before and the start of the line after; then the number of joins.

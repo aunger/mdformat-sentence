@@ -1,7 +1,7 @@
 # Quotation-mark roles: which marks can be read by their glyph?
 
 A note, not a specification.
-`DESIGN.md` §3.3 reads a lone CJK mark or a lone guillemet by its glyph, and every other lone mark by what precedes it.
+`DESIGN.md` section 3.3 reads a lone CJK mark or a lone guillemet by its glyph, and every other lone mark by what precedes it.
 This records the research behind that split.
 
 The question was whether any curly or angle quotation mark always opens, or always closes, in every language.
@@ -57,7 +57,7 @@ It records nothing historical, which is where `„` closes.
 And the JSON is resolved, so about 490 locales carry root's `“…”` and `‘…’` by inheritance, while only about 129 of the 766 set a value of their own.
 
 Unicode's general category is no guarantee either.
-In CLDR every `Ps` or `Pe` mark has one role and every `Pi` or `Pf` mark has both, which looks like a regularity, but `„` and `‚` are `Ps` and both close in historical text (§3).
+In CLDR every `Ps` or `Pe` mark has one role and every `Pi` or `Pf` mark has both, which looks like a regularity, but `„` and `‚` are `Ps` and both close in historical text (section 3 below).
 UAX #44 says only that `Pi` and `Pf` "may behave like opening punctuation (gc=Ps) or closing punctuation (gc=Pe), depending on usage and quotation conventions".
 
 ______________________________________________________________________
@@ -72,8 +72,8 @@ Every minority role below was re-fetched from a current primary source and read 
 | `”` opening | Finnish `”…”`, the same mark at both ends | Kielitoimiston ohjepankki, *Lainausmerkit* |
 | `‘` closing | German `‚…‘` | Duden, rule D12 |
 | `’` opening | Finnish and Swedish `’…’` | Kielitoimisto, *Puolilainausmerkki*; Isof, question 24612 |
-| `«` closing, `»` opening | Danish `»…«`; Finnish and Swedish `»…»` | Retskrivningsordbogen (2025) §58; Kielitoimisto |
-| `‹` closing, `›` opening | Danish `›…‹` | Retskrivningsordbogen §58 |
+| `«` closing, `»` opening | Danish `»…«`; Finnish and Swedish `»…»` | Retskrivningsordbogen (2025) section 58; Kielitoimisto |
+| `‹` closing, `›` opening | Danish `›…‹` | Retskrivningsordbogen section 58 |
 
 Some minority roles in CLDR or Wikipedia did not survive checking, and none changes a verdict.
 CLDR's Uyghur `»…«` looks like display order typed as logical order: Uyghur text on three sites stores `«` first every time.
@@ -92,7 +92,7 @@ A regular-expression search of Italian Wikisource for a letter, optional punctua
 The print spaces the mark off; the transcriptions do not.
 All three Italian pages above store it attached on Wikisource, `villaggio.„ Quegli`, `“Viènghi puro.„` and `torri!„`, checked for this note.
 So the spaced form that the lone-mark criterion reads correctly is the printed one, and the form a reader would actually import is the attached one.
-Section 3.3 therefore puts `„` in the closer set as well as the opener set, which finds `villaggio.„` as a sentence end.
+`DESIGN.md` section 3.3 therefore puts `„` in the closer set as well as the opener set, which finds `villaggio.„` as a sentence end.
 It costs nothing in modern text, where `„` touches the word it opens and follows a terminator in the same segment only by typo, `sagte.„ Hallo`, which then breaks with the mark at the end of the line where before it did not break at all.
 `‚` stays an opener only, although it closed in one edition (below), because it is nearly indistinguishable from a comma and the closer set must not contain anything a comma could be mistaken for; how often it stands in for one was not measured.
 
@@ -114,7 +114,7 @@ Both occasionally close in German Wikisource transcriptions, `„Darf ich?‟ fr
 The Finnish language office names it as a look-alike to avoid: "puolilainausmerkki on ’, ei ‛ eikä '", the half quotation mark is `’`, not `‛` or `'`.
 In Verdana and Tahoma, `“` and `‟` look swapped, so text typed by eye may hold either.
 No frequency was measured: a Wikipedia regular-expression search for either mark times out, and its one hit on Greek Wikipedia used `‟` as an apostrophe.
-`DESIGN.md` §3.3 puts both in the opener and the closer sets, as it does `“` and `‘`: the overlap costs nothing inside a segment, and it gains the break before a quotation that opens a sentence with either mark, and after the German closing `‟`.
+`DESIGN.md` section 3.3 puts both in the opener and the closer sets, as it does `“` and `‘`: the overlap costs nothing inside a segment, and it gains the break before a quotation that opens a sentence with either mark, and after the German closing `‟`.
 
 **Unverified leads**, each uncited where it appears: Albanian `“…„`, whose own orthography rules use `„…“`; a closing low mark in old Hebrew books, where three Hebrew Wikisource hits checked all open with `„`; Portuguese `“…„`, whose Wikisource hits were OCR errors for commas; and `“…„` in 2012 NHK subtitles.
 
@@ -129,10 +129,10 @@ Danish, Hungarian, Polish and Czech were not checked at a primary source.
 The languages on Wikipedia's list outside the `»…«` and `»…»` traditions all open with `«`, so a glyph reading stays correct even if one of them does space.
 
 **A lone `»` can open in French.**
-Canada's Bureau de la traduction, *Le guide du rédacteur* §7.2.5, describes "une tradition rivale" in which each continuation paragraph of a long quotation opens with `»`, and notes that many consider it "puriste et désuète"; the OQLF mentions it too.
+Canada's Bureau de la traduction, *Le guide du rédacteur* section 7.2.5, describes "une tradition rivale" in which each continuation paragraph of a long quotation opens with `»`, and notes that many consider it "puriste et désuète"; the OQLF mentions it too.
 The guide's own example types an ordinary space after that `»`, so it produces exactly a lone `»` that does not close.
 In Markdown it opens a paragraph, where either reading gives the same lines.
-A hard line break comes to the same thing, and the guide's own page separates its paragraphs that way, with `<br /><br />`: `DESIGN.md` §3.1 splits a paragraph into parts at hard breaks, so the `»` again has nothing before it.
+A hard line break comes to the same thing, and the guide's own page separates its paragraphs that way, with `<br /><br />`: `DESIGN.md` section 3.1 splits a paragraph into parts at hard breaks, so the `»` again has nothing before it.
 A soft break is not a continuation at all.
 A newline inside a Markdown paragraph renders as a space, so `Il a dit : « Il y a trois raisons.` then `» La première est la croissance. »` renders as one paragraph with a `»` in the middle of it, and reading that `»` as closing matches what the reader sees.
 
@@ -145,9 +145,9 @@ ______________________________________________________________________
 
 ## 5. What a lone mark's role decides
 
-`lonemark.py` runs §3.3's lone-mark handling over plain strings.
+`lonemark.py` runs `DESIGN.md` section 3.3's lone-mark handling over plain strings.
 
-Section 3.3 treats a run of lone marks between two words as one gap: the words on either side decide whether it breaks, and the marks' roles decide only where in the run the newline goes.
+`DESIGN.md` section 3.3 treats a run of lone marks between two words as one gap: the words on either side decide whether it breaks, and the marks' roles decide only where in the run the newline goes.
 A wrong role can then strand a mark at the wrong end of a line, and can never add or remove a break.
 Over twenty-two texts, with marks alone and side by side, every combination of readings, 120 in all, puts the same words on each line.
 
@@ -162,13 +162,13 @@ ______________________________________________________________________
 
 ## Sources
 
-- CLDR 48.2: [`cldr-misc-full` 48.2.0](https://www.npmjs.com/package/cldr-misc-full); [UAX #44 §5.7.1](https://www.unicode.org/reports/tr44/#General_Category_Values)
+- CLDR 48.2: [`cldr-misc-full` 48.2.0](https://www.npmjs.com/package/cldr-misc-full); [UAX #44 section 5.7.1](https://www.unicode.org/reports/tr44/#General_Category_Values)
 - The Unicode Standard: [16.0, chapter 6](https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-6/); [3.0, chapter 6](https://www.unicode.org/versions/Unicode3.0.0/ch06.pdf); [2.0, chapter 6](https://www.unicode.org/versions/Unicode2.0.0/ch06.pdf)
 - German: [Duden, Anführungszeichen](https://www.duden.de/sprachwissen/rechtschreibregeln/anfuehrungszeichen); [Typolexikon](https://www.typolexikon.de/franzoesische-anfuehrungszeichen/)
 - Finnish: [Kielitoimisto, Lainausmerkit](https://kielitoimistonohjepankki.fi/ohje/lainausmerkit/); [Puolilainausmerkki](https://kielitoimistonohjepankki.fi/ohje/puolilainausmerkki/)
 - Swedish: [Isof, question 24612](https://frageladan.isof.se/faqs/24612); [Språkbruk, mellanrum](https://sprakbruk.fi/-/anvandningen-av-mellanrum-i-skriven-text/)
-- Danish: [Retskrivningsordbogen §58](https://ro.dsn.dk/?paragraf=58&stykke=3&type=rulesearch)
-- French: [Bureau de la traduction §7.2.5](https://www.btb.termiumplus.gc.ca/redac-chap?lang=fra&lettr=chapsect7&info0=7.2.5) and [§7.3](https://www.btb.termiumplus.gc.ca/redac-chap?lang=fra&lettr=chapsect7&info0=7.3); [OQLF, citation longue](https://vitrinelinguistique.oqlf.gouv.qc.ca/23206/la-redaction-et-la-communication/bibliographie-et-citations/citations/citation-longue); [OQLF, guillemets itératifs](https://vitrinelinguistique.oqlf.gouv.qc.ca/23362/la-ponctuation/guillemets/guillemets-iteratifs)
+- Danish: [Retskrivningsordbogen section 58](https://ro.dsn.dk/?paragraf=58&stykke=3&type=rulesearch)
+- French: [Bureau de la traduction section 7.2.5](https://www.btb.termiumplus.gc.ca/redac-chap?lang=fra&lettr=chapsect7&info0=7.2.5) and [section 7.3](https://www.btb.termiumplus.gc.ca/redac-chap?lang=fra&lettr=chapsect7&info0=7.3); [OQLF, citation longue](https://vitrinelinguistique.oqlf.gouv.qc.ca/23206/la-redaction-et-la-communication/bibliographie-et-citations/citations/citation-longue); [OQLF, guillemets itératifs](https://vitrinelinguistique.oqlf.gouv.qc.ca/23362/la-ponctuation/guillemets/guillemets-iteratifs)
 - Greek `‟`: [Nick Nicholas, Greek punctuation](https://www.opoudjis.net/unicode/punctuation.html)
 - Italian scans: [De Amicis 1900](https://it.wikisource.org/wiki/Pagina:De_Amicis_-_Il_romanzo_d%27un_maestro,_Treves,_1900.djvu/197); [Belli 1886](https://it.wikisource.org/wiki/Pagina:Sonetti_romaneschi_I.djvu/380); [Pascoli 1923](https://it.wikisource.org/wiki/Pagina:Pascoli_-_Traduzioni_e_riduzioni,_1923.djvu/37); [Straparola 1899](https://it.wikisource.org/wiki/Pagina:Straparola_-_Le_piacevoli_notti_I.djvu/330)
 - German transcription: [*Die Gartenlaube* 1888, p. 309](https://de.wikisource.org/wiki/Seite:Die_Gartenlaube_(1888)_309.jpg)

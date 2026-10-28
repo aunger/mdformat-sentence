@@ -29,22 +29,22 @@ CHANGES_AST = False
 
 
 def update_mdit(mdit: MarkdownIt) -> None:
-    """Do nothing: the plugin adds no syntax (§2)."""
+    """Do nothing: the plugin adds no syntax (section 2)."""
 
 
 def add_cli_argument_group(group: argparse._ArgumentGroup) -> None:
-    """Add this plugin's flags (§2.4); §4 defines them."""
+    """Add this plugin's flags (section 2.4); section 4 defines them."""
 
 
 def _render_inline(node: RenderTreeNode, context: RenderContext) -> str:
-    """The `inline` renderer of §2.2."""
+    """The `inline` renderer of section 2.2."""
     if node.parent is None or node.parent.type != "paragraph":
         return DEFAULT_RENDERERS["inline"](node, context)
     context.env[_RAN] = True
     if not context.do_wrap:
-        # Inert under `--wrap keep`, with no recorder installed (§2.2).
+        # Inert under `--wrap keep`, with no recorder installed (section 2.2).
         return DEFAULT_RENDERERS["inline"](node, context)
-    # The node is rendered once, and recorded as it renders (§3.1).
+    # The node is rendered once, and recorded as it renders (section 3.1).
     records: dict[int, str] = {}
 
     def record(rendered: str, child: RenderTreeNode, _: RenderContext) -> str:
@@ -62,8 +62,8 @@ def _render_inline(node: RenderTreeNode, context: RenderContext) -> str:
 
 
 def _canary(text: str, node: RenderTreeNode, context: RenderContext) -> str:
-    """Once per render pass, report a lost `inline` slot (§2.2), or warn
-    that `--extensions` named the plugin under `--wrap keep` (§2.5).
+    """Once per render pass, report a lost `inline` slot (section 2.2), or warn
+    that `--extensions` named the plugin under `--wrap keep` (section 2.5).
 
     Every read degrades to silence or a nameless message rather than
     raising.

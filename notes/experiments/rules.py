@@ -2,7 +2,7 @@
 there: sentence end (sembr#4), clause punctuation (sembr#5), hyperlink or
 inline-markup boundary (sembr#10, sembr#11), or none of the above.
 
-Produces the table in DESIGN.md 5.2. Breaks are classified by first match, so
+Produces the table in DESIGN.md section 5.2. Breaks are classified by first match, so
 the rows are disjoint by construction; the count after the table says how many
 of them had a second claim on them. The last row is every break with no
 punctuation and no markup at it, of which sembr#6's dependent clauses are only a
@@ -11,7 +11,7 @@ part, so no sembr#N applies to it.
 The scope is every paragraph, as markdown-it parses them (_corpus.py); pass
 --top-level for the paragraphs outside lists and the blockquote only.
 
-It also counts what a naive sembr#5 would do, for DESIGN.md 5.1: every clause
+It also counts what a naive sembr#5 would do, for DESIGN.md section 5.1: every clause
 mark followed by whitespace, split by whether the author broke the line there.
 Marks at a line end are the breaks a sembr#5 would find; marks mid-line are
 positions it would break at where the author did not.

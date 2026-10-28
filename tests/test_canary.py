@@ -1,4 +1,4 @@
-"""The root canary of §2.2."""
+"""The root canary of section 2.2."""
 
 import logging
 import types
@@ -39,7 +39,7 @@ def render(md, wrap, extensions):
 def test_reports_a_lost_slot_once_per_render_pass(owner, caplog):
     with caplog.at_level(logging.WARNING, logger="mdformat"):
         render(PARAGRAPHS, "no", ["owner", "sentence"])
-    # `mdformat.text` renders twice when wrapping (§2.3).
+    # `mdformat.text` renders twice when wrapping (section 2.3).
     assert canary_messages(caplog) == [
         "mdformat-sentence did not run: plugin 'owner' owns the inline renderer"
     ] * 2

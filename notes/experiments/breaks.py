@@ -1,7 +1,7 @@
 """Measures what fraction of real sembr line breaks carry no
 punctuation at all, and how many of those a break-word list could recover.
 
-Produces the unpunctuated share and the break-word figures in DESIGN.md 5.2.
+Produces the unpunctuated share and the break-word figures in DESIGN.md section 5.2.
 The scope is every paragraph, as markdown-it parses them (_corpus.py); pass
 --top-level for the paragraphs outside lists and the blockquote only.
 
