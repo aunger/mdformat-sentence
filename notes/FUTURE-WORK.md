@@ -55,6 +55,13 @@ It cannot see parse-level traps such as `[^x]:` and `*[HTML]:`, which `paragraph
 
 **Intention.** Use it as the oracle for section 6.2's source-equality row first, and consider it at run time only after it has been run against plugins that own `paragraph`.
 
+### mdformat-mkdocs block openers under a broad `lowercase_names`
+
+**Observed.** Section 3.5's line-start check refuses what mdformat and the gate's co-plugins escape, and the definitions they parse, but not mdformat-mkdocs's block openers, such as a caption's `///` and an mkdocstrings injection's `:::`, which interrupt a paragraph unescaped (`quirks-mdformat-mkdocs.md`).
+The capital test refuses those words, so the shipped rules cannot break before one; a rules file whose `lowercase_names` passes any word, `'\S+'`, does, and with mkdocs loaded `It ended. /// caption follows.` then loses `follows.`.
+
+**Intention.** Settle it when the rules files load (M4) and the gate runs user-shaped rules with mkdocs (M5): either list mkdocs's block openers among the line-start entries, after finding which of them can interrupt a paragraph, or keep `lowercase_names` from passing a word with no letter in it.
+
 ## Detection
 
 ### More opening atoms

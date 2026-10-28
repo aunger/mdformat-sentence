@@ -195,7 +195,7 @@ def test_a_paragraph_opening_with_an_escaped_bracket_keeps_its_lines(md, monkeyp
     text doing so (section 3.5)."""
     md += "\n"
     assert plugin(md, ["mkdocs"]) == plain(md, ["mkdocs"])
-    monkeypatch.setattr(_segment.State, "math", property(lambda self: False))
+    monkeypatch.setattr(_segment, "is_math", lambda text: False)
     assert not _rendered_alike(plain(md, ["mkdocs"]), plugin(md, ["mkdocs"]), ["mkdocs"])
 
 

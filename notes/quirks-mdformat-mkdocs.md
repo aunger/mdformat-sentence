@@ -44,6 +44,13 @@ So `[ a. Then [Foo]: bar` stays one paragraph at `--wrap no`, while at `--wrap 8
 Without a guard this plugin would reach it at `--wrap no`: a break after `a.` puts `\]` on a later line, and the second pass returns `\[`, `a.` and `Then \[Foo\]` as a math block with `: bar` gone.
 Section 3.5's math safety therefore gives no break to a paragraph that opens with `\[` and holds a `\]`, with or without mkdocs.
 
+## Block openers at a line start are not escaped
+
+**Filing candidate.**
+*Verified* 2026-10-28, mkdocs alone (`experiments/mkdocsblocks.py`).
+A caption opener `///` or an mkdocstrings injection `:::` that mkdocs's own word wrap puts at the start of a paragraph line is left as it is, and it interrupts the paragraph: `It ended. /// caption follows.` at `--wrap 12` comes back as a caption block, and the render changes.
+This plugin's capital test refuses both, so only a broad `lowercase_names` pattern could let a break put one at a line start; `FUTURE-WORK.md` records the open question.
+
 ## Filler words in re-wrapped list items
 
 **Compatibility risk.** *Verified* (`experiments/seam_mkdocs.py`).

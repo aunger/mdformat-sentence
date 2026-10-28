@@ -6,13 +6,14 @@ Section numbers refer to `DESIGN.md`.
 from __future__ import annotations
 
 from bisect import bisect_right
-from itertools import chain
+from itertools import chain, islice
 import re
 from typing import TYPE_CHECKING
 
 from markdown_it.rules_block.html_block import HTML_SEQUENCES
 
 from mdformat_sentence import _ucd
+from mdformat_sentence._verdicts import NO
 
 if TYPE_CHECKING:
     from mdformat_sentence._segment import Piece, State
@@ -41,9 +42,6 @@ _SHAPE_OPENS = frozenset("«‹")
 _SHAPE_CLOSES = frozenset("»›”’")
 
 _FOOTNOTES = re.compile(r"(?:\[\^[^\]\s]+\])+\Z")
-
-# The decision list's verdict that vetoes a gap.
-NO = "no"
 
 # Sentence_Break values, looked up in the vendored data and never through
 # `str.isupper`, `str.islower` or `str.isalpha`.
@@ -229,11 +227,15 @@ def _opens(segments: list[str], k: int, state: State) -> bool:
     return sentence_end(segments[k - 1], start, state) is None
 
 
+def is_math(text: str) -> bool:
+    """Math safety (section 3.5): whether the paragraph's text opens with
+    `\\[` and holds a `\\]`, so that no gap in it breaks."""
+    return text.startswith("\\[") and "\\]" in text
+
+
 def is_safe(segments: list[str], at: int, state: State) -> bool:
-    """Edge safety, line-start safety and math safety (section 3.5), for a
-    newline before `segments[at]`."""
-    if state.math:
-        return False
+    """Edge safety and line-start safety (section 3.5), for a newline before
+    `segments[at]`."""
     before, after = segments[at - 1], segments[at]
     if not before[-1:].strip() or not after[:1].strip():
         return False
@@ -274,7 +276,7 @@ def _escaped_at_line_start(segments: list[str], at: int) -> bool:
         return True
     # A table's delimiter row, which mdformat-gfm escapes.
     dash = False
-    for segment in segments[at:]:
+    for segment in islice(segments, at, None):
         if not segment or any(c not in "|-:" for c in segment):
             break
         dash = dash or "-" in segment
@@ -286,7 +288,7 @@ def _escaped_at_line_start(segments: list[str], at: int) -> bool:
         # A label can hold spaces, so the line is read as it would come
         # out, as far as the bracket that closes it.
         label = []
-        for segment in segments[at:]:
+        for segment in islice(segments, at, None):
             label.append(segment)
             if "]" in segment or "\n" in segment:
                 break

@@ -849,9 +849,9 @@ A plugin with definition syntax of its own is not covered until it is added here
 Neither mdformat nor these plugins escape their own definitions at a line start: plain mdformat with mdformat-footnote or mdformat-mkdocs damages the same inputs when its own word wrap puts the definition there (`notes/quirks-mdformat-footnote.md`, `notes/quirks-mdformat-mkdocs.md`).
 
 **Math safety.**
-No gap breaks in a paragraph that opens with `\[` and holds a `\]`.
+No gap breaks in a paragraph whose text, as mdformat writes it, opens with `\[` and holds a `\]`.
 mdformat-mkdocs reads such a paragraph as display math, whole or in part, by where its `\]` falls among its lines, and formatting that reading drops text: broken after `a.`, `[ a. Then [Foo]: bar` would come back without `: bar`.
-Any break can move a `\]` to another line, so the paragraph keeps the lines mdformat gives it, which costs breaks only in a paragraph whose source opens with an escaped bracket.
+Any break can move a `\]` to another line, so the paragraph keeps the lines mdformat gives it, which costs breaks only in a paragraph that mdformat writes with an escaped bracket first, as it writes an unclosed `[`.
 Only a paragraph's first line can open the block, because it cannot interrupt a paragraph, so a `\[` opening a later line needs nothing.
 Plain mdformat with mdformat-mkdocs deletes the same text when its own word wrap moves the `\]`, and the check applies with or without mkdocs, for the reason the co-plugin escapes above do.
 Verified against mdformat 1.0.0 and mdformat-mkdocs 5.3.0, and `notes/experiments/mkdocsmath.py` reproduces it.

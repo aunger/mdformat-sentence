@@ -9,11 +9,10 @@ from __future__ import annotations
 import re
 from typing import Protocol
 
-from mdformat_sentence._detect import NBSP, NO, OPENERS
+from mdformat_sentence._detect import NBSP, OPENERS
+from mdformat_sentence._verdicts import ALLOW, NO
 
 __all__ = ["ALLOW", "NO", "STUB", "Rules"]
-
-ALLOW = "allow"
 
 
 class Rules(Protocol):
