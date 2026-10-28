@@ -82,13 +82,15 @@ print(repr(mdformat.text("A *\nb\n", options={"wrap": "keep"}, extensions=set())
 # 'A \\*\nb\n'
 ```
 
-The cause was not investigated.
+The cause is *read* from source: `escape_asterisk_emphasis` in `mdformat/renderer/_util.py` escapes every literal `*` unless the characters on both sides of it are whitespace, and it reads the edge of a text leaf, which a line break is, as neither.
+`escape_underscore_emphasis` does the same to a lone `_`.
 
 mdformat's `tests/test_commonmark_spec.py` asserts that a second pass changes nothing (`md_new == md_2nd_pass`), but it parametrizes `wrap` over `["keep", "no", 60]` only (*read* at the same commit), so no test reaches a width this narrow.
 
 This plugin's output does not depend on width (section 2.5), so it never asks mdformat to wrap at 5.
-The trigger is a bare `*` ending a line, and section 3.5 guards only a `*` that would start one.
-No sentence-only output was found that reaches it: a `*` attached to a terminator is escaped on pass 1, `Done.* Next` giving `Done.\* Next` (*verified*).
+A `*` attached to a terminator is escaped on pass 1, `Done.* Next` giving `Done.\* Next` (*verified*), so it cannot reach this.
+A lone `*` or `_` can, since section 3.3 places a run of lone marks on either side of a newline: `It ended. * Then more.` broken after `ended.` came back with `\*` opening its second line, a source change that renders the same (*verified* 2026-10-28, `experiments/edgeescape.py`).
+Section 3.5's edge safety therefore refuses a break beside a literal `*` or `_`.
 If section 6.2's "idempotency vs baseline" row ever fails, check this entry before the plugin.
 
 ## The CLI and TOML disagree on `wrap = 1`

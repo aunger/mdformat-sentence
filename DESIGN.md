@@ -735,7 +735,7 @@ The principles that follow are structural, and none is about any one language:
   The marks decide only where in the run the newline goes: before the first mark read as opening, or after the last mark when none is.
   A run that ends its paragraph part has no word after it, so no sentence opens there, it never breaks, and the decision list is not consulted.
   A closing mark after an opening one therefore follows it onto the next line, as in `Il a dit. « » Puis il part.`, which breaks before `«`.
-  **Section 3.5's two safety checks are tested where that newline lands**, between the segments on either side of it, which within a run are marks rather than the words that decided the run.
+  **Section 3.5's edge and line-start checks are tested where that newline lands**, between the segments on either side of it, which within a run are marks rather than the words that decided the run.
   When that position is unsafe the whole run is pinned, so `It ended. " ~~~ Then more.`, whose newline would open a line with `~~~`, and `Il a dit.` then a no-break space standing alone between two ordinary spaces and then `Puis il part.`, whose newline would end a line in a character `paragraph()` strips, both stay on one line.
   French spaces its marks off, `« Ceci est important. »` with ordinary spaces, which puts each mark in a segment of its own, and `Il a dit. « Ceci est important. » Puis il part.` breaks after `dit.` and after `»`, with each mark on the side it belongs to.
   That happens only when the space typed is an ordinary one; with the no-break space French typography prescribes, the mark stays in its word's segment and the transparency of no-break spaces above handles it.
@@ -794,31 +794,38 @@ The same experiment *without* pinning produces 78- and 61-character lines at `--
 
 Idempotency across mdformat's two-pass render follows from the same construction.
 On the second pass the inserted `\n` re-parses as a softbreak and the literal spaces re-collapse, so every gap is a `\x00` again and the identical content re-derives the identical breaks.
-That holds only because no break decision consults a width, and because section 3.5's line-start check guarantees mdformat adds no escape on the first pass that would change the second pass's markdown-it tokens.
+That holds only because no break decision consults a width, and because section 3.5's checks guarantee that the first pass adds no escape and opens no block that would change the second pass's markdown-it tokens.
 
 ### 3.5 Safety checks
 
-Two kinds of gap never break, whatever section 3.3 decides.
-Both are about the line a break would create rather than about sentences, which is why they live here, and no rule, exemption or option reaches either.
-**Both are tested where the newline would actually go.**
+Three kinds of gap never break, whatever section 3.3 decides.
+All three are about the lines a break would create rather than about sentences, which is why they live here, and no rule, exemption or option reaches any of them.
+**Edge and line-start safety are tested where the newline would actually go.**
 At an ordinary gap that is between the two words; within a run of lone marks it is wherever the marks' roles put it (section 3.3), and the segments on either side of it are marks, which is where these checks look, and an unsafe position pins the whole run.
-Neither kind of damage is visible to mdformat's own validation: `is_md_equal` compares HTML with whitespace collapsed, so it cannot see a deleted space or a repair that renders the same.
+Neither of their kinds of damage is visible to mdformat's own validation: `is_md_equal` compares HTML with whitespace collapsed, so it cannot see a deleted space or a repair that renders the same.
 
 **Edge safety.**
 A gap is ineligible when the last character of the segment the newline would follow, or the first character of the segment it would precede, is whitespace that `str.strip()` would delete.
 Test with `.strip()`, not with a character list.
 mdformat's `paragraph()` strips each line after wrapping, so a break at such a gap silently deletes the character, and `is_md_equal` cannot see it (above).
+It is ineligible too when that character is a literal `*` or `_`, one a text leaf holds, which a lone `*` or `_` always is (section 3.3).
+mdformat's `text()` escapes a literal `*` unless whitespace stands on both sides of it, and a literal `_` unless whitespace does or a character that is neither whitespace nor punctuation does, and it counts the end of a text leaf as neither kind of neighbor.
+A newline ends a text leaf on the second pass of section 2.3, so the mark beside it is escaped there, and `It ended. * Then more.` broken after `ended.` would come back with `\*` opening its second line, a backslash `is_md_equal` cannot see either.
+Emphasis markup is not held by a text leaf, so `*Then* it went.` after a sentence end breaks as usual.
+Verified against mdformat 1.0.0, and `notes/experiments/edgeescape.py` reproduces it.
 
 The check is small because of section 3.4: only sentence gaps can break at all, and every other gap is already pinned.
 An ineligible sentence gap is simply pinned like its neighbors.
 
 **Line-start safety.**
 A gap is ineligible when the line the newline would open is one mdformat 1.0.0's `paragraph()` escapes or indents: it starts with `#{1,6}` followed by a space, a tab or the end of the line, with any `>`, with `-`, `*` or `+` followed by the same, with `[0-9]+` then `.` or `)` followed by the same, or with an HTML block opener that can interrupt a paragraph; or it is three or more of one of `*`, `-` and `_` with nothing else but spaces and tabs, or only `-` or only `=`.
-It is ineligible too before two things mdformat does not escape but that still do damage: a run of three or more tildes, and a task box `[ ]`, `[x]` or `[X]`.
+It is ineligible too before four things mdformat does not escape but that still do damage: a run of three or more tildes, a task box `[ ]`, `[x]` or `[X]`, a definition-list marker, `:` or `~` followed by a space, and a table's delimiter row, a line made only of `|`, `-`, `:` and spaces with a `-` in it.
 Section 3.3's capital test refuses `#`, `>`, `-`, `+` and `=` on its own, but this check still applies to them, because a broad `lowercase_names` pattern (section 4) can pass `-`, `#` or `>`.
-For an enumerator, an HTML opener, which opens a sentence as raw HTML does (section 3.3), and the two entries mdformat does not escape, it is the only guard.
-The task box is the one a co-plugin escapes rather than mdformat: mdformat-gfm's `paragraph` postprocessor turns a line-opening `[X]` into `\[X\]`, whichever order the two plugins load in, so `It is done. [X] marks a finished task.` stays on one line.
-The entry applies with or without gfm, because a missed break costs less than a check that depends on what else is installed; `notes/experiments/seam.py` reproduces the escape.
+For an enumerator, an HTML opener, which opens a sentence as raw HTML does (section 3.3), and the four entries mdformat does not escape, it is the only guard.
+The last three are the ones a co-plugin escapes rather than mdformat.
+mdformat-gfm's `paragraph` postprocessors turn a line-opening `[X]` into `\[X\]`, whichever order the two plugins load in, so `It is done. [X] marks a finished task.` stays on one line, and they escape the first `-` of a delimiter row.
+mdformat-mkdocs's turns a line-opening `~` and a space into `\~`, and `:` and a space likewise, so `It ended. " ~ Then more.` stays on one line too.
+Each of these entries applies with or without its plugin, because a missed break costs less than a check that depends on what else is installed; `notes/experiments/seam.py` reproduces gfm's task-box escape, and `notes/experiments/edgeescape.py` mkdocs's escape and gfm's delimiter-row escape.
 
 The HTML entry is the one it is easy to omit, because mdformat's remedy for it is not an escape character.
 `paragraph()` prefixes four spaces to any line matching an `HTML_SEQUENCES` opener that can interrupt a paragraph, so `Do not use it. <div> is a block element.` broken at the sentence end comes back as `'Do not use it.\n    <div> is a block element.\n'`.
@@ -840,6 +847,14 @@ The `(label)=` entry matches any line that begins with one, so `Sentence one. (L
 **The list is closed over the co-plugins the gate loads (section 6.2).**
 A plugin with definition syntax of its own is not covered until it is added here, and the source-equality row of section 6.2 is the only detector for the rest, because some of these escapes, `\(Label)=`, render the same.
 Neither mdformat nor these plugins escape their own definitions at a line start: plain mdformat with mdformat-footnote or mdformat-mkdocs damages the same inputs when its own word wrap puts the definition there (`notes/quirks-mdformat-footnote.md`, `notes/quirks-mdformat-mkdocs.md`).
+
+**Math safety.**
+No gap breaks in a paragraph whose text, as mdformat writes it, opens with `\[` and holds a `\]`.
+mdformat-mkdocs reads such a paragraph as display math, whole or in part, by where its `\]` falls among its lines, and formatting that reading drops text: broken after `a.`, `[ a. Then [Foo]: bar` would come back without `: bar`.
+Any break can move a `\]` to another line, so the paragraph keeps the lines mdformat gives it, which costs breaks only in a paragraph that mdformat writes with an escaped bracket first, as it writes an unclosed `[`.
+Only a paragraph's first line can open the block, because it cannot interrupt a paragraph, so a `\[` opening a later line needs nothing.
+Plain mdformat with mdformat-mkdocs deletes the same text when its own word wrap moves the `\]`, and the check applies with or without mkdocs, for the reason the co-plugin escapes above do.
+Verified against mdformat 1.0.0 and mdformat-mkdocs 5.3.0, and `notes/experiments/mkdocsmath.py` reproduces it.
 
 ### 3.6 Failure policy
 
@@ -1241,13 +1256,15 @@ Nothing in `_api.py` or `_cli.py` wraps plugin code in `try`/`except`, so a malf
 
 ### 4.1 Options not provided
 
-- **Any width, column or line-length option.** Section 1.
+- **Any width, column or line-length option.**
+  Section 1.
 - **`avoid_escapes`.**
   Unnecessary: section 3.5's line-start check is unconditional, so no escape and no four-space indent is ever added for a construct it lists, and an unlisted co-plugin's definition syntax is the one exception it leaves (section 3.5).
 - **A "honor `--wrap`" mode** that would let mdformat wrap inside a sentence.
   That is a coherent product, and GNU Emacs's `fill-paragraph-semlf` is exactly it, but it reintroduces geometric line breaks and therefore forfeits section 1's property, which is the only reason this plugin exists.
   Anyone who wants it wants a different tool.
-- **Clause breaking, break words, short-line merging or a minimum line length.** Section 1.
+- **Clause breaking, break words, short-line merging or a minimum line length.**
+  Section 1.
 - **Reading the document's language from front matter.**
   Reachable, and declined.
   With a front-matter plugin named in `--extensions` a `lang:` key survives as a node the plugin reaches from its hook point by walking to the root, and hand-scanning for it needs no YAML parser and no dependency.

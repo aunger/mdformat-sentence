@@ -25,6 +25,32 @@ The cause is *read* from source: `_fix_links_with_spaced_urls` in `mdformat_mkdo
 `Sentence one here. *[HTML]: Hyper Text Markup Language is the term.` at `--wrap 18` or `20` comes back with `*[HTML]:` at a line start, unescaped, split into separate paragraphs, and not render-equal; at `--wrap 10` and `15` mdformat escapes it to `\*\[HTML\]:`.
 Section 3.5 refuses a break that would put `*[label]:` at a line start.
 
+## A definition-list marker at a line start is escaped
+
+**Compatibility risk.**
+*Verified* 2026-10-28, mkdocs alone (`experiments/edgeescape.py`).
+mdformat-mkdocs's `paragraph` postprocessor escapes `~` or `:` followed by a space at the start of any line of a paragraph, so `It ended. " ~ Then more.` at `--wrap 12` comes back with `\~` opening its second line, where plain mdformat leaves it alone.
+The render is the same, so only the source changes.
+The cause is *read* from source: `escape_deflist` in `mdformat_mkdocs/mdit_plugins/_material_deflist.py` matches `^[:~] ` on each line.
+A lone `~` can open a line this plugin creates (section 3.3), so section 3.5's line-start check refuses a break before either marker, with or without mkdocs.
+
+## A paragraph opening with `\[` becomes math once `\]` is on a later line
+
+**Filing candidate.**
+*Verified* 2026-10-28, mkdocs alone (`experiments/mkdocsmath.py`).
+mdformat-mkdocs reads a paragraph whose first line opens with `\[` as a display-math block when a later line holds its first `\]`, and drops whatever follows that `\]`.
+Its guard for escaped brackets, `_ESCAPED_BRACKET_RE` in `mdformat_mkdocs/mdit_plugins/_pymd_arithmatex.py`, matches only when the `\]` is on the opening line (*read*).
+So `[ a. Then [Foo]: bar` stays one paragraph at `--wrap no`, while at `--wrap 8` plain mkdocs puts `bar` in a paragraph of its own, and the render changes.
+Without a guard this plugin would reach it at `--wrap no`: a break after `a.` puts `\]` on a later line, and the second pass returns `\[`, `a.` and `Then \[Foo\]` as a math block with `: bar` gone.
+Section 3.5's math safety therefore gives no break to a paragraph that opens with `\[` and holds a `\]`, with or without mkdocs.
+
+## Block openers at a line start are not escaped
+
+**Filing candidate.**
+*Verified* 2026-10-28, mkdocs alone (`experiments/mkdocsblocks.py`).
+A caption opener `///` or an mkdocstrings injection `:::` that mkdocs's own word wrap puts at the start of a paragraph line is left as it is, and it interrupts the paragraph: `It ended. /// caption follows.` at `--wrap 12` comes back as a caption block, and the render changes.
+This plugin's capital test refuses both, so only a broad `lowercase_names` pattern could let a break put one at a line start; `FUTURE-WORK.md` records the open question.
+
 ## Filler words in re-wrapped list items
 
 **Compatibility risk.** *Verified* (`experiments/seam_mkdocs.py`).
