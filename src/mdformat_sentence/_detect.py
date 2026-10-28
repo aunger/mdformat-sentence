@@ -84,6 +84,7 @@ _HTML_OPENERS = [opener for opener, _, interrupts in HTML_SEQUENCES if interrupt
 # The definitions of mdformat-footnote, mdformat-mkdocs and mdformat-myst,
 # escaped or not (section 3.5).
 _DEFINITION = re.compile(r"\\?\*?\\?\[[^\]\n]*?\\?\]:|\\?\([^\s)]+\)=")
+_LABEL = re.compile(r"\\?\*?\\?\[")
 
 
 def sentence_break_value(char: str) -> str | None:
@@ -177,6 +178,8 @@ def opens_sentence(segment: str, start: int, state: State) -> bool:
         if atom is not None and atom.start == start + j and segment[j] == "<":
             # An autolink; link text is words, read like any other.
             return True
+        if atom is not None and _opaque_in_link(segment, j):
+            return True
         if segment[j] not in OPENERS and segment[j] not in NBSP:
             break
         j += 1
@@ -189,6 +192,15 @@ def opens_sentence(segment: str, start: int, state: State) -> bool:
     if value == LOWER and _camel(segment, j):
         return True
     return state.rules.lowercase_name(segment)
+
+
+def _opaque_in_link(segment: str, j: int) -> bool:
+    """Whether a code span or an image starts at `j`, inside a link's text,
+    which the link's atom holds whole: an unescaped backtick or `![`."""
+    if segment[j] != "`" and segment[j : j + 2] != "![":
+        return False
+    backslashes = len(segment[:j]) - len(segment[:j].rstrip("\\"))
+    return backslashes % 2 == 0
 
 
 def _camel(segment: str, j: int) -> bool:
@@ -218,8 +230,10 @@ def _opens(segments: list[str], k: int, state: State) -> bool:
 
 
 def is_safe(segments: list[str], at: int, state: State) -> bool:
-    """Edge safety and line-start safety (section 3.5), for a newline before
-    `segments[at]`."""
+    """Edge safety, line-start safety and math safety (section 3.5), for a
+    newline before `segments[at]`."""
+    if state.math:
+        return False
     before, after = segments[at - 1], segments[at]
     if not before[-1:].strip() or not after[:1].strip():
         return False
@@ -258,10 +272,25 @@ def _escaped_at_line_start(segments: list[str], at: int) -> bool:
         # `_`: edge safety refuses a literal `*` or `_` at a line start, and
         # `-` followed by anything is a list marker.
         return True
-    if first[:1] in "\\*[(":
-        # A label can hold spaces, so the line is read as it would come out.
-        line = " ".join(segments[at:]).split("\n", 1)[0]
-        return _DEFINITION.match(line) is not None
+    # A table's delimiter row, which mdformat-gfm escapes.
+    dash = False
+    for segment in segments[at:]:
+        if not segment or any(c not in "|-:" for c in segment):
+            break
+        dash = dash or "-" in segment
+        if dash:
+            return True
+    if _DEFINITION.match(first):
+        return True
+    if _LABEL.match(first):
+        # A label can hold spaces, so the line is read as it would come
+        # out, as far as the bracket that closes it.
+        label = []
+        for segment in segments[at:]:
+            label.append(segment)
+            if "]" in segment or "\n" in segment:
+                break
+        return _DEFINITION.match(" ".join(label).split("\n", 1)[0]) is not None
     return False
 
 

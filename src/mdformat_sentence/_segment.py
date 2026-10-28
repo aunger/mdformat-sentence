@@ -104,6 +104,9 @@ class State(NamedTuple):
     rules: Rules
     # Where each decided run's newline lands, by its left word (`_detect`)
     landings: dict[int, int | None]
+    # Whether the paragraph opens with `\[` and holds a `\]`, so that no
+    # gap in it breaks (section 3.5)
+    math: bool
 
 
 def locate(
@@ -188,8 +191,9 @@ def _atom_test(pieces: list[Piece]) -> Callable[[int], bool]:
 
 def scan(text: str, part: ParagraphPart, rules: Rules = STUB) -> State:
     """Section 3.3's facts, computed once per paragraph part: where its
-    pieces start, the bracket depth at each gap (section 3.2), and which
-    segments are words."""
+    pieces start, the bracket depth at each gap (section 3.2), which
+    segments are words, and whether mdformat-mkdocs could read the
+    paragraph as math (section 3.5)."""
     first, last = part.span
     gaps = [s + len(seg) for s, seg in zip(part.starts, part.segments)][:-1]
     depth = [0] * len(gaps)
@@ -199,7 +203,8 @@ def scan(text: str, part: ParagraphPart, rules: Rules = STUB) -> State:
             depth[i] += 1
     starts = [p.start for p in part.pieces]
     words = [i for i, segment in enumerate(part.segments) if not is_lone(segment)]
-    return State(part, depth, starts, words, rules, {})
+    math = text.startswith("\\[") and "\\]" in text
+    return State(part, depth, starts, words, rules, {}, math)
 
 
 def _pairs(text: str, prose: list[Piece], first: int, last: int):

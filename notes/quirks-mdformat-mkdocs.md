@@ -37,12 +37,12 @@ A lone `~` can open a line this plugin creates (section 3.3), so section 3.5's l
 ## A paragraph opening with `\[` becomes math once `\]` is on a later line
 
 **Filing candidate.**
-*Verified* 2026-10-28, mkdocs alone.
-mdformat-mkdocs reads a paragraph whose first line opens with `\[` as a display-math block when a later line holds `\]`, and drops whatever follows that `\]`.
+*Verified* 2026-10-28, mkdocs alone (`experiments/mkdocsmath.py`).
+mdformat-mkdocs reads a paragraph whose first line opens with `\[` as a display-math block when a later line holds its first `\]`, and drops whatever follows that `\]`.
 Its guard for escaped brackets, `_ESCAPED_BRACKET_RE` in `mdformat_mkdocs/mdit_plugins/_pymd_arithmatex.py`, matches only when the `\]` is on the opening line (*read*).
 So `[ a. Then [Foo]: bar` stays one paragraph at `--wrap no`, while at `--wrap 8` plain mkdocs puts `bar` in a paragraph of its own, and the render changes.
-This plugin reaches it at `--wrap no`: a break after `a.` puts `\]` on a later line, and the second pass returns `\[`, `a.` and `Then \[Foo\]` as a math block with `: bar` gone.
-No check in section 3.5 guards it yet, because the damage does not show at the line the newline opens; the gate's runs with mkdocs (section 6.2) are where a guard would be decided.
+Without a guard this plugin would reach it at `--wrap no`: a break after `a.` puts `\]` on a later line, and the second pass returns `\[`, `a.` and `Then \[Foo\]` as a math block with `: bar` gone.
+Section 3.5's math safety therefore gives no break to a paragraph that opens with `\[` and holds a `\]`, with or without mkdocs.
 
 ## Filler words in re-wrapped list items
 

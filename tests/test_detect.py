@@ -8,11 +8,12 @@ from __future__ import annotations
 import re
 
 import mdformat
+from mdformat._util import is_md_equal
 import pytest
 
 from _detection import DETECTION
 from _gate import orders, run
-from mdformat_sentence import _detect, _plugin
+from mdformat_sentence import _detect, _plugin, _segment
 from mdformat_sentence._rules import ALLOW, NO, STUB
 
 
@@ -148,22 +149,65 @@ def test_line_start_safety(rules, monkeypatch, md):
     assert rules(everything, md) != out
 
 
+def _rendered_alike(md, out, extensions):
+    return is_md_equal(md, out, options={"wrap": "no"}, extensions=list(extensions))
+
+
 @pytest.mark.parametrize(
-    "md, extensions",
+    "md",
     [
-        ("Sentence one. *[HTML]: Hyper Text Markup Language is the term.", ("mkdocs",)),
-        ("Sentence one. *[Hyper Text]: is a phrase defined here.", ("mkdocs",)),
-        ("Sentence one. [Foo]: Not a definition either.", ()),
-        ("It ended. (Label)= Then more.", ()),
+        "Sentence one. *[HTML]: Hyper Text Markup Language is the term.",
+        "Sentence one. *[Hyper Text]: is a phrase defined here.",
     ],
 )
-def test_co_plugin_definitions_are_refused_at_a_line_start(md, extensions, monkeypatch):
-    """Only the definition veto refuses these; without it, mkdocs reads an
-    abbreviation definition where the source had text (section 3.5)."""
+def test_the_definition_veto_keeps_mkdocs_from_reading_a_definition(md, monkeypatch):
+    """Without the veto, mkdocs reads an abbreviation definition where the
+    source had text, and the render changes (section 3.5)."""
     md += "\n"
-    assert plugin(md, extensions) == plain(md, extensions)
+    assert plugin(md, ["mkdocs"]) == plain(md, ["mkdocs"])
     monkeypatch.setattr(_detect, "_DEFINITION", re.compile("(?!)"))
-    assert plugin(md, extensions) != plain(md, extensions)
+    assert not _rendered_alike(md, plugin(md, ["mkdocs"]), ["mkdocs"])
+
+
+@pytest.mark.parametrize(
+    "md",
+    ["Sentence one. [Foo]: Not a definition either.", "It ended. (Label)= Then more."],
+)
+def test_the_definition_veto_applies_without_the_co_plugin(md, monkeypatch):
+    """With no co-plugin loaded these breaks would render the same; the veto
+    refuses them anyway, and nothing else does."""
+    md += "\n"
+    assert plugin(md) == plain(md)
+    monkeypatch.setattr(_detect, "_DEFINITION", re.compile("(?!)"))
+    assert "\n" in plugin(md)[:-1]
+
+
+@pytest.mark.parametrize(
+    "md",
+    [
+        "[ a. Then [Foo]: bar",
+        "\\[Foo Dr. Yes! [ ] [Foo]: \\ Yes! 1. Then more.",
+    ],
+)
+def test_a_paragraph_opening_with_an_escaped_bracket_keeps_its_lines(md, monkeypatch):
+    """mdformat-mkdocs reads a paragraph opening with `\\[` as display math,
+    whole or in part, by where its `\\]` falls among its lines, and drops
+    text doing so (section 3.5)."""
+    md += "\n"
+    assert plugin(md, ["mkdocs"]) == plain(md, ["mkdocs"])
+    monkeypatch.setattr(_segment.State, "math", property(lambda self: False))
+    assert not _rendered_alike(plain(md, ["mkdocs"]), plugin(md, ["mkdocs"]), ["mkdocs"])
+
+
+@pytest.mark.parametrize("md", ["It ended. :-:", "It ended. |-|", "It ended. | --- | :-: |"])
+def test_a_table_delimiter_row_is_refused_at_a_line_start(rules, md, monkeypatch):
+    """mdformat-gfm escapes the first `-` of a line made only of `|`, `-`, `:`
+    and spaces, which a broad `lowercase_names` pattern could open."""
+    md += "\n"
+    everything = Recorded(names=True)
+    assert rules(everything, md, ["gfm"]) == plain(md, ["gfm"])
+    monkeypatch.setattr(_detect, "_escaped_at_line_start", lambda *_: False)
+    assert rules(everything, md, ["gfm"]) != plain(md, ["gfm"])
 
 
 @pytest.mark.parametrize("extensions", [(), ("gfm",)])

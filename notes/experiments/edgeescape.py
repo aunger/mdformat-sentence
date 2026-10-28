@@ -17,8 +17,13 @@ It establishes:
      space at the start of a line, a definition-list marker, wherever the
      line break came from; plain mdformat leaves it alone. This is
      line-start safety's definition-list entry.
+  3. mdformat-gfm's `paragraph` postprocessor escapes the first `-` of a
+     line made only of `|`, `-`, `:` and spaces, a table's delimiter row;
+     plain mdformat leaves it alone. This is line-start safety's
+     delimiter-row entry.
 
-Needs mdformat 1.0.0 and, for 2, mdformat-mkdocs 5.3.0.
+Needs mdformat 1.0.0, and for 2 mdformat-mkdocs 5.3.0, for 3 mdformat-gfm
+1.0.0.
 """
 import mdformat
 from mdformat._util import is_md_equal
@@ -50,3 +55,9 @@ for md in ('It ended. " ~ Then more.\n', "It ended. a : Then more.\n"):
     for extensions in ((), ("mkdocs",)):
         out = mdformat.text(md, options={"wrap": 12}, extensions=set(extensions))
         print(f"   {'+'.join(extensions) or 'no plugin':10} --wrap 12  {md!r:30} -> {out!r}")
+
+print("\n3. A table's delimiter row opening a line\n")
+for md in ("It ended.\n:-:\n", "It ended.\n| --- | :-: |\n", "It ended.\n| a | b |\n"):
+    for extensions in ((), ("gfm",)):
+        out = fmt(md, extensions)
+        print(f"   {'+'.join(extensions) or 'no plugin':10} {md!r:30} -> {out!r}")

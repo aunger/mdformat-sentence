@@ -21,6 +21,13 @@ mdformat-openmmlab carries a copy of the same postprocessor (*read*).
 gfm's `paragraph` postprocessor turns a line-opening `[ ]`, `[x]` or `[X]` into `\[X\]`, whichever order the plugins load in, so a break before one changes the source.
 Section 3.5 refuses that break, with or without gfm.
 
+## A table's delimiter row at a line start is escaped
+
+**Compatibility risk.**
+*Verified* 2026-10-28 (`experiments/edgeescape.py` check 3).
+The tables plugin inside gfm has a `paragraph` postprocessor, `_escape_tables`, that escapes the first `-` of any line made only of `|`, `-`, `:` and spaces, so a break before `:-:` or `| --- |` changes the source.
+Only a broad `lowercase_names` pattern lets such a line open a sentence, and section 3.5 refuses that break, with or without gfm.
+
 ## A bare URL renders its source, not its child
 
 **Compatibility risk.** *Verified* (`experiments/recorder.py` check 4).

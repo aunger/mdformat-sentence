@@ -96,6 +96,13 @@ DETECTION = [
         "It ended. <em>then</em> no.\nIt ended.\n<br> Then.\nIt ended.\n`x` runs.",
     ),
     _case(
+        "a code span or an image opening a link's text opens a sentence",
+        "It ended. [`x`](u) runs. See it. [![Badge](b.png)](u) is up. "
+        "It ended. [\\`x](u) runs.",
+        "It ended.\n[`x`](u) runs.\nSee it.\n[![Badge](b.png)](u) is up.\n"
+        "It ended. [\\`x](u) runs.",
+    ),
+    _case(
         "formatted text is words",
         "It ended. [the docs](u) explain it. It ended. [The docs](u) explain it. "
         "It ended. *Then* it went. It ended. **so** it went.",
@@ -281,6 +288,12 @@ DETECTION = [
             ("HTML", "Hyper Text Markup Language is the term."),
             ("Hyper Text", "is a phrase defined here."),
         )
+    ),
+    _case(
+        "a paragraph opening with an escaped bracket",
+        "[ a. Then [Foo]: bar. Then more.",
+        "\\[ a. Then \\[Foo\\]: bar. Then more.",
+        ("mkdocs",),
     ),
     # Section 6.4's hook-point fixtures that M3 decides.
     _case(
