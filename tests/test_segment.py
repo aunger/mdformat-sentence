@@ -11,7 +11,7 @@ from mdformat.renderer import LOGGER, RenderTreeNode
 import pytest
 
 from _gate import WIDTHS, run
-from mdformat_sentence import _plugin, _segment
+from mdformat_sentence import _plugin
 from mdformat_sentence._segment import BACK_OFF, FALLBACK, locate, paragraph_parts, scan
 
 
@@ -40,7 +40,7 @@ def segments(text, pieces):
 
 
 def depths(text, pieces):
-    return [scan(text, p, pieces).depth for p in paragraph_parts(text, pieces)]
+    return [scan(text, p).depth for p in paragraph_parts(text, pieces)]
 
 
 def test_atoms_keep_their_punctuation(decided):
@@ -75,7 +75,6 @@ def test_a_run_of_wrap_points_keeps_its_length(decided):
     (part,) = paragraph_parts(text, pieces)
     for start, segment in zip(part.starts, part.segments):
         assert text[start : start + len(segment)] == segment
-    assert scan(text, part, pieces).starts == part.starts
 
 
 def test_paragraph_parts_end_at_hard_breaks_only(decided):
@@ -107,25 +106,20 @@ def test_brackets_pair_within_a_paragraph_part(decided):
     assert depths(*decided("A ( b\\\nc ) d.\n")) == [[0, 0], [0, 0]]
 
 
-def test_each_paragraph_part_is_scanned_with_its_own_pieces(monkeypatch):
-    """`decide` hands `scan` a slice of the pieces; it must see what the
-    whole list would show it."""
-    scan = _segment.scan
-    seen = []
-
-    def decide(text, pieces):
-        def checked(text, part, own):
-            assert scan(text, part, own) == scan(text, part, pieces)
-            seen.append(part)
-            return scan(text, part, own)
-
-        monkeypatch.setattr(_segment, "scan", checked)
-        return _segment.decide(text, pieces)
-
-    monkeypatch.setattr(_plugin, "decide", decide)
-    md = "A ( b\\\nc ) [d.\\\ne] `f)`.\\\nEnd *(g\\\nh)* i.\n"
-    mdformat.text(md, options={"wrap": "no"}, extensions={"sentence"})
-    assert len(seen) == 2 * 5  # two passes, five parts
+def test_each_paragraph_part_gets_its_own_pieces(decided):
+    # Atoms that end at a hard break and that open the next part.
+    text, pieces = decided("A `x)`\\\n[l](u) (b\\\nc) `d` e.\n")
+    parts = list(paragraph_parts(text, pieces))
+    assert [
+        [(p.type, text[p.start : p.end]) for p in part.pieces] for part in parts
+    ] == [
+        [("text", "A\x00"), ("code_inline", "`x)`")],
+        [("link", "[l](u)"), ("text", "\x00(b")],
+        [("text", "c)\x00"), ("code_inline", "`d`"), ("text", "\x00e.")],
+    ]
+    assert [scan(text, part).atoms for part in parts] == [
+        [p for p in part.pieces if p.atom] for part in parts
+    ]
 
 
 def test_every_gap_is_pinned():

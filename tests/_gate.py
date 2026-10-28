@@ -10,11 +10,11 @@ import re
 from typing import NamedTuple
 
 import mdformat
-from mdformat.renderer import DEFAULT_RENDERERS, LOGGER
+from mdformat.renderer import DEFAULT_RENDERERS, LOGGER, WRAP_POINT
 
 import mdformat_sentence
-from mdformat_sentence import _plugin
-from mdformat_sentence._segment import _RUN, BACK_OFF, FALLBACK
+from mdformat_sentence import _plugin, _segment
+from mdformat_sentence._segment import BACK_OFF, FALLBACK, Piece
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -24,7 +24,8 @@ WIDTHS = ("no", 20, 40, 80, 120, 1000)
 
 class Fixture(NamedTuple):
     name: str
-    md: str
+    # `None` where the file it is read from is absent (`_read`).
+    md: str | None
     plugins: tuple[str, ...] = ()
 
 
@@ -125,7 +126,6 @@ FIXTURES = [
     Fixture("sembr.md with gfm", _read("notes/corpus/sembr.md"), ("gfm",)),
     Fixture("DESIGN.md", _read("DESIGN.md"), ("gfm",)),
 ]
-FIXTURES = [f for f in FIXTURES if f.md is not None]
 
 
 def orders(plugins: tuple[str, ...]) -> list[tuple[str, ...]]:
@@ -139,8 +139,13 @@ class Run(NamedTuple):
     out: str
     # (mdformat's rendering, the plugin's) for each paragraph's inline node
     pairs: list[tuple[str, str]]
+    # (mdformat's rendering, `locate`'s pieces) for each paragraph located
+    located: list[tuple[str, list[Piece]]]
     back_offs: int
     fallbacks: list[str]
+    # How often anything listed the recording map's keys or length (§3.1),
+    # as a copy of it would
+    listed: int
 
 
 class _Messages(logging.Handler):
@@ -160,11 +165,30 @@ def run(md: str, extensions: tuple[str, ...], wrap) -> Run:
     default = DEFAULT_RENDERERS["inline"]
     given: list[str] = []
     pairs: list[tuple[str, str]] = []
+    located: list[tuple[str, list[Piece]]] = []
+    listed = [0]
+    locate = _plugin.locate
+    recording = _segment.Recording
 
     def spy(node, context):
         text = default(node, context)
         given.append(text)
         return text
+
+    def spy_locate(node, records, text):
+        pieces = locate(node, records, text)
+        if pieces is not None:
+            located.append((text, pieces))
+        return pieces
+
+    class Listed(recording):
+        def __iter__(self):
+            listed[0] += 1
+            return super().__iter__()
+
+        def __len__(self):
+            listed[0] += 1
+            return super().__len__()
 
     def wrapper(node, context):
         given.clear()
@@ -180,6 +204,8 @@ def run(md: str, extensions: tuple[str, ...], wrap) -> Run:
     # and mdformat's own map is read-only.
     _plugin.DEFAULT_RENDERERS = {**DEFAULT_RENDERERS, "inline": spy}
     mdformat_sentence.RENDERERS["inline"] = wrapper
+    _plugin.locate = spy_locate
+    _plugin.Recording = Listed
     LOGGER.addHandler(handler)
     LOGGER.setLevel(logging.DEBUG)
     try:
@@ -187,14 +213,18 @@ def run(md: str, extensions: tuple[str, ...], wrap) -> Run:
     finally:
         _plugin.DEFAULT_RENDERERS = DEFAULT_RENDERERS
         mdformat_sentence.RENDERERS["inline"] = renderer
+        _plugin.locate = locate
+        _plugin.Recording = recording
         LOGGER.removeHandler(handler)
         LOGGER.setLevel(level)
     prefix = f"{FALLBACK}: "
     return Run(
         out,
         pairs,
+        located,
         handler.messages.count(BACK_OFF),
         [m[len(prefix) :] for m in handler.messages if m.startswith(prefix)],
+        listed[0],
     )
 
 
@@ -207,5 +237,6 @@ def baseline(md: str, plugins: tuple[str, ...], wrap) -> str:
 def preserves(given: str, out: str) -> bool:
     """Whether `out` is `given` with each run of wrap points replaced by
     one newline or one space (§6.2's text-preservation row)."""
-    parts = _RUN.split(given)[0::2]
+    # Independent of `_segment._RUN`, so the row can catch a fault in it.
+    parts = re.split(f"{re.escape(WRAP_POINT)}+", given)
     return re.fullmatch("[\n ]".join(map(re.escape, parts)), out) is not None
