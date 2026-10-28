@@ -74,6 +74,11 @@ class ParagraphPart(NamedTuple):
     starts: list[int]
     pieces: list[Piece]
 
+    @property
+    def span(self) -> tuple[int, int]:
+        """The part's start and end offsets in the paragraph's text."""
+        return self.starts[0], self.starts[-1] + len(self.segments[-1])
+
 
 class State(NamedTuple):
     """Section 3.3's cross-segment facts about one paragraph part.
@@ -175,8 +180,7 @@ def _atom_test(pieces: list[Piece]) -> Callable[[int], bool]:
 def scan(text: str, part: ParagraphPart) -> State:
     """Section 3.3's facts, computed once per paragraph part: the atoms in it,
     and the bracket depth at each gap (§3.2)."""
-    first = part.starts[0]
-    last = part.starts[-1] + len(part.segments[-1])
+    first, last = part.span
     gaps = [s + len(seg) for s, seg in zip(part.starts, part.segments)][:-1]
     depth = [0] * len(gaps)
     prose = [p for p in part.pieces if not p.atom]

@@ -93,8 +93,7 @@ def test_each_paragraph_part_gets_its_own_pieces(md, plugins, extensions, wrap):
     for text, pieces in located:
         assert all(a.start <= a.end <= b.start for a, b in pairwise(pieces))
         for part in paragraph_parts(text, pieces):
-            first = part.starts[0]
-            last = part.starts[-1] + len(part.segments[-1])
+            first, last = part.span
             assert part.pieces == [
                 p for p in pieces if p.start < last and p.end > first
             ]
