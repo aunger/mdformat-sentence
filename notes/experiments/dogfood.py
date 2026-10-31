@@ -12,7 +12,7 @@ the shipped default would join, before the plugin is there to run:
     does not count;
   - the line after must open, after any opening quotes, brackets and emphasis markers, with a
     capital, a digit, a camelCase word, a code span, an image or a tag, or with a word that matches
-    the shipped `lowercase_names = 'mdformat\\S*'`.
+    the shipped rule `after = 'mdformat\\S*'`.
 It knows no abbreviation, initial or line-start check, so it misses joins that sections 3.3 and 3.5
 would make, and it looks only at breaks the author made, so it reports joins only, never a sentence
 end inside a line that the plugin would split.

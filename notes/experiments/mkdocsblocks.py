@@ -4,7 +4,7 @@ It establishes that mdformat-mkdocs neither escapes nor indents a caption
 opener `///` or an mkdocstrings injection `:::` that its own word wrap
 puts at the start of a paragraph line, and that both then interrupt the
 paragraph and change the render. The plugin's capital test refuses both
-words, so only a `lowercase_names` pattern broad enough to pass them
+words, so only a `split` rule broad enough to pass them
 could let a break do the same (notes/FUTURE-WORK.md).
 
 Needs mdformat 1.0.0 and mdformat-mkdocs 5.3.0.

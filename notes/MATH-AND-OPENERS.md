@@ -29,25 +29,19 @@ Math-heavy prose, the kind `academic.toml` exists for, was not measured, so the 
 
 ## 2. Can a rule add an opening atom?
 
-**Not as a `[[rule]]`.**
-A rule is consulted only at a gap after an ATerm terminator, matches the text of the words around the gap, and returns `no` or `allow`.
-It cannot force a break, it never sees a node's type, and it is not consulted after `!` or `?`.
-An opening atom is a property of the word after any terminator, so it is the wrong shape for the decision list.
-
-**As a key of a rules file, yes, the way `lowercase_names` already is.**
-`lowercase_names` lets a named lowercase word pass the capital test, and it is a file key rather than a rule for the same reasons (`DESIGN.md` section 4).
-A second key could name node types that open a sentence:
+**Yes, as a `[[rule]]` on `after_type`, since issue #30.**
+Before #30 the answer was no: a rule was consulted only at a gap after an ATerm terminator, saw no node type, and could not force a break, so this note proposed a file key beside `lowercase_names`.
+Issue #30 removed all three limits: the rule list decides every gap that passes bracket depth and section 3.5, `split` is a break, and `after_type` reads the type of the atom the word after the gap opens with (`DESIGN.md` section 3.3).
+So a rules file lets inline math open a sentence with one rule, laid down after the base rules:
 
 ```toml
-schema       = 1
-opener_types = ['math_inline']
+[[rule]]
+at_term    = '.+'
+after_type = 'math_inline'
+verdict    = 'split'
 ```
 
-The name is a placeholder of this note, not a decision.
-It would compose like `lowercase_names`: every file in a composition contributes, a file can add types and none can take one away; unlike `lowercase_names`, its default would name none.
-The recorder of `DESIGN.md` section 3.1 already knows each atom's node type, so the check costs a set lookup.
-
-A text pattern instead of a node type, say `openers = '\$.*'`, would be more general and riskier: it reads atom text through a pattern, which is what the closed list was made to stop.
+An `after` pattern can still read an atom's text, `after = '\$.*'`, which is more general and riskier: it reads atom text through a pattern, which is what the closed list was made to stop.
 Node types are the narrower tool.
 
 **The type names agree across the math plugins read.**
@@ -71,7 +65,6 @@ That is one plugin with default settings; the others, and dollarmath's options, 
 1. Measure the cost on math-heavy Markdown: how many sentences open with inline math, and how many of those the closed list holds back.
    If it is small there too, the closed list stays and this note is the record of why.
 2. For each math plugin worth supporting, run the gate's line-start and render-equality rows with a break before `math_inline` at a line start, in both load orders.
-3. Decide between a file key such as `opener_types` and a fixed list in code.
-   A fixed list is simpler but makes the spec name co-plugins; a key keeps that knowledge in rules files, where `academic.toml` could carry it.
+3. Decide whether a shipped rules file, `academic.toml` for instance, should carry the `math_inline` rule, or leave it to each project.
 
 The mdformat-gfm bare URL is the other candidate on record: measured at 24 gaps in about 150,000 paragraphs, judged safe by reasoning, and deferred (`FUTURE-WORK.md`).
