@@ -26,7 +26,7 @@ Section 3.5 refuses that break, with or without gfm.
 **Compatibility risk.**
 *Verified* 2026-10-28 (`experiments/edgeescape.py` check 3).
 The tables plugin inside gfm has a `paragraph` postprocessor, `_escape_tables`, that escapes the first `-` of any line made only of `|`, `-`, `:` and spaces, so a break before `:-:` or `| --- |` changes the source.
-Only a broad `lowercase_names` pattern lets such a line open a sentence, and section 3.5 refuses that break, with or without gfm.
+Only a broad `split` rule on `after` lets such a line open a sentence, and section 3.5 refuses that break, with or without gfm.
 
 ## A bare URL renders its source, not its child
 

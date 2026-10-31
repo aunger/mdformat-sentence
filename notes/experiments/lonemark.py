@@ -7,7 +7,7 @@ split at ordinary spaces, which is what the hook point delivers for these texts.
 Stdlib only.
 
 Terminators are cut down to the ones these texts use; the real set is
-UAX #29 STerm and ATerm. No decision list, bracket depth or capital-test
+UAX #29 STerm and ATerm. No rule list, bracket depth or capital-test
 exemption is consulted: none of these texts needs one.
 
 It establishes:

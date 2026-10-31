@@ -49,7 +49,7 @@ Section 3.5's math safety therefore gives no break to a paragraph that opens wit
 **Filing candidate.**
 *Verified* 2026-10-28, mkdocs alone (`experiments/mkdocsblocks.py`).
 A caption opener `///` or an mkdocstrings injection `:::` that mkdocs's own word wrap puts at the start of a paragraph line is left as it is, and it interrupts the paragraph: `It ended. /// caption follows.` at `--wrap 12` comes back as a caption block, and the render changes.
-This plugin's capital test refuses both, so only a broad `lowercase_names` pattern could let a break put one at a line start; `FUTURE-WORK.md` records the open question.
+This plugin's capital test refuses both, so only a broad `split` rule on `after` could let a break put one at a line start; `FUTURE-WORK.md` records the open question.
 
 ## Filler words in re-wrapped list items
 

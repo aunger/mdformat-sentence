@@ -55,12 +55,12 @@ It cannot see parse-level traps such as `[^x]:` and `*[HTML]:`, which `paragraph
 
 **Intention.** Use it as the oracle for section 6.2's source-equality row first, and consider it at run time only after it has been run against plugins that own `paragraph`.
 
-### mdformat-mkdocs block openers under a broad `lowercase_names`
+### mdformat-mkdocs block openers under a broad `split` rule
 
 **Observed.** Section 3.5's line-start check refuses what mdformat and the gate's co-plugins escape, and the definitions they parse, but not mdformat-mkdocs's block openers, such as a caption's `///` and an mkdocstrings injection's `:::`, which interrupt a paragraph unescaped (`quirks-mdformat-mkdocs.md`).
-The capital test refuses those words, so the shipped rules cannot break before one; a rules file whose `lowercase_names` passes any word, `'\S+'`, does, and with mkdocs loaded `It ended. /// caption follows.` then loses `follows.`.
+The capital test refuses those words, so the shipped rules cannot break before one; a rules file with a later `split` rule that passes any word, `after = '\S+'`, does, and with mkdocs loaded `It ended. /// caption follows.` then loses `follows.`.
 
-**Intention.** Settle it when the rules files load (M4) and the gate runs user-shaped rules with mkdocs (M5): either list mkdocs's block openers among the line-start entries, after finding which of them can interrupt a paragraph, or keep `lowercase_names` from passing a word with no letter in it.
+**Intention.** Settle it when the rules files load (M4) and the gate runs user-shaped rules with mkdocs (M5): either list mkdocs's block openers among the line-start entries, after finding which of them can interrupt a paragraph, or document that a `split` rule on `after` should require a letter, as `lowercase-sentence.toml`'s does.
 
 ## Detection
 
@@ -78,13 +78,13 @@ An mdformat-gfm bare URL as an opening atom was measured at 24 gaps in about 150
 
 **Intention.** If clause breaks are ever added they are a separate decision, and a parse is the mechanism to evaluate first.
 It would add a model dependency that this design's footprint, mdformat and `tomli` below Python 3.11, does not have.
-It would also need an answer to section 1's promise and section 6.2's locality row: a decision made from the whole sentence is still a function of the text, but only if the model is deterministic and analyzes one sentence at a time, so that an edit in one sentence cannot move a break in another.
+It would also need an answer to section 1's width independence and section 6.2's locality row: a decision made from the whole sentence is still a function of the text, but only if the model is deterministic and analyzes one sentence at a time, so that an edit in one sentence cannot move a break in another.
 
 ## Packaging and versions
 
 ### Widening the mdformat bound
 
-**Observed.** The dependency is `mdformat>=1.0.0,<1.1`, because the hook point rests on facts mdformat does not promise (section 2): `WRAP_POINT`, the pipeline's order, and the postprocessor-map convention the recorder uses.
+**Observed.** The dependency is `mdformat>=1.0.0,<1.1`, because the hook point rests on facts mdformat does not guarantee (section 2): `WRAP_POINT`, the pipeline's order, and the postprocessor-map convention the recorder uses.
 mdformat 0.7.17 and 0.7.22 were read and match, but only 1.0.0 was run.
 
 **Intention.** Move the bound only after section 6's gate passes against the newer mdformat, which the non-blocking CI job runs.
